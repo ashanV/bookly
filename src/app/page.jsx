@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -32,7 +32,7 @@ function HeroSection() {
   const [wordIndex, setWordIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const words = ["terminu", "stylu", "relaksu", "doświadczenia"];
+  const words = useMemo(() => ["terminu", "stylu", "relaksu", "doświadczenia"], []);
 
   useEffect(() => {
     let timeout;
@@ -217,7 +217,7 @@ function HeroSection() {
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <div className="text-sm text-gray-600 mb-2 font-medium flex items-center">
                         <MapPin className="w-4 h-4 mr-2 text-violet-500" />
-                        Szukasz: "{searchQuery}"
+                        Szukasz: &quot;{searchQuery}&quot;
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {[
@@ -365,9 +365,11 @@ function FeaturedServices() {
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="relative overflow-hidden">
-                <img
+                <Image
                   src={service.image}
                   alt={service.name}
+                  width={400}
+                  height={250}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                 />
                 <div className="absolute top-4 left-4">
