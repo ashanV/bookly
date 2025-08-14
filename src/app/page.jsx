@@ -560,8 +560,15 @@ function FeaturesSection() {
 
               {/* Center logo/icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl shadow-2xl flex items-center justify-center">
-                  <Calendar className="w-12 h-12 text-white" />
+                <div className="flex items-center justify-center">
+                  <Image
+                    src="/images/Logo.png"
+                    alt="Bookly Logo"
+                    width={240}
+                    height={240}
+                    className="w-50 h-50 object-cover"
+                    priority
+                  />
                 </div>
               </div>
             </div>
