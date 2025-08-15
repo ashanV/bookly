@@ -161,7 +161,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <p className="text-gray-400 text-sm">
-                © 2024 Bookify. Wszelkie prawa zastrzeżone.
+                © 2024 Bookly. Wszelkie prawa zastrzeżone.
               </p>
             </div>
 
