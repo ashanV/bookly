@@ -95,7 +95,7 @@ export default function Navigation() {
                   <span>Dodaj swój biznes</span>
                 </Link>
                 <Link
-                  href="/auth"
+                  href="/client/auth"
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2"
                 >
                   <UserPlus size={18} />
