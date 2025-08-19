@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth"; 
 import {
   Eye,
   EyeOff,
@@ -15,9 +18,15 @@ import {
 } from "lucide-react";
 
 const BooklyAuth = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login, register, isAuthenticated, loading: authLoading } = useAuth(); // Używamy hooka
+
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -28,37 +37,87 @@ const BooklyAuth = () => {
     birthDate: "",
   });
 
+  // Jeśli użytkownik już jest zalogowany, przekieruj go
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const redirect = searchParams.get("redirect") || "/client";
+      console.log("✅ Już zalogowany - przekierowanie na:", redirect);
+      router.push(redirect);
+    }
+  }, [isAuthenticated, authLoading, router, searchParams]);
+
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Wyczyść błąd przy zmianie danych
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-    const url = isLogin ? "/api/auth/login" : "/api/auth/register";
+    try {
+      if (isLogin) {
+        // LOGOWANIE - używamy hooka
+        const result = await login(formData.email, formData.password);
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+        if (result.success) {
+          const redirect = searchParams.get("redirect") || "/client";
+          console.log("✅ Logowanie udane - przekierowanie na:", redirect);
+          router.push(redirect);
+        } else {
+          setError(result.error);
+        }
+      } else {
+        // REJESTRACJA
+        // Walidacja po stronie klienta
+        if (formData.password !== formData.confirmPassword) {
+          setError("Hasła nie są identyczne");
+          setIsLoading(false);
+          return;
+        }
+        if (formData.password.length < 6) {
+          setError("Hasło musi mieć co najmniej 6 znaków");
+          setIsLoading(false);
+          return;
+        }
 
-    const data = await res.json();
-    console.log(data);
+        // Używamy hooka do rejestracji
+        const result = await register(formData);
 
-    if (res.ok) {
-      alert(isLogin ? "Zalogowano pomyślnie!" : "Rejestracja udana!");
-      // tutaj możesz zapisać token do localStorage lub cookies
-    } else {
-      alert(data.error || "Coś poszło nie tak");
+        if (result.success) {
+          setError(""); // Wyczyść błędy
+          alert("Rejestracja udana! Możesz się teraz zalogować.");
+          // Po rejestracji przełącz na tryb logowania
+          setIsLogin(true);
+          setFormData({
+            email: formData.email,
+            password: "",
+            confirmPassword: "",
+            firstName: "",
+            lastName: "",
+            phone: "",
+            birthDate: "",
+          });
+        } else {
+          setError(result.error);
+        }
+      }
+    } catch (err) {
+      console.error("Błąd:", err);
+      setError("Wystąpił nieoczekiwany błąd");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
+    setError(""); // Wyczyść błędy
     setFormData({
       email: "",
       password: "",
@@ -69,6 +128,20 @@ const BooklyAuth = () => {
       birthDate: "",
     });
   };
+
+  // Pokaż loader podczas sprawdzania autoryzacji
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg mb-4">
+            <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-gray-600">Sprawdzam autoryzację...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -106,29 +179,38 @@ const BooklyAuth = () => {
           <div className="flex mb-8 p-1 bg-gray-100 rounded-xl">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${
+              disabled={isLoading}
+              className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${
                 isLogin
                   ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
                   : "text-gray-600 hover:text-gray-800"
-              }`}
+              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <LogIn size={18} />
               <span>Logowanie</span>
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${
+              disabled={isLoading}
+              className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${
                 !isLogin
                   ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
                   : "text-gray-600 hover:text-gray-800"
-              }`}
+              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <UserPlus size={18} />
               <span>Rejestracja</span>
             </button>
           </div>
 
-          <div className="space-y-6">
+          {/* Komunikat błędu */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Pola dla rejestracji */}
             <div
               className={`transition-all duration-700 ease-in-out transform ${
@@ -151,7 +233,9 @@ const BooklyAuth = () => {
                         placeholder="Imię"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70"
+                        disabled={isLoading}
+                        required={!isLogin}
+                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70 disabled:opacity-50"
                       />
                     </div>
                     <div className="relative">
@@ -165,7 +249,9 @@ const BooklyAuth = () => {
                         placeholder="Nazwisko"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70"
+                        disabled={isLoading}
+                        required={!isLogin}
+                        className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70 disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -181,7 +267,8 @@ const BooklyAuth = () => {
                       placeholder="Numer telefonu"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-0 transition-all duration-300 bg-white/70"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-0 transition-all duration-300 bg-white/70 disabled:opacity-50"
                     />
                   </div>
 
@@ -196,7 +283,8 @@ const BooklyAuth = () => {
                       placeholder="Data urodzenia"
                       value={formData.birthDate}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70"
+                      disabled={isLoading}
+                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70 disabled:opacity-50"
                     />
                   </div>
                 </>
@@ -215,7 +303,9 @@ const BooklyAuth = () => {
                 placeholder="Adres email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70"
+                disabled={isLoading}
+                required
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70 disabled:opacity-50"
               />
             </div>
 
@@ -231,12 +321,15 @@ const BooklyAuth = () => {
                 placeholder="Hasło"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70"
+                disabled={isLoading}
+                required
+                className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70 disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black hover:text-gray-600 transition-all duration-300 hover:scale-110"
+                disabled={isLoading}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black hover:text-gray-600 transition-all duration-300 hover:scale-110 disabled:opacity-50"
               >
                 {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
               </button>
@@ -262,12 +355,15 @@ const BooklyAuth = () => {
                     placeholder="Potwierdź hasło"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70"
+                    disabled={isLoading}
+                    required={!isLogin}
+                    className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-0 focus:border-transparent transition-all duration-300 bg-white/70 disabled:opacity-50"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black hover:text-gray-600 transition-all duration-300 hover:scale-110"
+                    disabled={isLoading}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black hover:text-gray-600 transition-all duration-300 hover:scale-110 disabled:opacity-50"
                   >
                     {showConfirmPassword ? (
                       <Eye size={20} />
@@ -292,7 +388,9 @@ const BooklyAuth = () => {
                   <input
                     type="checkbox"
                     id="terms"
-                    className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 transition-all duration-300"
+                    required={!isLogin}
+                    disabled={isLoading}
+                    className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 transition-all duration-300 disabled:opacity-50"
                   />
                   <label
                     htmlFor="terms"
@@ -313,14 +411,27 @@ const BooklyAuth = () => {
 
             {/* Przycisk submit */}
             <button
-              onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 hover:from-indigo-700 hover:to-purple-700"
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-indigo-600 cursor-pointer to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <div className="transition-all duration-300 transform">
-                {isLogin ? <LogIn size={20} /> : <UserPlus size={20} />}
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : isLogin ? (
+                  <LogIn size={20} />
+                ) : (
+                  <UserPlus size={20} />
+                )}
               </div>
               <span className="transition-all duration-300">
-                {isLogin ? "Zaloguj się" : "Utwórz konto"}
+                {isLoading
+                  ? isLogin
+                    ? "Logowanie..."
+                    : "Rejestracja..."
+                  : isLogin
+                  ? "Zaloguj się"
+                  : "Utwórz konto"}
               </span>
             </button>
 
@@ -338,7 +449,7 @@ const BooklyAuth = () => {
                 </span>
               )}
             </div>
-          </div>
+          </form>
 
           {/* Divider */}
           <div className="my-6 flex items-center">
@@ -351,7 +462,11 @@ const BooklyAuth = () => {
 
           {/* Logowanie przez social media */}
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 group hover:shadow-md transform hover:scale-[1.01]">
+            <button
+              type="button"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center cursor-pointer space-x-3 py-3 px-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 group hover:shadow-md transform hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110">
                 <span className="text-white text-xs font-bold">G</span>
               </div>
@@ -359,7 +474,11 @@ const BooklyAuth = () => {
                 Kontynuuj z Google
               </span>
             </button>
-            <button className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 group hover:shadow-md transform hover:scale-[1.01]">
+            <button
+              type="button"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center cursor-pointer space-x-3 py-3 px-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 group hover:shadow-md transform hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Facebook size={24} color="#0300a8" />
               <span className="text-gray-700 font-medium transition-all duration-300">
                 Kontynuuj z Facebook
@@ -373,8 +492,10 @@ const BooklyAuth = () => {
               <>
                 Nie masz konta?{" "}
                 <button
+                  type="button"
                   onClick={toggleMode}
-                  className="text-indigo-600 hover:underline font-medium transition-all duration-300 hover:text-indigo-700"
+                  disabled={isLoading}
+                  className="text-indigo-600 hover:underline cursor-pointer font-medium transition-all duration-300 hover:text-indigo-700 disabled:opacity-50"
                 >
                   Zarejestruj się
                 </button>
@@ -383,8 +504,10 @@ const BooklyAuth = () => {
               <>
                 Masz już konto?{" "}
                 <button
+                  type="button"
                   onClick={toggleMode}
-                  className="text-indigo-600 hover:underline font-medium transition-all duration-300 hover:text-indigo-700"
+                  disabled={isLoading}
+                  className="text-indigo-600 hover:underline font-medium transition-all duration-300 hover:text-indigo-700 disabled:opacity-50"
                 >
                   Zaloguj się
                 </button>
