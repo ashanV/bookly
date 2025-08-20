@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   Search,
@@ -23,16 +24,39 @@ import {
   Twitter,
 } from "lucide-react";
 
+
 // Komponenty
 import Navigation from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
+// Definicje wariantów animacji dla framer-motion
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.3,
+    },
+  },
+};
 
 function HeroSection() {
   const [currentWord, setCurrentWord] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const words = useMemo(() => ["terminu", "stylu", "relaksu", "doświadczenia"], []);
+  const words = useMemo(() => ["termin", "styl", "relaks",], []);
 
   useEffect(() => {
     let timeout;
@@ -110,23 +134,28 @@ function HeroSection() {
         ></div>
       </div>
 
-      <div className="container mx-auto px-6 pt-20 pb-16 relative z-10">
+      <motion.div 
+        className="container mx-auto px-6 pt-20 pb-16 relative z-10"
+        initial="hidden"
+        animate="visible"
+        variants={staggerContainer}
+      >
         <div className="text-center text-white">
-          <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-8 fade-in-up">
+          <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl font-extrabold leading-tight mb-8">
             Znajdź i zarezerwuj <br />
             swój idealny{" "}
             <span className="hero-gradient-text">
               {currentWord}
               <span className="pulse-custom">|</span>
             </span>
-          </h1>
+          </motion.h1>
 
-          <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-12 fade-in-up animation-delay-200">
+          <motion.p variants={fadeInUp} className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-12">
             Odkryj najlepszych specjalistów w Twojej okolicy. Szybka i prosta
             rezerwacja wizyt online 24/7.
-          </p>
+          </motion.p>
 
-          <div className="mt-10 max-w-2xl mx-auto mb-12 fade-in-up animation-delay-400">
+          <motion.div variants={fadeInUp} className="mt-10 max-w-2xl mx-auto mb-12">
             <div className="search-container relative group">
               <div
                 className={`glass-card rounded-xl shadow-xl border transition-all duration-300 ${
@@ -166,93 +195,95 @@ function HeroSection() {
                 </div>
               </div>
 
-              <div
-                className={`search-suggestions-container absolute top-full left-0 right-0 mt-4 z-50 transition-all duration-300 ${
-                  isSearchFocused
-                    ? "opacity-100 visible translate-y-0"
-                    : "opacity-0 invisible translate-y-4"
-                }`}
-                style={{
-                  marginBottom: isSearchFocused ? "40px" : "20px",
-                }}
-              >
-                <div
-                  className="glass-card rounded-lg p-5 shadow-xl border border-white/20 pulse-glow"
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={closeSuggestions}
-                    className="cursor-pointer absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+              <AnimatePresence>
+                {isSearchFocused && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="search-suggestions-container absolute top-full left-0 right-0 mt-4 z-50"
                   >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <div className="text-sm text-gray-600 mb-3 font-medium flex items-center">
-                    <Search className="w-4 h-4 mr-2 text-violet-500" />
-                    Popularne wyszukiwania:
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      "Fryzjer męski",
-                      "Manicure hybrydowy",
-                      "Masaż relaksacyjny",
-                      "Depilacja",
-                      "Strzyżenie damskie",
-                      "Pedicure",
-                    ].map((term) => (
+                    <div
+                      className="glass-card rounded-lg p-5 shadow-xl border border-white/20 pulse-glow"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
                       <button
-                        key={term}
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          handleSuggestionClick(term);
-                        }}
-                        className="suggestion-item hover-lift text-sm bg-gradient-to-r from-white to-gray-50 text-gray-700 px-3 py-2 rounded-lg hover:from-violet-50 hover:to-purple-50 hover:text-violet-700 cursor-pointer font-medium border border-gray-200 hover:border-violet-300 shadow-sm hover:shadow-lg"
+                        onClick={closeSuggestions}
+                        className="cursor-pointer absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
                       >
-                        {term}
+                        <X className="w-4 h-4" />
                       </button>
-                    ))}
-                  </div>
 
-                  {searchQuery && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="text-sm text-gray-600 mb-2 font-medium flex items-center">
-                        <MapPin className="w-4 h-4 mr-2 text-violet-500" />
-                        Szukasz: &quot;{searchQuery}&quot;
+                      <div className="text-sm text-gray-600 mb-3 font-medium flex items-center">
+                        <Search className="w-4 h-4 mr-2 text-violet-500" />
+                        Popularne wyszukiwania:
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {[
-                          "Warszawa",
-                          "Kraków",
-                          "Wrocław",
-                          "Gdańsk",
-                          "Poznań",
-                        ].map((city) => (
+                          "Fryzjer męski",
+                          "Manicure hybrydowy",
+                          "Masaż relaksacyjny",
+                          "Depilacja",
+                          "Strzyżenie damskie",
+                          "Pedicure",
+                        ].map((term) => (
                           <button
-                            key={city}
+                            key={term}
                             onMouseDown={(e) => {
                               e.stopPropagation();
-                              handleCityClick(city);
+                              handleSuggestionClick(term);
                             }}
-                            className="suggestion-item hover-lift text-sm bg-gradient-to-r from-violet-50 to-purple-50 text-violet-700 px-3 py-2 rounded-lg hover:from-violet-100 hover:to-purple-100 cursor-pointer font-medium border border-violet-200 hover:border-violet-400 shadow-sm hover:shadow-lg"
+                            className="suggestion-item hover-lift text-sm bg-gradient-to-r from-white to-gray-50 text-gray-700 px-3 py-2 rounded-lg hover:from-violet-50 hover:to-purple-50 hover:text-violet-700 cursor-pointer font-medium border border-gray-200 hover:border-violet-300 shadow-sm hover:shadow-lg"
                           >
-                            {city}
+                            {term}
                           </button>
                         ))}
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div
-            className="popular-services-slide flex flex-wrap items-center justify-center gap-3 mb-16 fade-in-up animation-delay-600 transition-all duration-500 ease-out"
+                      {searchQuery && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="text-sm text-gray-600 mb-2 font-medium flex items-center">
+                            <MapPin className="w-4 h-4 mr-2 text-violet-500" />
+                            Szukasz: &quot;{searchQuery}&quot;
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              "Warszawa",
+                              "Kraków",
+                              "Wrocław",
+                              "Gdańsk",
+                              "Poznań",
+                            ].map((city) => (
+                              <button
+                                key={city}
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  handleCityClick(city);
+                                }}
+                                className="suggestion-item hover-lift text-sm bg-gradient-to-r from-violet-50 to-purple-50 text-violet-700 px-3 py-2 rounded-lg hover:from-violet-100 hover:to-purple-100 cursor-pointer font-medium border border-violet-200 hover:border-violet-400 shadow-sm hover:shadow-lg"
+                              >
+                                {city}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={fadeInUp}
+            className="popular-services-slide flex flex-wrap items-center justify-center gap-3 mb-16 transition-all duration-500 ease-out"
             style={{
               marginTop: isSearchFocused
                 ? searchQuery
-                  ? "320px"
-                  : "280px"
+                  ? "200px" 
+                  : "160px" 
                 : "0px",
               transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
             }}
@@ -267,11 +298,10 @@ function HeroSection() {
               "Paznokcie",
               "Masaż",
               "SPA",
-            ].map((service, index) => (
+            ].map((service) => (
               <button
                 key={service}
                 className=" cursor-pointer hover-lift glass-card text-gray-700 px-5 py-3 rounded-lg font-medium hover:bg-white hover:shadow-lg transition-all duration-300 border border-white/20 hover:border-white/40"
-                style={{ animationDelay: `${index * 100}ms` }}
                 onClick={() => {
                   setSearchQuery(service);
                   setIsSearchFocused(true);
@@ -280,9 +310,9 @@ function HeroSection() {
                 {service}
               </button>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
@@ -344,9 +374,15 @@ function FeaturedServices() {
   ];
 
   return (
-    <section className="py-24 bg-white">
+    <motion.section 
+      className="py-24 bg-white"
+      initial="hidden"
+      whileInView="visible"
+      variants={staggerContainer}
+      viewport={{ once: true, amount: 0.2 }}
+    >
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
+        <motion.div variants={fadeInUp} className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Odkryj najlepsze usługi w{" "}
             <span className="hero-gradient-text">Twojej okolicy</span>
@@ -355,14 +391,17 @@ function FeaturedServices() {
             Wybrane przez naszych ekspertów miejsca, które gwarantują najwyższą
             jakość usług
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {services.map((service, index) => (
-            <div
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          variants={staggerContainer}
+        >
+          {services.map((service) => (
+            <motion.div
               key={service.id}
-              className="service-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl group fade-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
+              variants={fadeInUp}
+              className="service-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl group"
             >
               <div className="relative overflow-hidden">
                 <Image
@@ -409,11 +448,11 @@ function FeaturedServices() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -478,7 +517,13 @@ function FeaturesSection() {
   }, [mainFeatures.length]);
 
   return (
-    <section className="py-32 bg-gray-50 relative overflow-hidden">
+    <motion.section 
+      className="py-32 bg-gray-50 relative overflow-hidden"
+      initial="hidden"
+      whileInView="visible"
+      variants={staggerContainer}
+      viewport={{ once: true, amount: 0.1 }}
+    >
       {/* Background Elements */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-20 w-96 h-96 bg-violet-500 rounded-full blur-3xl"></div>
@@ -487,7 +532,7 @@ function FeaturesSection() {
 
       <div className="container mx-auto px-6 relative z-10">
         {/* Main Header */}
-        <div className="text-center mb-20">
+        <motion.div variants={fadeInUp} className="text-center mb-20">
           <div className="inline-flex items-center bg-gradient-to-r from-violet-100 to-purple-100 px-6 py-2 rounded-full text-violet-700 font-semibold mb-6">
             <Sparkles className="w-5 h-5 mr-2" />
             Dlaczego jesteśmy najlepsi
@@ -500,14 +545,15 @@ function FeaturesSection() {
             Nie jesteśmy kolejną platformą rezerwacji. Tworzymy przyszłość
             branży beauty & wellness.
           </p>
-        </div>
+        </motion.div>
 
         {/* Interactive Main Features */}
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
-          <div className="space-y-8">
+          <motion.div variants={staggerContainer} className="space-y-8">
             {mainFeatures.map((feature, index) => (
-              <div
+              <motion.div
                 key={index}
+                variants={fadeInUp}
                 className={`relative p-8 rounded-2xl cursor-pointer transition-all duration-500 transform hover:scale-105 ${
                   activeFeature === index
                     ? "bg-white shadow-2xl border-2 border-violet-200"
@@ -537,20 +583,23 @@ function FeaturesSection() {
 
                 {/* Progress bar */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-2xl overflow-hidden">
-                  <div
-                    className={`h-full bg-gradient-to-r ${
-                      feature.color
-                    } transition-all duration-4000 ${
-                      activeFeature === index ? "w-full" : "w-0"
-                    }`}
-                  ></div>
+                   <AnimatePresence>
+                    {activeFeature === index && (
+                      <motion.div
+                        className={`h-full bg-gradient-to-r ${feature.color}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 4, ease: "linear" }}
+                      />
+                    )}
+                  </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Enhanced Visual Showcase without main image */}
-          <div className="relative min-h-[500px] flex items-center justify-center">
+          <motion.div variants={fadeInUp} className="relative min-h-[500px] flex items-center justify-center">
             {/* Central decorative element */}
             <div className="relative w-80 h-80">
               {/* Main circle with gradient */}
@@ -649,20 +698,23 @@ function FeaturesSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Additional Features Grid */}
-        <div className="mb-16">
+        <motion.div variants={fadeInUp} className="mb-16">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
             I to nie wszystko...
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={staggerContainer}
+          >
             {additionalFeatures.map((feature, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 text-center group fade-in-up"
-                style={{ animationDelay: `${index * 100}ms` }}
+                variants={fadeInUp}
+                className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 text-center group"
               >
                 <div className="bg-gradient-to-br from-violet-100 to-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <div className="text-violet-600">{feature.icon}</div>
@@ -671,13 +723,13 @@ function FeaturesSection() {
                   {feature.title}
                 </h4>
                 <p className="text-gray-600 text-sm">{feature.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Call to Action */}
-        <div className="text-center">
+        <motion.div variants={fadeInUp} className="text-center">
           <div className="glass-card p-12 rounded-3xl shadow-2xl max-w-4xl mx-auto">
             <h3 className="text-4xl font-bold text-gray-900 mb-6">
               Gotowy na <span className="hero-gradient-text">przyszłość</span>{" "}
@@ -689,21 +741,21 @@ function FeaturesSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button className="cursor-pointer bg-gradient-to-r from-violet-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center">
-                Rozpocznij za darmo
+                Rozpocznij teraz
                 <ArrowRight className="w-5 h-5 ml-2" />
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 // Główny komponent strony
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-white">
       <Navigation />
       <HeroSection />
       <FeaturedServices />
