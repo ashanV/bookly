@@ -26,6 +26,7 @@ import {
     Headphones,
     Award,
     ChevronDown,
+    ChevronUp,
     Menu,
     X,
     Facebook,
@@ -72,7 +73,7 @@ function Navbar() {
                     {[
                         { name: 'Home', href: "#HeroSection" },
                         { name: 'Funkcje', href: '/funkcje' },
-                        { name: 'Cennik', href: '/cennik' },
+                        { name: 'Cennik', href: '/business/pricing' },
                         { name: 'Klienci', href: '/' },
                         { name: 'Kontakt', href: '/kontakt' }
                     ].map((item, i) => (
@@ -651,6 +652,44 @@ function Footer() {
     );
 }
 
+function ScrollToTop() {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsVisible(window.scrollY > 300);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    return (
+        <motion.button
+            className={`fixed bottom-8 right-8 z-50 bg-gradient-to-r cursor-pointer from-indigo-600 to-purple-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+            }`}
+            onClick={scrollToTop}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ 
+                opacity: isVisible ? 1 : 0, 
+                y: isVisible ? 0 : 20 
+            }}
+        >
+            <ChevronUp className="w-6 h-6" />
+        </motion.button>
+    );
+}
+
 // Main App Component
 export default function App() {
     return (
@@ -662,6 +701,7 @@ export default function App() {
             <SocialProofSection />
             <CTASection />
             <Footer />
+            <ScrollToTop />
         </div>
     )
 }

@@ -55,7 +55,7 @@ export default function Navigation() {
                 <span>Załóż konto / Zaloguj</span>
               </Link>
               <Link
-                href="/admin"
+                href="/business"
                 className="cursor-pointer text-black-600 hover:text-orange-600 font-medium transition-all duration-300 flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-orange-50 hover:shadow-md group border border-transparent hover:border-orange-200"
               >
                 <Building2
