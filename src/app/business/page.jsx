@@ -75,7 +75,7 @@ function Navbar() {
                         { name: 'Funkcje', href: '/funkcje' },
                         { name: 'Cennik', href: '/business/pricing' },
                         { name: 'Klienci', href: '/' },
-                        { name: 'Kontakt', href: '/kontakt' }
+                        { name: 'Kontakt', href: '/business/contact' }
                     ].map((item, i) => (
                         <li key={i}>
                             <Link
