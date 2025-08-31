@@ -6,7 +6,7 @@ import { Check, Star, Zap, Crown, Users, Calendar, Clock, Shield, Phone, Mail, A
 // --- Komponenty Podrzędne ---
 
 const HeroSection = ({ billingCycle, setBillingCycle }) => (
-    <div className="relative py-20 px-4 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
         <div className="max-w-7xl mx-auto text-center relative">
             <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full text-blue-700 text-sm font-medium mb-6">
@@ -14,26 +14,26 @@ const HeroSection = ({ billingCycle, setBillingCycle }) => (
                 Zaufało nam już ponad 10,000+ biznesów
             </div>
 
-            <h1 className="text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-6xl font-bold text-white mb-6">
                 Proste <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ceny</span>
                 <br />bez niespodzianek
             </h1>
 
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
                 Wybierz plan idealny dla Twojego biznesu. Bez ukrytych kosztów,
                 z możliwością zmiany w każdej chwili. Zacznij za darmo już dziś.
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 mb-12">
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-white">
                     <Check className="w-5 h-5 text-green-500 mr-2" />
                     <span>14 dni za darmo</span>
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-white">
                     <Check className="w-5 h-5 text-green-500 mr-2" />
                     <span>Bez karty kredytowej</span>
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-white">
                     <Check className="w-5 h-5 text-green-500 mr-2" />
                     <span>Anuluj kiedy chcesz</span>
                 </div>

@@ -71,8 +71,8 @@ function Navbar() {
                 <ul className={`hidden md:flex gap-8 text-sm font-medium transition-colors ${scrolled ? 'text-gray-700' : 'text-white/90'
                     }`}>
                     {[
-                        { name: 'Home', href: "#HeroSection" },
-                        { name: 'Funkcje', href: '/funkcje' },
+                        { name: 'Dla kogo', href: "/business/who" },
+                        { name: 'Funkcje', href: '/business/functions' },
                         { name: 'Cennik', href: '/business/pricing' },
                         { name: 'Klienci', href: '/' },
                         { name: 'Kontakt', href: '/business/contact' }
