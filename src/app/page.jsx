@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -52,6 +53,7 @@ const staggerContainer = {
 };
 
 function HeroSection() {
+  const router = useRouter();
   const [currentWord, setCurrentWord] = useState("");
   const [wordIndex, setWordIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,15 +114,23 @@ function HeroSection() {
     if (searchQuery.trim()) {
       console.log("Szukam:", searchQuery);
       setIsSearchFocused(false);
+      // Navigate to services page with search query
+      const encodedQuery = encodeURIComponent(searchQuery.trim());
+      router.push(`/client/services?search=${encodedQuery}`);
     }
   };
 
   const handleSuggestionClick = (term) => {
     setSearchQuery(term);
+    const encodedQuery = encodeURIComponent(term);
+    router.push(`/client/services?search=${encodedQuery}`);
   };
 
   const handleCityClick = (city) => {
-    setSearchQuery(`${searchQuery} ${city}`);
+    const newQuery = `${searchQuery} ${city}`;
+    setSearchQuery(newQuery);
+    const encodedQuery = encodeURIComponent(newQuery);
+    router.push(`/client/services?search=${encodedQuery}`);
   };
 
   return (
@@ -134,7 +144,7 @@ function HeroSection() {
         ></div>
       </div>
 
-      <motion.div 
+      <motion.div
         className="container mx-auto px-6 pt-20 pb-16 relative z-10"
         initial="hidden"
         animate="visible"
@@ -158,18 +168,16 @@ function HeroSection() {
           <motion.div variants={fadeInUp} className="mt-10 max-w-2xl mx-auto mb-12">
             <div className="search-container relative group">
               <div
-                className={`glass-card rounded-xl shadow-xl border transition-all duration-300 ${
-                  isSearchFocused
-                    ? "border-white/60 shadow-xl scale-[1.0]"
-                    : "border-white/20 hover:border-white/40"
-                }`}
+                className={`glass-card rounded-xl shadow-xl border transition-all duration-300 ${isSearchFocused
+                  ? "border-white/60 shadow-xl scale-[1.0]"
+                  : "border-white/20 hover:border-white/40"
+                  }`}
               >
                 <div className="flex items-center p-2">
                   <div className="flex items-center flex-1 px-4">
                     <Search
-                      className={`w-5 h-5 mr-3 transition-colors duration-300 ${
-                        isSearchFocused ? "text-violet-500" : "text-gray-400"
-                      }`}
+                      className={`w-5 h-5 mr-3 transition-colors duration-300 ${isSearchFocused ? "text-violet-500" : "text-gray-400"
+                        }`}
                     />
                     <input
                       type="text"
@@ -282,8 +290,8 @@ function HeroSection() {
             style={{
               marginTop: isSearchFocused
                 ? searchQuery
-                  ? "200px" 
-                  : "160px" 
+                  ? "200px"
+                  : "160px"
                 : "0px",
               transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
             }}
@@ -301,10 +309,10 @@ function HeroSection() {
             ].map((service) => (
               <button
                 key={service}
-                className=" cursor-pointer hover-lift glass-card text-gray-700 px-5 py-3 rounded-lg font-medium hover:bg-white hover:shadow-lg transition-all duration-300 border border-white/20 hover:border-white/40"
+                className="cursor-pointer hover-lift glass-card text-gray-700 px-5 py-3 rounded-lg font-medium hover:bg-white hover:shadow-lg transition-all duration-300 border border-white/20 hover:border-white/40"
                 onClick={() => {
-                  setSearchQuery(service);
-                  setIsSearchFocused(true);
+                  const encodedQuery = encodeURIComponent(service);
+                  router.push(`/client/services?search=${encodedQuery}`);
                 }}
               >
                 {service}
@@ -318,6 +326,7 @@ function HeroSection() {
 }
 
 function FeaturedServices() {
+  const router = useRouter();
   const services = [
     {
       id: 1,
@@ -373,8 +382,13 @@ function FeaturedServices() {
     },
   ];
 
+  const handleServiceClick = (service) => {
+    const encodedCategory = encodeURIComponent(service.category);
+    router.push(`/client/services?category=${encodedCategory}`);
+  };
+
   return (
-    <motion.section 
+    <motion.section
       className="py-24 bg-white"
       initial="hidden"
       whileInView="visible"
@@ -393,7 +407,7 @@ function FeaturedServices() {
           </p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
           variants={staggerContainer}
         >
@@ -401,7 +415,8 @@ function FeaturedServices() {
             <motion.div
               key={service.id}
               variants={fadeInUp}
-              className="service-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl group"
+              className="service-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl group cursor-pointer"
+              onClick={() => handleServiceClick(service)}
             >
               <div className="relative overflow-hidden">
                 <Image
@@ -517,7 +532,7 @@ function FeaturesSection() {
   }, [mainFeatures.length]);
 
   return (
-    <motion.section 
+    <motion.section
       className="py-32 bg-gray-50 relative overflow-hidden"
       initial="hidden"
       whileInView="visible"
@@ -554,11 +569,10 @@ function FeaturesSection() {
               <motion.div
                 key={index}
                 variants={fadeInUp}
-                className={`relative p-8 rounded-2xl cursor-pointer transition-all duration-500 transform hover:scale-105 ${
-                  activeFeature === index
-                    ? "bg-white shadow-2xl border-2 border-violet-200"
-                    : "bg-white/50 hover:bg-white/80 shadow-lg"
-                }`}
+                className={`relative p-8 rounded-2xl cursor-pointer transition-all duration-500 transform hover:scale-105 ${activeFeature === index
+                  ? "bg-white shadow-2xl border-2 border-violet-200"
+                  : "bg-white/50 hover:bg-white/80 shadow-lg"
+                  }`}
                 onMouseEnter={() => setActiveFeature(index)}
               >
                 <div className="flex items-start space-x-6">
@@ -583,7 +597,7 @@ function FeaturesSection() {
 
                 {/* Progress bar */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-2xl overflow-hidden">
-                   <AnimatePresence>
+                  <AnimatePresence>
                     {activeFeature === index && (
                       <motion.div
                         className={`h-full bg-gradient-to-r ${feature.color}`}
@@ -706,7 +720,7 @@ function FeaturesSection() {
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
             I to nie wszystko...
           </h3>
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             variants={staggerContainer}
           >
