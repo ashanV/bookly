@@ -2,9 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from "next/link";
-import { Search, Filter, MapPin, Star, Clock, Calendar, Heart, ArrowRight, SlidersHorizontal, X, ChevronDown, Zap, Shield, Users, Award, Menu, Plus } from 'lucide-react';
+import { Search, Filter, MapPin, Star, Clock, Calendar, Heart, ArrowRight, SlidersHorizontal, X, ChevronDown, Zap, Shield, Users, Award, Menu, Plus, Map } from 'lucide-react';
+import MapModal from '../../../components/Map';
 
-// Mock data for services with added likes
+// Mock data for services with added likes and coordinates
 const mockServices = [
   {
     id: 1,
@@ -22,7 +23,9 @@ const mockServices = [
     tags: ["Męski", "Premium", "Stylizacja"],
     nextAvailable: "Dziś 14:30",
     isPromoted: true,
-    discount: 20
+    discount: 20,
+    lat: 52.1942,
+    lng: 21.0347
   },
   {
     id: 2,
@@ -39,7 +42,9 @@ const mockServices = [
     image: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&h=300&fit=crop",
     tags: ["Hybrydowy", "Wzorki", "Długotrwały"],
     nextAvailable: "Jutro 10:00",
-    isPromoted: false
+    isPromoted: false,
+    lat: 50.0614,
+    lng: 19.9366
   },
   {
     id: 3,
@@ -57,7 +62,9 @@ const mockServices = [
     tags: ["Relaks", "Całe ciało", "Aromaterapia"],
     nextAvailable: "Za 2 dni 16:00",
     isPromoted: true,
-    discount: 15
+    discount: 15,
+    lat: 51.1079,
+    lng: 17.0385
   },
   {
     id: 4,
@@ -74,7 +81,9 @@ const mockServices = [
     image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=300&fit=crop",
     tags: ["Oczyszczanie", "Peeling", "Anti-aging"],
     nextAvailable: "Dziś 18:00",
-    isPromoted: false
+    isPromoted: false,
+    lat: 54.38,
+    lng: 18.62
   },
   {
     id: 5,
@@ -91,7 +100,9 @@ const mockServices = [
     image: "https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=400&h=300&fit=crop",
     tags: ["Damski", "Modelowanie", "Stylizacja"],
     nextAvailable: "Jutro 12:00",
-    isPromoted: false
+    isPromoted: false,
+    lat: 52.2297,
+    lng: 21.0118
   },
   {
     id: 6,
@@ -109,7 +120,9 @@ const mockServices = [
     tags: ["Laser", "Długotrwały", "Bezbolesny"],
     nextAvailable: "Za 3 dni 14:00",
     isPromoted: true,
-    discount: 25
+    discount: 25,
+    lat: 52.4167,
+    lng: 16.9167
   }
 ];
 
@@ -393,6 +406,7 @@ export default function ServicesPage() {
   const [sortBy, setSortBy] = useState('relevance');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const handleGeolocation = () => {
     if (navigator.geolocation) {
@@ -449,6 +463,10 @@ export default function ServicesPage() {
     return result;
   }, [searchQuery, locationQuery, filters, sortBy]);
 
+  const topService = useMemo(() => {
+    return [...filteredServices].sort((a, b) => b.rating - a.rating)[0];
+  }, [filteredServices]);
+
   const handleFavorite = (serviceId) => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(serviceId)) {
@@ -500,6 +518,12 @@ export default function ServicesPage() {
                 className="bg-violet-600 hover:bg-violet-700 cursor-pointer text-white p-4 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
               >
                 <MapPin className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setIsMapOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white p-4 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <Map className="w-5 h-5" />
               </button>
             </div>
 
@@ -658,6 +682,16 @@ export default function ServicesPage() {
           </div>
         </div>
       </main>
+
+      {/* Map Popup Component */}
+      <MapModal
+        isOpen={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        filteredServices={filteredServices}
+        topService={topService}
+        favorites={favorites}
+        onFavorite={handleFavorite}
+      />
     </div>
   );
 }
