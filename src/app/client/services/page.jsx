@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from "next/link";
 import { Search, Filter, MapPin, Star, Clock, Calendar, Heart, ArrowRight, SlidersHorizontal, X, ChevronDown, Zap, Shield, Users, Award, Menu, Plus, Map } from 'lucide-react';
 import MapModal from '../../../components/Map';
+import BookingModal from '../../../components/BookingModal';
 
 // Mock data for services with added likes and coordinates
 const mockServices = [
@@ -135,7 +136,7 @@ const sortOptions = [
   { value: "distance", label: "Najbliżej" }
 ];
 
-function ServiceCard({ service, onFavorite, isFavorite }) {
+function ServiceCard({ service, onFavorite, isFavorite, onBookingClick }) {
   return (
     <div className="bg-white rounded-3xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group border border-gray-100 hover:border-violet-300 relative">
       {service.isPromoted && (
@@ -225,7 +226,10 @@ function ServiceCard({ service, onFavorite, isFavorite }) {
               {service.price} zł
             </div>
           </div>
-          <button className="bg-gradient-to-r from-violet-600 to-purple-600 cursor-pointer hover:from-violet-700 hover:to-purple-700 text-white px-8 py-4 rounded-full font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2">
+          <button
+            onClick={() => onBookingClick(service)}
+            className="bg-gradient-to-r from-violet-600 to-purple-600 cursor-pointer hover:from-violet-700 hover:to-purple-700 text-white px-8 py-4 rounded-full font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2"
+          >
             <span>Rezerwuj</span>
             <ArrowRight className="w-5 h-5" />
           </button>
@@ -407,6 +411,8 @@ export default function ServicesPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
 
   const handleGeolocation = () => {
     if (navigator.geolocation) {
@@ -675,6 +681,10 @@ export default function ServicesPage() {
                     service={service}
                     onFavorite={handleFavorite}
                     isFavorite={favorites.has(service.id)}
+                    onBookingClick={(service) => {
+                      setSelectedService(service);
+                      setIsBookingOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -691,6 +701,14 @@ export default function ServicesPage() {
         topService={topService}
         favorites={favorites}
         onFavorite={handleFavorite}
+      />
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => {
+          setIsBookingOpen(false);
+          setSelectedService(null);
+        }}
+        service={selectedService}
       />
     </div>
   );
