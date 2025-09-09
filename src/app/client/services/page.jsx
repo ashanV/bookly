@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';;
 import Link from "next/link";
 import { Search, MapPin, Star, Heart, X, ChevronDown, Map } from 'lucide-react';
 import MapModal from '../../../components/Map';
@@ -86,6 +86,7 @@ const sortOptions = [
 ];
 
 export default function ServicesPage() {
+  const [isClient, setIsClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [filters, setFilters] = useState({
@@ -102,8 +103,12 @@ export default function ServicesPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
 
+   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const handleGeolocation = () => {
-    if (navigator.geolocation) {
+    if (isClient && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLocationQuery('Warszawa');
@@ -111,7 +116,7 @@ export default function ServicesPage() {
         },
         (error) => alert('Błąd geolokalizacji: ' + error.message)
       );
-    } else {
+    } else if (isClient) {
       alert('Geolokalizacja nie jest wspierana.');
     }
   };
