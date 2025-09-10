@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';;
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from "next/link";
 import { Search, MapPin, Star, Heart, X, ChevronDown, Map } from 'lucide-react';
-import MapModal from '../../../components/Map';
-import BookingModal from '../../../components/BookingModal';
-import StudioCard from '../../../components/StudioCard';
-import FilterSidebar from '../../../components/FilterSidebar';
+import dynamic from 'next/dynamic';
+
+// Dynamically import components that might use browser APIs
+const MapModal = dynamic(() => import('../../../components/Map'), { ssr: false });
+const BookingModal = dynamic(() => import('../../../components/BookingModal'), { ssr: false });
+const StudioCard = dynamic(() => import('../../../components/StudioCard'), { ssr: false });
+const FilterSidebar = dynamic(() => import('../../../components/FilterSidebar'), { ssr: false });
 
 // Mock data for services
 const mockStudios = [
@@ -103,12 +106,14 @@ export default function ServicesPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
 
-   useEffect(() => {
+  useEffect(() => {
     setIsClient(true);
   }, []);
 
   const handleGeolocation = () => {
-    if (isClient && navigator.geolocation) {
+    if (!isClient) return;
+    
+    if (typeof window !== 'undefined' && 'navigator' in window && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLocationQuery('Warszawa');
@@ -116,7 +121,7 @@ export default function ServicesPage() {
         },
         (error) => alert('Błąd geolokalizacji: ' + error.message)
       );
-    } else if (isClient) {
+    } else {
       alert('Geolokalizacja nie jest wspierana.');
     }
   };
@@ -177,6 +182,31 @@ export default function ServicesPage() {
     setSelectedService(service || studio);
     setIsBookingOpen(true);
   };
+
+  // Show loading state during SSR/hydration
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <header className="bg-white/90 backdrop-blur-xl shadow-md sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-20">
+              <div className="flex-shrink-0">
+                <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
+                  Bookly
+                </h1>
+                <p className="text-xs text-gray-500 font-medium">Rezerwuj piękno</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-gray-500">Ładowanie...</div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -331,8 +361,19 @@ export default function ServicesPage() {
         </div>
       </main>
 
-      <MapModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} filteredStudios={filteredStudios} topService={topService} favorites={favorites} onFavorite={handleFavorite} />
-      <BookingModal isOpen={isBookingOpen} onClose={() => { setIsBookingOpen(false); setSelectedService(null); }} service={selectedService} />
+      <MapModal 
+        isOpen={isMapOpen} 
+        onClose={() => setIsMapOpen(false)} 
+        filteredStudios={filteredStudios} 
+        topService={topService} 
+        favorites={favorites} 
+        onFavorite={handleFavorite} 
+      />
+      <BookingModal 
+        isOpen={isBookingOpen} 
+        onClose={() => { setIsBookingOpen(false); setSelectedService(null); }} 
+        service={selectedService} 
+      />
     </div>
   );
 }
