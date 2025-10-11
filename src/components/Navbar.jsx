@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, UserPlus, Building2, ArrowUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Menu, X, UserPlus, Building2, ArrowUp, User } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Navigation() {
+  const router = useRouter();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -23,6 +27,14 @@ export default function Navigation() {
       top: 0,
       behavior: "smooth",
     });
+  };
+
+  const handleUserClick = () => {
+    if (isAuthenticated) {
+      router.push('/client');
+    } else {
+      router.push('/client/auth');
+    }
   };
 
   return (
@@ -47,13 +59,25 @@ export default function Navigation() {
 
             {/* Desktop menu */}
             <div className="hidden md:flex items-center space-x-6">
-              <Link
-                href="/client/auth"
-                className="cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
-              >
-                <UserPlus size={18} />
-                <span>Załóż konto / Zaloguj</span>
-              </Link>
+              {isAuthenticated ? (
+                // Ikona użytkownika dla zalogowanych
+                <button
+                  onClick={handleUserClick}
+                  className="cursor-pointer p-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
+                  title={`Profil użytkownika: ${user?.firstName || 'Użytkownik'}`}
+                >
+                  <User size={20} />
+                </button>
+              ) : (
+                // Przycisk logowania dla niezalogowanych
+                <Link
+                  href="/client/auth"
+                  className="cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+                >
+                  <UserPlus size={18} />
+                  <span>Załóż konto / Zaloguj</span>
+                </Link>
+              )}
               <Link
                 href="/business"
                 className="cursor-pointer text-black-600 hover:text-orange-600 font-medium transition-all duration-300 flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-orange-50 hover:shadow-md group border border-transparent hover:border-orange-200"
@@ -94,13 +118,25 @@ export default function Navigation() {
                   />
                   <span>Dodaj swój biznes</span>
                 </Link>
-                <Link
-                  href="/client/auth"
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2"
-                >
-                  <UserPlus size={18} />
-                  <span>Załóż konto</span>
-                </Link>
+                {isAuthenticated ? (
+                  // Ikona użytkownika dla zalogowanych (mobile)
+                  <button
+                    onClick={handleUserClick}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2"
+                  >
+                    <User size={18} />
+                    <span>Mój profil</span>
+                  </button>
+                ) : (
+                  // Przycisk logowania dla niezalogowanych (mobile)
+                  <Link
+                    href="/client/auth"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2"
+                  >
+                    <UserPlus size={18} />
+                    <span>Załóż konto</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

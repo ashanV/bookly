@@ -2,8 +2,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from "next/link";
-import { Search, MapPin, Star, Heart, X, ChevronDown, Map } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, MapPin, Star, Heart, X, ChevronDown, Map, User } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useAuth } from '../../../hooks/useAuth';
 
 // Dynamically import components that might use browser APIs
 const MapModal = dynamic(() => import('../../../components/Map'), { ssr: false });
@@ -89,6 +91,8 @@ const sortOptions = [
 ];
 
 export default function ServicesPage() {
+  const router = useRouter();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [isClient, setIsClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
@@ -179,12 +183,29 @@ export default function ServicesPage() {
   };
 
   const handleBookingClick = (studio, service) => {
+    // Sprawdź czy użytkownik jest zalogowany
+    if (!isAuthenticated) {
+      // Przekieruj na stronę logowania z parametrem redirect
+      const currentPath = window.location.pathname;
+      router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+    
+    // Jeśli użytkownik jest zalogowany, otwórz modal rezerwacji
     setSelectedService(service || studio);
     setIsBookingOpen(true);
   };
 
-  // Show loading state during SSR/hydration
-  if (!isClient) {
+  const handleUserClick = () => {
+    if (isAuthenticated) {
+      router.push('/client');
+    } else {
+      router.push('/client/auth');
+    }
+  };
+
+  // Show loading state during SSR/hydration or auth loading
+  if (!isClient || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <header className="bg-white/90 backdrop-blur-xl shadow-md sticky top-0 z-30">
@@ -201,7 +222,7 @@ export default function ServicesPage() {
         </header>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-gray-500">Ładowanie...</div>
+            <div className="text-gray-500">{authLoading ? 'Sprawdzanie autoryzacji...' : 'Ładowanie...'}</div>
           </div>
         </main>
       </div>
@@ -257,9 +278,21 @@ export default function ServicesPage() {
               <Link href="/business" className="text-gray-700 cursor-pointer hover:text-violet-600 px-4 py-3 rounded-full font-semibold transition-all duration-300">
                 Dla firmy
               </Link>
-              <Link href="/client/auth" className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-md">
-                Zaloguj
-              </Link>
+              {isAuthenticated ? (
+                // Ikona użytkownika dla zalogowanych
+                <button
+                  onClick={handleUserClick}
+                  className="cursor-pointer p-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center"
+                  title={`Profil użytkownika: ${user?.firstName || 'Użytkownik'}`}
+                >
+                  <User size={20} />
+                </button>
+              ) : (
+                // Przycisk logowania dla niezalogowanych
+                <Link href="/client/auth" className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-md">
+                  Zaloguj
+                </Link>
+              )}
             </div>
           </div>
           <div className="md:hidden pb-4 space-y-2">

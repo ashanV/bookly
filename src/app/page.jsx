@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   Search,
@@ -29,54 +28,14 @@ import {
 // Komponenty
 import Navigation from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import TypeText from "@/components/animations/TypeText";
+import AnimatedContent from '@/components/animations/AnimatedContent';
 
-// Definicje wariantów animacji dla framer-motion
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut",
-    },
-  },
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.3,
-    },
-  },
-};
 
 function HeroSection() {
   const router = useRouter();
-  const [currentWord, setCurrentWord] = useState("");
-  const [wordIndex, setWordIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const words = useMemo(() => ["termin", "styl", "relaks",], []);
-
-  useEffect(() => {
-    let timeout;
-    const currentFullWord = words[wordIndex];
-
-    if (currentWord.length < currentFullWord.length) {
-      timeout = setTimeout(() => {
-        setCurrentWord(currentFullWord.slice(0, currentWord.length + 1));
-      }, 100);
-    } else {
-      timeout = setTimeout(() => {
-        setCurrentWord("");
-        setWordIndex((prev) => (prev + 1) % words.length);
-      }, 2000);
-    }
-
-    return () => clearTimeout(timeout);
-  }, [currentWord, wordIndex, words]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -144,28 +103,36 @@ function HeroSection() {
         ></div>
       </div>
 
-      <motion.div
-        className="container mx-auto px-6 pt-20 pb-16 relative z-10"
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-      >
+      <div className="container mx-auto px-6 pt-20 pb-16 relative z-10">
         <div className="text-center text-white">
-          <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl font-extrabold leading-tight mb-8">
-            Znajdź i zarezerwuj <br />
-            swój idealny{" "}
-            <span className="hero-gradient-text">
-              {currentWord}
-              <span className="pulse-custom">|</span>
-            </span>
-          </motion.h1>
+          <AnimatedContent delay={0.1}>
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-8">
+              Znajdź i zarezerwuj <br />
+              swój idealny{" "}
+              <span className="hero-gradient-text">
+                <TypeText 
+                  text={["termin", "styl", "relaks"]}
+                  typingSpeed={100}
+                  pauseDuration={2000}
+                  deletingSpeed={50}
+                  showCursor={true}
+                  cursorCharacter="|"
+                  cursorClassName="pulse-custom"
+                  className="inline"
+                />
+              </span>
+            </h1>
+          </AnimatedContent>
 
-          <motion.p variants={fadeInUp} className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-12">
-            Odkryj najlepszych specjalistów w Twojej okolicy. Szybka i prosta
-            rezerwacja wizyt online 24/7.
-          </motion.p>
+          <AnimatedContent delay={0.2}>
+            <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-12">
+              Odkryj najlepszych specjalistów w Twojej okolicy. Szybka i prosta
+              rezerwacja wizyt online 24/7.
+            </p>
+          </AnimatedContent>
 
-          <motion.div variants={fadeInUp} className="mt-10 max-w-2xl mx-auto mb-12">
+          <AnimatedContent delay={0.3}>
+            <div className="mt-10 max-w-2xl mx-auto mb-12">
             <div className="search-container relative group">
               <div
                 className={`glass-card rounded-xl shadow-xl border transition-all duration-300 ${isSearchFocused
@@ -203,15 +170,8 @@ function HeroSection() {
                 </div>
               </div>
 
-              <AnimatePresence>
-                {isSearchFocused && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="search-suggestions-container absolute top-full left-0 right-0 mt-4 z-50"
-                  >
+              {isSearchFocused && (
+                <div className="search-suggestions-container absolute top-full left-0 right-0 mt-4 z-50">
                     <div
                       className="glass-card rounded-lg p-5 shadow-xl border border-white/20 pulse-glow"
                       onMouseDown={(e) => e.stopPropagation()}
@@ -278,15 +238,14 @@ function HeroSection() {
                         </div>
                       )}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                </div>
+              )}
             </div>
-          </motion.div>
+          </div>
+          </AnimatedContent>
 
-          <motion.div
-            variants={fadeInUp}
-            className="popular-services-slide flex flex-wrap items-center justify-center gap-3 mb-16 transition-all duration-500 ease-out"
+          <AnimatedContent delay={0.4}>
+            <div className="popular-services-slide flex flex-wrap items-center justify-center gap-3 mb-16 transition-all duration-500 ease-out"
             style={{
               marginTop: isSearchFocused
                 ? searchQuery
@@ -318,9 +277,10 @@ function HeroSection() {
                 {service}
               </button>
             ))}
-          </motion.div>
+          </div>
+          </AnimatedContent>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
@@ -388,36 +348,28 @@ function FeaturedServices() {
   };
 
   return (
-    <motion.section
-      className="py-24 bg-white"
-      initial="hidden"
-      whileInView="visible"
-      variants={staggerContainer}
-      viewport={{ once: true, amount: 0.2 }}
-    >
+    <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
-        <motion.div variants={fadeInUp} className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Odkryj najlepsze usługi w{" "}
-            <span className="hero-gradient-text">Twojej okolicy</span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Wybrane przez naszych ekspertów miejsca, które gwarantują najwyższą
-            jakość usług
-          </p>
-        </motion.div>
+        <AnimatedContent delay={0.1}>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Odkryj najlepsze usługi w{" "}
+              <span className="hero-gradient-text">Twojej okolicy</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Wybrane przez naszych ekspertów miejsca, które gwarantują najwyższą
+              jakość usług
+            </p>
+          </div>
+        </AnimatedContent>
 
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-          variants={staggerContainer}
-        >
-          {services.map((service) => (
-            <motion.div
-              key={service.id}
-              variants={fadeInUp}
-              className="service-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl group cursor-pointer"
-              onClick={() => handleServiceClick(service)}
-            >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {services.map((service, index) => (
+            <AnimatedContent key={service.id} delay={0.2 + (index * 0.1)}>
+              <div
+                className="service-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl group cursor-pointer"
+                onClick={() => handleServiceClick(service)}
+              >
               <div className="relative overflow-hidden">
                 <Image
                   src={service.image}
@@ -463,11 +415,12 @@ function FeaturedServices() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+              </div>
+            </AnimatedContent>
           ))}
-        </motion.div>
+        </div>
       </div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -532,13 +485,7 @@ function FeaturesSection() {
   }, [mainFeatures.length]);
 
   return (
-    <motion.section
-      className="py-32 bg-gray-50 relative overflow-hidden"
-      initial="hidden"
-      whileInView="visible"
-      variants={staggerContainer}
-      viewport={{ once: true, amount: 0.1 }}
-    >
+    <section className="py-32 bg-gray-50 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-20 w-96 h-96 bg-violet-500 rounded-full blur-3xl"></div>
@@ -547,7 +494,8 @@ function FeaturesSection() {
 
       <div className="container mx-auto px-6 relative z-10">
         {/* Main Header */}
-        <motion.div variants={fadeInUp} className="text-center mb-20">
+        <AnimatedContent delay={0.1}>
+          <div className="text-center mb-20">
           <div className="inline-flex items-center bg-gradient-to-r from-violet-100 to-purple-100 px-6 py-2 rounded-full text-violet-700 font-semibold mb-6">
             <Sparkles className="w-5 h-5 mr-2" />
             Dlaczego jesteśmy najlepsi
@@ -560,21 +508,21 @@ function FeaturesSection() {
             Nie jesteśmy kolejną platformą rezerwacji. Tworzymy przyszłość
             branży beauty & wellness.
           </p>
-        </motion.div>
+          </div>
+        </AnimatedContent>
 
         {/* Interactive Main Features */}
         <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
-          <motion.div variants={staggerContainer} className="space-y-8">
+          <div className="space-y-8">
             {mainFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className={`relative p-8 rounded-2xl cursor-pointer transition-all duration-500 transform hover:scale-105 ${activeFeature === index
-                  ? "bg-white shadow-2xl border-2 border-violet-200"
-                  : "bg-white/50 hover:bg-white/80 shadow-lg"
-                  }`}
-                onMouseEnter={() => setActiveFeature(index)}
-              >
+              <AnimatedContent key={index} delay={0.2 + (index * 0.1)}>
+                <div
+                  className={`relative p-8 rounded-2xl cursor-pointer transition-all duration-500 transform hover:scale-105 ${activeFeature === index
+                    ? "bg-white shadow-2xl border-2 border-violet-200"
+                    : "bg-white/50 hover:bg-white/80 shadow-lg"
+                    }`}
+                  onMouseEnter={() => setActiveFeature(index)}
+                >
                 <div className="flex items-start space-x-6">
                   <div
                     className={`bg-gradient-to-br ${feature.color} text-white p-4 rounded-2xl flex-shrink-0 shadow-lg`}
@@ -597,23 +545,21 @@ function FeaturesSection() {
 
                 {/* Progress bar */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200 rounded-b-2xl overflow-hidden">
-                  <AnimatePresence>
-                    {activeFeature === index && (
-                      <motion.div
-                        className={`h-full bg-gradient-to-r ${feature.color}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 4, ease: "linear" }}
-                      />
-                    )}
-                  </AnimatePresence>
+                  {activeFeature === index && (
+                    <div
+                      className={`h-full bg-gradient-to-r ${feature.color}`}
+                      style={{ width: "100%", transition: "width 4s linear" }}
+                    />
+                  )}
                 </div>
-              </motion.div>
+                </div>
+              </AnimatedContent>
             ))}
-          </motion.div>
+          </div>
 
           {/* Enhanced Visual Showcase without main image */}
-          <motion.div variants={fadeInUp} className="relative min-h-[500px] flex items-center justify-center">
+          <AnimatedContent delay={0.5}>
+            <div className="relative min-h-[500px] flex items-center justify-center">
             {/* Central decorative element */}
             <div className="relative w-80 h-80">
               {/* Main circle with gradient */}
@@ -712,24 +658,20 @@ function FeaturesSection() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
+          </AnimatedContent>
         </div>
 
         {/* Additional Features Grid */}
-        <motion.div variants={fadeInUp} className="mb-16">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            I to nie wszystko...
-          </h3>
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            variants={staggerContainer}
-          >
-            {additionalFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 text-center group"
-              >
+        <AnimatedContent delay={0.6}>
+          <div className="mb-16">
+            <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
+              I to nie wszystko...
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {additionalFeatures.map((feature, index) => (
+                <AnimatedContent key={index} delay={0.7 + (index * 0.1)}>
+                  <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 text-center group">
                 <div className="bg-gradient-to-br from-violet-100 to-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <div className="text-violet-600">{feature.icon}</div>
                 </div>
@@ -737,32 +679,36 @@ function FeaturesSection() {
                   {feature.title}
                 </h4>
                 <p className="text-gray-600 text-sm">{feature.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Call to Action */}
-        <motion.div variants={fadeInUp} className="text-center">
-          <div className="glass-card p-12 rounded-3xl shadow-2xl max-w-4xl mx-auto">
-            <h3 className="text-4xl font-bold text-gray-900 mb-6">
-              Gotowy na <span className="hero-gradient-text">przyszłość</span>{" "}
-              rezerwacji?
-            </h3>
-            <p className="text-xl text-gray-600 mb-8">
-              Dołącz do tysięcy zadowolonych użytkowników, którzy już odkryli
-              nowy sposób na rezerwację usług.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="cursor-pointer bg-gradient-to-r from-violet-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center">
-                Rozpocznij teraz
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </button>
+                  </div>
+                </AnimatedContent>
+              ))}
             </div>
           </div>
-        </motion.div>
+        </AnimatedContent>
+
+        {/* Call to Action */}
+        <AnimatedContent delay={0.8}>
+          <div className="text-center">
+            <div className="glass-card p-12 rounded-3xl shadow-2xl max-w-4xl mx-auto">
+              <h3 className="text-4xl font-bold text-gray-900 mb-6">
+                Gotowy na <span className="hero-gradient-text">przyszłość</span>{" "}
+                rezerwacji?
+              </h3>
+              <p className="text-xl text-gray-600 mb-8">
+                Dołącz do tysięcy zadowolonych użytkowników, którzy już odkryli
+                nowy sposób na rezerwację usług.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button className="cursor-pointer bg-gradient-to-r from-violet-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center">
+                  Rozpocznij teraz
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </AnimatedContent>
       </div>
-    </motion.section>
+    </section>
   );
 }
 

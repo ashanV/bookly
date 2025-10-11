@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from "next/link";
-import { useParams } from 'next/navigation'; // App Router hook
+import { useParams, useRouter } from 'next/navigation'; // App Router hook
 import {
   ArrowLeft, Star, Heart, MapPin, Clock, Phone, Globe,
   Share2, Camera, Calendar, ChevronRight, Users, Award,
@@ -10,6 +10,7 @@ import {
   Twitter, Youtube, Mail, MessageCircle, Info, Image
 } from 'lucide-react';
 import BookingModal from '../../../../components/BookingModal';
+import { useAuth } from '../../../../hooks/useAuth';
 
 // Mock data for detailed studio info
 const getStudioDetails = (id) => {
@@ -181,6 +182,8 @@ const dayNames = {
 
 export default function StudioDetailsPage() {
   const params = useParams(); // App Router way to get params
+  const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const id = params?.id; // Get id from params
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -231,13 +234,13 @@ export default function StudioDetailsPage() {
   }, []);
 
 
-  // Loading state while params are being resolved
-  if (!id) {
+  // Loading state while params are being resolved or auth is loading
+  if (!id || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Ładowanie...</p>
+          <p className="text-gray-600">{authLoading ? 'Sprawdzanie autoryzacji...' : 'Ładowanie...'}</p>
         </div>
       </div>
     );
@@ -260,6 +263,15 @@ export default function StudioDetailsPage() {
     : studio.services.filter(s => s.category === serviceFilter);
 
 const handleBookingClick = (service = null) => {
+  // Sprawdź czy użytkownik jest zalogowany
+  if (!isAuthenticated) {
+    // Przekieruj na stronę logowania z parametrem redirect
+    const currentPath = window.location.pathname;
+    router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
+    return;
+  }
+  
+  // Jeśli użytkownik jest zalogowany, otwórz modal rezerwacji
   console.log('handleBookingClick called', service, isBookingOpen);
   setSelectedService(service);
   setIsBookingOpen(true);
