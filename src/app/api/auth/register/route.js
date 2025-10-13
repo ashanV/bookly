@@ -32,7 +32,7 @@ export async function POST(req) {
       password: hashedPassword,
       phone,
       birthDate,
-      role: 'client', 
+      role: 'client',
     });
 
     await newUser.save();

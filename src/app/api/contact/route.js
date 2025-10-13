@@ -33,21 +33,37 @@ export async function POST(request) {
       );
     }
 
+    // Prosta sanitizacja pól tekstowych (escape podstawowych znaków HTML)
+    const escape = (str = '') => String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const sName = escape(name);
+    const sEmail = escape(email);
+    const sCompany = company ? escape(company) : '';
+    const sPhone = phone ? escape(phone) : '';
+    const sBusinessType = businessType ? escape(businessType) : '';
+    const sSubject = escape(subject);
+    const sMessage = escape(message);
+
     // Przygotowanie treści emaila
     const emailContent = `
 📧 Nowa wiadomość z formularza kontaktowego Bookly
 
 👤 DANE KONTAKTOWE:
-• Imię i nazwisko: ${name}
-• Email: ${email}
-${company ? `• Firma: ${company}` : ''}
-${phone ? `• Telefon: ${phone}` : ''}
-${businessType ? `• Rodzaj biznesu: ${businessType}` : ''}
+• Imię i nazwisko: ${sName}
+• Email: ${sEmail}
+${sCompany ? `• Firma: ${sCompany}` : ''}
+${sPhone ? `• Telefon: ${sPhone}` : ''}
+${sBusinessType ? `• Rodzaj biznesu: ${sBusinessType}` : ''}
 
 📝 TREŚĆ WIADOMOŚCI:
-Temat: ${subject}
+Temat: ${sSubject}
 
-${message}
+${sMessage}
 
 ---
 Wiadomość została wysłana z formularza kontaktowego na stronie Bookly.
@@ -58,8 +74,8 @@ Data: ${new Date().toLocaleString('pl-PL')}
     const adminEmailData = await resend.emails.send({
       from: "Bookly Contact Form <onboarding@resend.dev>", // ⚠️ Zmień na swoją domenę
       to: "app.online3@op.pl", // ⚠️ Zmień na swój email kontaktowy
-      subject: `🔔 Nowe zapytanie od ${name} - ${subject}`,
-      reply_to: email,
+      subject: `🔔 Nowe zapytanie od ${sName} - ${sSubject}`,
+      reply_to: sEmail,
       text: emailContent,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; padding: 20px; border-radius: 8px;">
@@ -70,21 +86,21 @@ Data: ${new Date().toLocaleString('pl-PL')}
           <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <h2 style="color: #1f2937; margin-top: 0;">👤 Dane kontaktowe</h2>
             <table style="width: 100%; border-collapse: collapse;">
-              <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Imię i nazwisko:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${name}</td></tr>
-              <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${email}">${email}</a></td></tr>
-              ${company ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Firma:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${company}</td></tr>` : ''}
-              ${phone ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Telefon:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${phone}</td></tr>` : ''}
-              ${businessType ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Rodzaj biznesu:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${businessType}</td></tr>` : ''}
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Imię i nazwisko:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${sName}</td></tr>
+              <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Email:</strong></td><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${sEmail}">${sEmail}</a></td></tr>
+              ${sCompany ? `<tr><td style=\"padding: 8px 0; border-bottom: 1px solid #e5e7eb;\"><strong>Firma:</strong></td><td style=\"padding: 8px 0; border-bottom: 1px solid #e5e7eb;\">${sCompany}</td></tr>` : ''}
+              ${sPhone ? `<tr><td style=\"padding: 8px 0; border-bottom: 1px solid #e5e7eb;\"><strong>Telefon:</strong></td><td style=\"padding: 8px 0; border-bottom: 1px solid #e5e7eb;\">${sPhone}</td></tr>` : ''}
+              ${sBusinessType ? `<tr><td style=\"padding: 8px 0; border-bottom: 1px solid #e5e7eb;\"><strong>Rodzaj biznesu:</strong></td><td style=\"padding: 8px 0; border-bottom: 1px solid #e5e7eb;\">${sBusinessType}</td></tr>` : ''}
             </table>
           </div>
 
           <div style="background: white; padding: 20px; border-radius: 8px;">
             <h2 style="color: #1f2937; margin-top: 0;">📝 Wiadomość</h2>
             <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-              <strong>Temat:</strong> ${subject}
+              <strong>Temat:</strong> ${sSubject}
             </div>
             <div style="background: #f9fafb; padding: 15px; border-radius: 6px; white-space: pre-wrap; line-height: 1.6;">
-${message}
+${sMessage}
             </div>
           </div>
 
@@ -108,7 +124,7 @@ ${message}
           </div>
           
           <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h2 style="color: #1f2937; margin-top: 0;">Cześć ${name}!</h2>
+            <h2 style="color: #1f2937; margin-top: 0;">Cześć ${sName}!</h2>
             <p style="color: #4b5563; line-height: 1.6;">
               Dziękujemy za wysłanie wiadomości przez formularz kontaktowy Bookly. 
               Otrzymaliśmy Twoje zapytanie i odpowiemy na nie w ciągu <strong>15 minut</strong> w godzinach roboczych.
@@ -116,9 +132,9 @@ ${message}
             
             <div style="background: #f0f9ff; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6;">
               <h3 style="color: #1e40af; margin: 0 0 10px 0;">Podsumowanie Twojej wiadomości:</h3>
-              <p style="margin: 5px 0; color: #1f2937;"><strong>Temat:</strong> ${subject}</p>
-              <p style="margin: 5px 0; color: #1f2937;"><strong>Email kontaktowy:</strong> ${email}</p>
-              ${company ? `<p style="margin: 5px 0; color: #1f2937;"><strong>Firma:</strong> ${company}</p>` : ''}
+              <p style="margin: 5px 0; color: #1f2937;"><strong>Temat:</strong> ${sSubject}</p>
+              <p style="margin: 5px 0; color: #1f2937;"><strong>Email kontaktowy:</strong> ${sEmail}</p>
+              ${sCompany ? `<p style=\"margin: 5px 0; color: #1f2937;\"><strong>Firma:</strong> ${sCompany}</p>` : ''}
             </div>
           </div>
 

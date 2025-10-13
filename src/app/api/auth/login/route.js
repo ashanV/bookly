@@ -19,13 +19,13 @@ export async function POST(req) {
     
     const response = NextResponse.json({ 
       message: "Zalogowano", 
-      token, 
       user: {
         id: user._id,
         email: user.email,
         firstName: user.firstName, 
         lastName: user.lastName,   
-        fullName: `${user.firstName} ${user.lastName}` 
+        fullName: `${user.firstName} ${user.lastName}`,
+        role: user.role,
       }
     });
 

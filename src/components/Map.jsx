@@ -55,6 +55,7 @@ function StudioCard({ studio, onFavorite, isFavorite }) {
           src={studio.image}
           alt={studio.name}
           className="w-full h-48 object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 

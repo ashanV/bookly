@@ -7,25 +7,11 @@ export const useAuth = (redirectTo = '/client/auth') => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
-  // Funkcja do sprawdzenia czy token jest ważny
-  const isTokenValid = useCallback((token) => {
-    if (!token) return false;
-    
-    try {
-      // Dekoduj token (bez weryfikacji - to robimy po stronie serwera)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const now = Date.now() / 1000;
-      
-      // Sprawdź czy token nie wygasł
-      return payload.exp > now;
-    } catch (error) {
-      return false;
-    }
-  }, []);
-
   // Funkcja wylogowania
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (_) {}
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
@@ -35,76 +21,36 @@ export const useAuth = (redirectTo = '/client/auth') => {
 
   // Funkcja odświeżania danych użytkownika
   const refreshUser = useCallback(async () => {
-  const token = localStorage.getItem('token');
-  
-  if (!token || !isTokenValid(token)) {
-    logout();
-    return false;
-  }
-
-  try {
-    const response = await fetch('/api/auth/verify', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'x-auth-token': token,
-      },
-    });
-
-    if (response.ok) {
-      const userData = await response.json();
-      
-      // ZAPISZ WSZYSTKIE DANE UŻYTKOWNIKA
-      const fullUserData = {
-        id: userData.user.id,
-        email: userData.user.email,
-        firstName: userData.user.firstName,
-        lastName: userData.user.lastName,
-        fullName: userData.user.fullName,
-        // Dodaj inne pola jeśli są dostępne
-      };
-      
-      setUser(fullUserData);
-      localStorage.setItem('user', JSON.stringify(fullUserData));
-      setIsAuthenticated(true);
-      console.log('✅ Token zweryfikowany - użytkownik zalogowany');
-      return true;
-    } else {
-      console.log('❌ Token nieważny - wylogowanie');
-      logout();
+    try {
+      const response = await fetch('/api/auth/verify', { credentials: 'include' });
+      if (response.ok) {
+        const { user: verifiedUser } = await response.json();
+        setUser(verifiedUser);
+        localStorage.setItem('user', JSON.stringify(verifiedUser));
+        setIsAuthenticated(true);
+        console.log('✅ Sesja zweryfikowana - użytkownik zalogowany');
+        return true;
+      } else {
+        console.log('❌ Brak ważnej sesji - wylogowanie');
+        await logout();
+        return false;
+      }
+    } catch (error) {
+      console.error('Błąd podczas odświeżania danych użytkownika:', error);
+      await logout();
       return false;
     }
-  } catch (error) {
-    console.error('Błąd podczas odświeżania danych użytkownika:', error);
-    logout();
-    return false;
-  }
-}, [isTokenValid, logout]);
+  }, [logout]);
 
   // Inicjalizacja stanu autoryzacji
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const userData = localStorage.getItem('user');
-      
-      if (token && userData && isTokenValid(token)) {
-        console.log('🔍 Znaleziono token - weryfikacja po stronie serwera...');
-        
-        // WAŻNE: Sprawdź token po stronie serwera
-        const isValid = await refreshUser();
-        
-        if (!isValid) {
-          // Token jest nieważny - wyczyść dane i przekieruj
-          if (window.location.pathname.startsWith('/client') && !window.location.pathname.startsWith('/client/auth')) {
-            router.push(redirectTo + '?redirect=' + encodeURIComponent(window.location.pathname));
-          }
-        }
-      } else {
-        // Wyczyść nieprawidłowe dane
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        console.log('❌ Brak ważnego tokenu - wylogowanie');
-        
-        // Przekieruj tylko jeśli jesteśmy na chronionej stronie
+      const cachedUser = localStorage.getItem('user');
+      if (cachedUser) {
+        try { setUser(JSON.parse(cachedUser)); } catch {}
+      }
+      const isValid = await refreshUser();
+      if (!isValid) {
         if (window.location.pathname.startsWith('/client') && !window.location.pathname.startsWith('/client/auth')) {
           router.push(redirectTo + '?redirect=' + encodeURIComponent(window.location.pathname));
         }
@@ -113,7 +59,7 @@ export const useAuth = (redirectTo = '/client/auth') => {
     };
 
     initAuth();
-  }, [router, redirectTo, isTokenValid, refreshUser]);
+  }, [router, redirectTo, refreshUser]);
 
   // Funkcja logowania
   const login = useCallback(async (email, password) => {
@@ -137,16 +83,16 @@ export const useAuth = (redirectTo = '/client/auth') => {
         firstName: data.user.firstName,
         lastName: data.user.lastName,
         fullName: data.user.fullName,
+        role: data.user.role,
       };
-      
-      localStorage.setItem('token', data.token);
+
       localStorage.setItem('user', JSON.stringify(fullUserData));
       
       // Zaktualizuj stan
       setUser(fullUserData);
       setIsAuthenticated(true);
 
-      console.log('✅ Logowanie udane - token zapisany');
+      console.log('✅ Logowanie udane - sesja ustawiona');
       return { success: true, user: fullUserData };
     } else {
       return { success: false, error: data.error };
@@ -181,16 +127,13 @@ export const useAuth = (redirectTo = '/client/auth') => {
 
   // Funkcja aktualizacji profilu
   const updateProfile = useCallback(async (newUserData) => {
-    const token = localStorage.getItem('token');
-    
     try {
       const response = await fetch('/api/auth/update-profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-auth-token': token,
         },
+        credentials: 'include',
         body: JSON.stringify(newUserData),
       });
 
@@ -230,9 +173,8 @@ export const useAuth = (redirectTo = '/client/auth') => {
     hasRole,
     hasPermission,
     // Dodatkowe utility funkcje
-    isAdmin: hasRole('admin'),
     isClient: hasRole('client'),
-    isProvider: hasRole('provider'),
+    isBusiness: hasRole('business'),
   };
 };
 
