@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Star, Heart, X, ChevronDown, Map, User } from 'lucide-react';
+import { Search, MapPin, Star, Heart, X, ChevronDown, Map, User, LogOut } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -92,7 +92,7 @@ const sortOptions = [
 
 export default function ServicesPage() {
   const router = useRouter();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [isClient, setIsClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
@@ -109,14 +109,32 @@ export default function ServicesPage() {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
+
   const handleGeolocation = () => {
     if (!isClient) return;
-    
+
     if (typeof window !== 'undefined' && 'navigator' in window && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -128,6 +146,11 @@ export default function ServicesPage() {
     } else {
       alert('Geolokalizacja nie jest wspierana.');
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setIsUserMenuOpen(false);
   };
 
   const filteredStudios = useMemo(() => {
@@ -190,7 +213,7 @@ export default function ServicesPage() {
       router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
-    
+
     // Jeśli użytkownik jest zalogowany, otwórz modal rezerwacji
     setSelectedService(service || studio);
     setIsBookingOpen(true);
@@ -279,14 +302,42 @@ export default function ServicesPage() {
                 Dla firmy
               </Link>
               {isAuthenticated ? (
-                // Ikona użytkownika dla zalogowanych
-                <button
-                  onClick={handleUserClick}
-                  className="cursor-pointer p-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center"
-                  title={`Profil użytkownika: ${user?.firstName || 'Użytkownik'}`}
-                >
-                  <User size={20} />
-                </button>
+                // Dropdown menu użytkownika
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onMouseEnter={() => setIsUserMenuOpen(true)}
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="cursor-pointer p-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center"
+                    title={`Profil użytkownika: ${user?.firstName || 'Użytkownik'}`}
+                  >
+                    <User size={20} />
+                  </button>
+
+                  {/* Dropdown */}
+                  {isUserMenuOpen && (
+                    <div
+                      onMouseEnter={() => setIsUserMenuOpen(true)}
+                      onMouseLeave={() => setIsUserMenuOpen(false)}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50"
+                    >
+                      <button
+                        onClick={handleUserClick}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center space-x-3"
+                      >
+                        <User size={18} className="text-gray-600" />
+                        <span className="text-gray-700 font-medium">Mój profil</span>
+                      </button>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center space-x-3 text-red-600"
+                      >
+                        <LogOut size={18} />
+                        <span className="font-medium">Wyloguj się</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 // Przycisk logowania dla niezalogowanych
                 <Link href="/client/auth" className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-md">
@@ -394,18 +445,18 @@ export default function ServicesPage() {
         </div>
       </main>
 
-      <MapModal 
-        isOpen={isMapOpen} 
-        onClose={() => setIsMapOpen(false)} 
-        filteredStudios={filteredStudios} 
-        topService={topService} 
-        favorites={favorites} 
-        onFavorite={handleFavorite} 
+      <MapModal
+        isOpen={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        filteredStudios={filteredStudios}
+        topService={topService}
+        favorites={favorites}
+        onFavorite={handleFavorite}
       />
-      <BookingModal 
-        isOpen={isBookingOpen} 
-        onClose={() => { setIsBookingOpen(false); setSelectedService(null); }} 
-        service={selectedService} 
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => { setIsBookingOpen(false); setSelectedService(null); }}
+        service={selectedService}
       />
     </div>
   );

@@ -1,14 +1,13 @@
-// pages/api/auth/verify.js
 import { connectDB } from "@/lib/mongodb";
 import User from "../../../models/User";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-export async function GET(req) {
+export async function GET() {
   try {
-    const token =
-      req.headers.get("authorization")?.replace("Bearer ", "") ||
-      req.headers.get("x-auth-token");
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Brak tokenu" }), {
@@ -34,6 +33,7 @@ export async function GET(req) {
         firstName: user.firstName,
         lastName: user.lastName,
         fullName: `${user.firstName} ${user.lastName}`,
+        role: user.role,
         // Dodaj inne pola jeśli potrzebne
       },
     });

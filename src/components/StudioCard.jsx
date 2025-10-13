@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { MapPin, Star, Heart, Calendar, ChevronDown, ArrowRight, Clock } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation'; 
 
 export default function StudioCard({ studio, onFavorite, isFavorite, onBookingClick }) {
@@ -37,7 +38,9 @@ export default function StudioCard({ studio, onFavorite, isFavorite, onBookingCl
       )}
 
       <div className="relative overflow-hidden">
-        <img
+        <Image
+          width={400}
+          height={300}
           src={studio.image}
           alt={studio.name}
           className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
