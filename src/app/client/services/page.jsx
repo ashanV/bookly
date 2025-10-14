@@ -149,7 +149,7 @@ export default function ServicesPage() {
   };
 
   const handleLogout = async () => {
-    await logout();
+    await logout(false);
     setIsUserMenuOpen(false);
   };
 
