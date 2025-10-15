@@ -90,7 +90,7 @@ function Navbar() {
                 </ul>
 
                 <div className="flex items-center gap-4">
-                    <Link href="/admin/auth">
+                    <Link href="/business/auth">
                         <button className={`hidden md:flex items-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium transition-colors ${scrolled ? 'text-gray-600 hover:text-indigo-600' : 'text-white/90 hover:text-white'
                             }`}>
                             <User size={18} />

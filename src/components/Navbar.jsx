@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, UserPlus, Building2, ArrowUp, User } from "lucide-react";
+import { Menu, X, UserPlus, Building2, ArrowUp, User, LogOut } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Navigation() {
   const router = useRouter();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,23 @@ export default function Navigation() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Zamknij dropdown gdy klikniesz poza nim
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -33,8 +52,19 @@ export default function Navigation() {
     if (isAuthenticated) {
       router.push('/client');
     } else {
-      router.push('/client/auth');
+      handleLoginClick();
     }
+  };
+
+  const handleLoginClick = () => {
+    const currentPath = window.location.pathname + window.location.search;
+    localStorage.setItem('redirectAfterLogin', currentPath);
+    router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
+  };
+
+  const handleLogout = async () => {
+    await logout(false);
+    setIsUserMenuOpen(false);
   };
 
   return (
@@ -59,25 +89,69 @@ export default function Navigation() {
 
             {/* Desktop menu */}
             <div className="hidden md:flex items-center space-x-6">
-              {isAuthenticated ? (
-                // Ikona użytkownika dla zalogowanych
-                <button
-                  onClick={handleUserClick}
-                  className="cursor-pointer p-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
-                  title={`Profil użytkownika: ${user?.firstName || 'Użytkownik'}`}
-                >
-                  <User size={20} />
-                </button>
+              {authLoading ? (
+                <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+              ) : isAuthenticated ? (
+                // Dropdown menu użytkownika
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onMouseEnter={() => setIsUserMenuOpen(true)}
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="cursor-pointer p-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center"
+                    title={`Profil użytkownika: ${user?.firstName || 'Użytkownik'}`}
+                  >
+                    <User size={20} />
+                  </button>
+
+                  {/* Dropdown */}
+                  {isUserMenuOpen && (
+                    <div
+                      onMouseEnter={() => setIsUserMenuOpen(true)}
+                      onMouseLeave={() => setIsUserMenuOpen(false)}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          handleUserClick();
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center space-x-3"
+                      >
+                        <User size={18} className="text-gray-600" />
+                        <span className="text-gray-700 font-medium">Mój profil</span>
+                      </button>
+
+                      <div className="border-t border-gray-100 my-1"></div>
+
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center space-x-3 text-red-600"
+                      >
+                        <LogOut size={18} />
+                        <span className="font-medium">Wyloguj się</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 // Przycisk logowania dla niezalogowanych
-                <Link
-                  href="/client/auth"
-                  className="cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+                <button
+                  onClick={handleLoginClick}
+                  className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-md"
                 >
-                  <UserPlus size={18} />
-                  <span>Załóż konto / Zaloguj</span>
-                </Link>
+                  Zaloguj
+                </button>
               )}
+              
               <Link
                 href="/business"
                 className="cursor-pointer text-black-600 hover:text-orange-600 font-medium transition-all duration-300 flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-orange-50 hover:shadow-md group border border-transparent hover:border-orange-200"
@@ -111,6 +185,7 @@ export default function Navigation() {
                 <Link
                   href="/business"
                   className="text-gray-600 hover:text-orange-600 font-medium transition-all duration-300 flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-orange-50 group border border-transparent hover:border-orange-200"
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   <Building2
                     size={20}
@@ -118,24 +193,51 @@ export default function Navigation() {
                   />
                   <span>Dodaj swój biznes</span>
                 </Link>
-                {isAuthenticated ? (
-                  // Ikona użytkownika dla zalogowanych (mobile)
-                  <button
-                    onClick={handleUserClick}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2"
-                  >
-                    <User size={18} />
-                    <span>Mój profil</span>
-                  </button>
+
+                {authLoading ? (
+                  <div className="h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                ) : isAuthenticated ? (
+                  // Menu użytkownika dla mobile
+                  <div className="pt-4 border-t border-gray-100 space-y-3">
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleUserClick();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors flex items-center space-x-3 cursor-pointer"
+                    >
+                      <User size={18} className="text-gray-600" />
+                      <span className="text-gray-700 font-medium">Mój profil</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-red-50 rounded-lg transition-colors flex items-center space-x-3 text-red-600 cursor-pointer"
+                    >
+                      <LogOut size={18} />
+                      <span className="font-medium">Wyloguj się</span>
+                    </button>
+                  </div>
                 ) : (
                   // Przycisk logowania dla niezalogowanych (mobile)
-                  <Link
-                    href="/client/auth"
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2"
+                  <button
+                    onClick={() => {
+                      handleLoginClick();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     <UserPlus size={18} />
                     <span>Załóż konto</span>
-                  </Link>
+                  </button>
                 )}
               </div>
             </div>

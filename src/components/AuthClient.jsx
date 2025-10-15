@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth"; 
+import { useAuth } from "@/hooks/useAuth";
 import {
   Eye,
   EyeOff,
@@ -37,14 +37,7 @@ const BooklyAuth = () => {
     birthDate: "",
   });
 
-  // Jeśli użytkownik już jest zalogowany, przekieruj go
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const redirect = searchParams.get("redirect") || "/client";
-      console.log("✅ Już zalogowany - przekierowanie na:", redirect);
-      router.push(redirect);
-    }
-  }, [isAuthenticated, authLoading, router, searchParams]);
+  
 
   const handleInputChange = (e) => {
     setFormData({
@@ -66,9 +59,9 @@ const BooklyAuth = () => {
         const result = await login(formData.email, formData.password);
 
         if (result.success) {
-          const redirect = searchParams.get("redirect") || "/client";
-          console.log("✅ Logowanie udane - przekierowanie na:", redirect);
-          router.push(redirect);
+          // Hook useAuth automatycznie przekieruje użytkownika
+          // NIE TRZEBA TUTAJ DODAWAĆ router.push()
+          console.log("✅ Logowanie udane - hook useAuth przekierowuje...");
         } else {
           setError(result.error);
         }
@@ -180,11 +173,10 @@ const BooklyAuth = () => {
             <button
               onClick={() => setIsLogin(true)}
               disabled={isLoading}
-              className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${
-                isLogin
+              className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${isLogin
                   ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
                   : "text-gray-600 hover:text-gray-800"
-              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <LogIn size={18} />
               <span>Logowanie</span>
@@ -192,11 +184,10 @@ const BooklyAuth = () => {
             <button
               onClick={() => setIsLogin(false)}
               disabled={isLoading}
-              className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${
-                !isLogin
+              className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${!isLogin
                   ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
                   : "text-gray-600 hover:text-gray-800"
-              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <UserPlus size={18} />
               <span>Rejestracja</span>
@@ -213,11 +204,10 @@ const BooklyAuth = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Pola dla rejestracji */}
             <div
-              className={`transition-all duration-700 ease-in-out transform ${
-                !isLogin
+              className={`transition-all duration-700 ease-in-out transform ${!isLogin
                   ? "max-h-screen opacity-100 translate-y-0"
                   : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
-              }`}
+                }`}
             >
               {!isLogin && (
                 <>
@@ -337,11 +327,10 @@ const BooklyAuth = () => {
 
             {/* Potwierdzenie hasła - tylko przy rejestracji */}
             <div
-              className={`relative transition-all duration-700 ease-in-out transform ${
-                !isLogin
+              className={`relative transition-all duration-700 ease-in-out transform ${!isLogin
                   ? "max-h-screen opacity-100 translate-y-0"
                   : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
-              }`}
+                }`}
             >
               {!isLogin && (
                 <div className="relative">
@@ -377,11 +366,10 @@ const BooklyAuth = () => {
 
             {/* Checkbox dla rejestracji */}
             <div
-              className={`transition-all duration-700 ease-in-out transform ${
-                !isLogin
+              className={`transition-all duration-700 ease-in-out transform ${!isLogin
                   ? "max-h-screen opacity-100 translate-y-0"
                   : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
-              }`}
+                }`}
             >
               {!isLogin && (
                 <div className="flex items-start space-x-3">
@@ -430,18 +418,17 @@ const BooklyAuth = () => {
                     ? "Logowanie..."
                     : "Rejestracja..."
                   : isLogin
-                  ? "Zaloguj się"
-                  : "Utwórz konto"}
+                    ? "Zaloguj się"
+                    : "Utwórz konto"}
               </span>
             </button>
 
             {/* Link "Zapomniałeś hasła?" - tylko przy logowaniu */}
             <div
-              className={`text-center transition-all duration-700 ease-in-out transform ${
-                isLogin
+              className={`text-center transition-all duration-700 ease-in-out transform ${isLogin
                   ? "max-h-screen opacity-100 translate-y-0"
                   : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
-              }`}
+                }`}
             >
               {isLogin && (
                 <span className="text-indigo-600 hover:underline text-sm cursor-pointer transition-all duration-300 hover:text-indigo-700">

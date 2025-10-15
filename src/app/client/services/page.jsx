@@ -340,9 +340,16 @@ export default function ServicesPage() {
                 </div>
               ) : (
                 // Przycisk logowania dla niezalogowanych
-                <Link href="/client/auth" className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-md">
+                <button
+                  onClick={() => {
+                    const currentPath = window.location.pathname + window.location.search;
+                    localStorage.setItem('redirectAfterLogin', currentPath);
+                    router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
+                  }}
+                  className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-md"
+                >
                   Zaloguj
-                </Link>
+                </button>
               )}
             </div>
           </div>
