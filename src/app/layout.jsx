@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
+import ToastWrapper from "@/components/ToastWrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
     <html lang="pl">
       <body className={`${inter.variable} font-sans antialiased bg-gray-50`}>
         {children}
+        <ToastWrapper />
       </body>
     </html>
   );

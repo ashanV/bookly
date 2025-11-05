@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import User from "../../../models/User";
+import Business from "../../../models/Business";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
@@ -11,9 +12,11 @@ export async function POST(req) {
     // Podłączenie do bazy danych
     await connectDB();
 
-    // Sprawdzenie, czy użytkownik o podanym emailu już istnieje
+    // Sprawdzenie, czy użytkownik o podanym emailu już istnieje (w User lub Business)
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const existingBusiness = await Business.findOne({ email });
+    
+    if (existingUser || existingBusiness) {
       return NextResponse.json(
         { error: "Użytkownik o tym adresie email już istnieje" },
         { status: 400 }
@@ -32,7 +35,6 @@ export async function POST(req) {
       password: hashedPassword,
       phone,
       birthDate,
-      role: 'client', 
     });
 
     await newUser.save();

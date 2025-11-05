@@ -9,23 +9,28 @@ export async function POST(req) {
     const { email, password } = await req.json();
     await connectDB();
 
+    // Tylko sprawdź w kolekcji User (klienci)
     const user = await User.findOne({ email });
-    if (!user) return new Response(JSON.stringify({ error: "Nieprawidłowy email" }), { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: "Nieprawidłowy email lub konto biznesowe" }, { status: 400 });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return new Response(JSON.stringify({ error: "Nieprawidłowe hasło" }), { status: 400 });
+    if (!isMatch) {
+      return NextResponse.json({ error: "Nieprawidłowe hasło" }, { status: 400 });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id, role: 'client' }, process.env.JWT_SECRET, { expiresIn: "7d" });
     
     const response = NextResponse.json({ 
       message: "Zalogowano", 
       user: {
         id: user._id,
         email: user.email,
-        firstName: user.firstName, 
+        firstName: user.firstName,
         lastName: user.lastName,
         fullName: `${user.firstName} ${user.lastName}`,
-        role: user.role,
+        role: 'client'
       }
     });
 
@@ -40,6 +45,7 @@ export async function POST(req) {
 
     return response;
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return NextResponse.json({ error: error.message || "Wystąpił błąd serwera" }, { status: 500 });
   }
 }
+

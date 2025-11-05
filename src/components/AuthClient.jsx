@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/Toast";
 import {
   Eye,
   EyeOff,
@@ -20,7 +21,7 @@ import {
 const BooklyAuth = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, register, isAuthenticated, loading: authLoading } = useAuth(); // Używamy hooka
+  const { register, isAuthenticated, user, loading: authLoading } = useAuth(); // Używamy hooka
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +37,13 @@ const BooklyAuth = () => {
     phone: "",
     birthDate: "",
   });
+
+  // Sprawdź czy użytkownik jest już zalogowany jako business - przekieruj
+  useEffect(() => {
+    if (!authLoading && user && user.role === 'business') {
+      router.push('/business/dashboard');
+    }
+  }, [authLoading, user, router]);
 
   
 
@@ -55,15 +63,35 @@ const BooklyAuth = () => {
 
     try {
       if (isLogin) {
-        // LOGOWANIE - używamy hooka
-        const result = await login(formData.email, formData.password);
+        // LOGOWANIE - tylko dla klientów
+        const response = await fetch('/api/auth/login-client', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ email: formData.email, password: formData.password }),
+        });
 
-        if (result.success) {
-          // Hook useAuth automatycznie przekieruje użytkownika
-          // NIE TRZEBA TUTAJ DODAWAĆ router.push()
-          console.log("✅ Logowanie udane - hook useAuth przekierowuje...");
+        const data = await response.json();
+
+        if (response.ok) {
+          // Zapisz dane użytkownika
+          localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // Przekieruj na dashboard klienta
+          const redirectUrl = searchParams?.get('redirect') || 
+                            localStorage.getItem('redirectAfterLogin') || 
+                            '/client';
+          
+          localStorage.removeItem('redirectAfterLogin');
+          router.push(redirectUrl);
+          toast.success('Pomyślnie zalogowano!');
+          console.log("✅ Logowanie klienta udane - przekierowanie...");
         } else {
-          setError(result.error);
+          const errorMsg = data.error || 'Błąd logowania';
+          setError(errorMsg);
+          toast.error(errorMsg);
         }
       } else {
         // REJESTRACJA
@@ -84,7 +112,7 @@ const BooklyAuth = () => {
 
         if (result.success) {
           setError(""); // Wyczyść błędy
-          alert("Rejestracja udana! Możesz się teraz zalogować.");
+          toast.success("Rejestracja udana! Możesz się teraz zalogować.");
           // Po rejestracji przełącz na tryb logowania
           setIsLogin(true);
           setFormData({
@@ -102,7 +130,9 @@ const BooklyAuth = () => {
       }
     } catch (err) {
       console.error("Błąd:", err);
-      setError("Wystąpił nieoczekiwany błąd");
+      const errorMsg = "Wystąpił nieoczekiwany błąd";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

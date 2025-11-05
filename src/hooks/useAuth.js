@@ -1,12 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export const useAuth = (redirectTo = '/client/auth') => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   // Funkcja wylogowania
   const logout = useCallback(async (shouldRedirect = true) => {
@@ -64,56 +63,6 @@ export const useAuth = (redirectTo = '/client/auth') => {
     initAuth();
   }, [refreshUser]);
 
-  // Funkcja logowania
-  const login = useCallback(async (email, password) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Zapisz pełne dane użytkownika
-        const fullUserData = {
-          id: data.user.id,
-          email: data.user.email,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          fullName: data.user.fullName,
-          role: data.user.role,
-        };
-        localStorage.setItem('user', JSON.stringify(fullUserData));
-        
-        // Zaktualizuj stan
-        setUser(fullUserData);
-        setIsAuthenticated(true);
-
-        console.log('✅ Logowanie udane - sesja ustawiona');
-
-        // ZAWSZE wróć na stronę z której przyszedłeś
-        const redirectUrl = searchParams?.get('redirect') || 
-                          localStorage.getItem('redirectAfterLogin') || 
-                          '/client';
-        
-        localStorage.removeItem('redirectAfterLogin');
-        
-        console.log('🔄 Przekierowanie na:', redirectUrl);
-        router.push(redirectUrl);
-
-        return { success: true, user: fullUserData };
-      } else {
-        return { success: false, error: data.error };
-      }
-    } catch (error) {
-      return { success: false, error: 'Błąd połączenia z serwerem' };
-    }
-  }, [router, searchParams]);
 
   // Funkcja rejestracji
   const register = useCallback(async (userData) => {
@@ -178,7 +127,6 @@ export const useAuth = (redirectTo = '/client/auth') => {
     user,
     loading,
     isAuthenticated,
-    login,
     register,
     logout,
     refreshUser,
