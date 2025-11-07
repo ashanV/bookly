@@ -12,6 +12,7 @@
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
+    "googleapis": "^164.1.0",
     "gsap": "^3.13.0",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
@@ -24,6 +25,7 @@
     "react-day-picker": "^9.9.0",
     "react-dom": "19.1.0",
     "react-leaflet": "^5.0.0",
+    "recharts": "^3.3.0",
     "resend": "^6.0.1"
   },
   "devDependencies": {

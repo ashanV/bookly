@@ -46,6 +46,14 @@ const BusinessSchema = new mongoose.Schema({
   // Status biznesu
   isActive: { type: Boolean, default: true },
   isVerified: { type: Boolean, default: false },
+  
+  // Integracja z Google Calendar
+  googleCalendarTokens: {
+    accessToken: { type: String, default: null },
+    refreshToken: { type: String, default: null },
+    expiryDate: { type: Date, default: null }
+  },
+  googleCalendarConnected: { type: Boolean, default: false },
 }, {
   strict: true,
   validateBeforeSave: true
