@@ -110,11 +110,49 @@ export default function ServicesPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [studios, setStudios] = useState([]);
+  const [loading, setLoading] = useState(true);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Pobieranie biznesów z API
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (locationQuery) params.append('location', locationQuery);
+        if (filters.category !== 'Wszystkie') params.append('category', filters.category);
+
+        const response = await fetch(`/api/businesses/list?${params.toString()}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          // Łączymy dane z API z mockowymi danymi (dla demo)
+          const allStudios = [...(data.businesses || []), ...mockStudios];
+          setStudios(allStudios);
+        } else {
+          console.error('Błąd pobierania biznesów:', data.error);
+          // W razie błędu używamy tylko mockowych danych
+          setStudios(mockStudios);
+        }
+      } catch (error) {
+        console.error('Błąd pobierania biznesów:', error);
+        // W razie błędu używamy tylko mockowych danych
+        setStudios(mockStudios);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isClient) {
+      fetchBusinesses();
+    }
+  }, [isClient, searchQuery, locationQuery, filters.category]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -154,7 +192,7 @@ export default function ServicesPage() {
   };
 
   const filteredStudios = useMemo(() => {
-    let result = mockStudios.filter(studio => {
+    let result = studios.filter(studio => {
       const matchesSearch = searchQuery === '' ||
         studio.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         studio.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -189,7 +227,7 @@ export default function ServicesPage() {
         result.sort((a, b) => (b.isPromoted ? 1 : 0) - (a.isPromoted ? 1 : 0));
     }
     return result;
-  }, [searchQuery, locationQuery, filters, sortBy]);
+  }, [studios, searchQuery, locationQuery, filters, sortBy]);
 
   const topService = useMemo(() => {
     return [...filteredStudios].sort((a, b) => b.rating - a.rating)[0];
@@ -228,7 +266,7 @@ export default function ServicesPage() {
   };
 
   // Show loading state during SSR/hydration or auth loading
-  if (!isClient || authLoading) {
+  if (!isClient || authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <header className="bg-white/90 backdrop-blur-xl shadow-md sticky top-0 z-30">
@@ -245,7 +283,12 @@ export default function ServicesPage() {
         </header>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-gray-500">{authLoading ? 'Sprawdzanie autoryzacji...' : 'Ładowanie...'}</div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+              <div className="text-gray-500">
+                {authLoading ? 'Sprawdzanie autoryzacji...' : loading ? 'Ładowanie saloniów...' : 'Ładowanie...'}
+              </div>
+            </div>
           </div>
         </main>
       </div>

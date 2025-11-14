@@ -2,9 +2,47 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Star, Clock, Heart, ArrowRight, Filter, Search, ChevronDown } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy map components
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full flex items-center justify-center bg-gray-100"><p className="text-gray-500">Ładowanie mapy...</p></div>
+});
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+
+// Create a wrapper for MapController that can use useMap hook
+const MapControllerWrapper = dynamic(
+  () => Promise.all([
+    import('react-leaflet'),
+    import('react')
+  ]).then(([reactLeaflet, react]) => {
+    const { useMap } = reactLeaflet;
+    const { useEffect } = react;
+    
+    return ({ selectedStudio }) => {
+      const map = useMap();
+      useEffect(() => {
+        if (map && selectedStudio?.lat && selectedStudio?.lng) {
+          map.flyTo([selectedStudio.lat, selectedStudio.lng], 15, {
+            animate: true,
+            duration: 1.5,
+          });
+        }
+      }, [selectedStudio, map]);
+      return null;
+    };
+  }),
+  { ssr: false }
+);
+
+// Lazy load leaflet CSS
+if (typeof window !== 'undefined') {
+  import('leaflet/dist/leaflet.css');
+}
+
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 // --- Custom SVG Icon for Markers ---
 const createMarkerIcon = (isSelected = false) => {
@@ -25,21 +63,7 @@ const createMarkerIcon = (isSelected = false) => {
 const defaultIcon = createMarkerIcon(false);
 const selectedIcon = createMarkerIcon(true);
 
-// --- Map Controller Hook ---
-function MapController({ selectedStudio }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (selectedStudio?.lat && selectedStudio?.lng) {
-      map.flyTo([selectedStudio.lat, selectedStudio.lng], 15, {
-        animate: true,
-        duration: 1.5,
-      });
-    }
-  }, [selectedStudio, map]);
-
-  return null;
-}
+// MapController is now defined as a dynamic wrapper above
 
 // --- Studio Card Component ---
 function StudioCard({ studio, onFavorite, isFavorite }) {
@@ -304,7 +328,7 @@ function MapModal({ isOpen, onClose, filteredStudios, topStudio, favorites, onFa
             style={{ height: '100%', width: '100%' }}
             className="z-10"
           >
-            <MapController selectedStudio={selectedStudio} />
+            <MapControllerWrapper selectedStudio={selectedStudio} />
             <TileLayer
               url={mapStyles[mapStyle]}
               attribution='&copy; OpenStreetMap contributors'

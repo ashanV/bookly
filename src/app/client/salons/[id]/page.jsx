@@ -196,13 +196,50 @@ export default function StudioDetailsPage() {
   const [isVisible, setIsVisible] = useState(true);
   const [isSticky, setIsSticky] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [studio, setStudio] = useState(null);
+  const [loadingStudio, setLoadingStudio] = useState(true);
 
   const bookingCardRef = useRef(null);
   const sidebarRef = useRef(null);
 
-  const studio = useMemo(() => {
-    if (!id) return null;
-    return getStudioDetails(parseInt(id));
+  // Pobieranie szczegółów biznesu z API
+  useEffect(() => {
+    const fetchStudio = async () => {
+      if (!id) return;
+
+      try {
+        setLoadingStudio(true);
+        // Sprawdź czy ID jest numeryczne (mock) czy string (MongoDB ID)
+        const isMockId = !isNaN(id);
+        
+        if (isMockId) {
+          // Dla mockowych ID używamy getStudioDetails
+          const mockStudio = getStudioDetails(parseInt(id));
+          setStudio(mockStudio);
+        } else {
+          // Dla MongoDB ID pobieramy z API
+          const response = await fetch(`/api/businesses/${id}`);
+          const data = await response.json();
+
+          if (response.ok && data.business) {
+            setStudio(data.business);
+          } else {
+            // Jeśli nie znaleziono w API, spróbuj mockowych danych
+            const mockStudio = getStudioDetails(parseInt(id));
+            setStudio(mockStudio || null);
+          }
+        }
+      } catch (error) {
+        console.error('Błąd pobierania szczegółów salona:', error);
+        // W razie błędu spróbuj mockowych danych
+        const mockStudio = getStudioDetails(parseInt(id));
+        setStudio(mockStudio || null);
+      } finally {
+        setLoadingStudio(false);
+      }
+    };
+
+    fetchStudio();
   }, [id]);
 
   // Handle desktop detection
@@ -235,12 +272,12 @@ export default function StudioDetailsPage() {
 
 
   // Loading state while params are being resolved or auth is loading
-  if (!id || authLoading) {
+  if (!id || authLoading || loadingStudio) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{authLoading ? 'Sprawdzanie autoryzacji...' : 'Ładowanie...'}</p>
+          <p className="text-gray-600">{authLoading ? 'Sprawdzanie autoryzacji...' : loadingStudio ? 'Ładowanie szczegółów salona...' : 'Ładowanie...'}</p>
         </div>
       </div>
     );
@@ -257,10 +294,10 @@ export default function StudioDetailsPage() {
     </div>;
   }
 
-  const serviceCategories = ['Wszystkie', ...new Set(studio.services.map(s => s.category))];
+  const serviceCategories = ['Wszystkie', ...new Set((studio.services || []).map(s => s.category))];
   const filteredServices = serviceFilter === 'Wszystkie'
-    ? studio.services
-    : studio.services.filter(s => s.category === serviceFilter);
+    ? (studio.services || [])
+    : (studio.services || []).filter(s => s.category === serviceFilter);
 
 const handleBookingClick = (service = null) => {
   // Sprawdź czy użytkownik jest zalogowany
@@ -338,9 +375,9 @@ const handleBookingClick = (service = null) => {
                 <div className="flex items-center space-x-4">
                   <div className="text-right hidden md:block">
                     <div className="text-sm font-bold text-gray-900">
-                      Od {Math.min(...studio.services.map(s => s.price))} zł
+                      Od {studio.services && studio.services.length > 0 ? Math.min(...studio.services.map(s => s.price)) : 0} zł
                     </div>
-                    <div className="text-xs text-green-600">{studio.nextAvailable}</div>
+                    <div className="text-xs text-green-600">{studio.nextAvailable || 'Sprawdź dostępność'}</div>
                   </div>
                   <button
                     onClick={() => handleBookingClick()}
@@ -386,27 +423,31 @@ const handleBookingClick = (service = null) => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Image Gallery */}
-            <div className="relative">
-              <div className="aspect-[16/10] rounded-2xl overflow-hidden shadow-lg">
-                <img
-                  src={studio.images[currentImageIndex]}
-                  alt={studio.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex mt-4 space-x-2 overflow-x-auto">
-                {studio.images.map((image, index) => (
+            {(studio.images && studio.images.length > 0) && (
+              <div className="relative">
+                <div className="aspect-[16/10] rounded-2xl overflow-hidden shadow-lg">
+                  <img
+                    src={studio.images[currentImageIndex] || studio.images[0]}
+                    alt={studio.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {studio.images.length > 1 && (
+                  <div className="flex mt-4 space-x-2 overflow-x-auto">
+                    {studio.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex ? 'border-violet-500' : 'border-transparent'
                       }`}
                   >
-                    <img src={image} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+                      <img src={image} alt="" className="w-full h-full object-cover" />
+                    </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* Studio Info */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -414,11 +455,11 @@ const handleBookingClick = (service = null) => {
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{studio.name}</h1>
                   <p className="text-gray-600 leading-relaxed mb-4">{studio.description}</p>
-                  <div className="flex items-center space-x-6 text-sm text-gray-500">
+                    <div className="flex items-center space-x-6 text-sm text-gray-500">
                     <div className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
                       <span className="font-medium text-gray-900">{studio.rating}</span>
-                      <span className="ml-1">({studio.reviews.length} opinii)</span>
+                      <span className="ml-1">({studio.reviews?.length || studio.reviews || 0} opinii)</span>
                     </div>
                     <div className="flex items-center">
                       <MapPin className="w-4 h-4 mr-1" />
@@ -438,37 +479,43 @@ const handleBookingClick = (service = null) => {
               </div>
 
               {/* Social Media Links */}
-              <div className="border-t pt-6 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Śledź nas</h3>
-                <div className="flex space-x-3">
-                  {Object.entries(studio.socialMedia).map(([platform, url]) => {
-                    const Icon = socialIcons[platform];
-                    return (
-                      <a
-                        key={platform}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-violet-100 text-gray-600 hover:text-violet-600 transition-all"
-                      >
-                        <Icon className="w-5 h-5" />
-                      </a>
-                    );
-                  })}
+              {(studio.socialMedia && Object.values(studio.socialMedia).some(url => url)) && (
+                <div className="border-t pt-6 mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Śledź nas</h3>
+                  <div className="flex space-x-3">
+                    {Object.entries(studio.socialMedia || {}).map(([platform, url]) => {
+                      if (!url) return null;
+                      const Icon = socialIcons[platform];
+                      if (!Icon) return null;
+                      return (
+                        <a
+                          key={platform}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-violet-100 text-gray-600 hover:text-violet-600 transition-all"
+                        >
+                          <Icon className="w-5 h-5" />
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Amenities */}
-              <div className="border-t pt-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Udogodnienia</h3>
-                <div className="flex flex-wrap gap-2">
-                  {studio.amenities.map((amenity, index) => (
-                    <span key={index} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-                      {amenity}
-                    </span>
-                  ))}
+              {(studio.amenities && studio.amenities.length > 0) && (
+                <div className="border-t pt-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Udogodnienia</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {studio.amenities.map((amenity, index) => (
+                      <span key={index} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                        {amenity}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Navigation Tabs */}
@@ -524,13 +571,15 @@ const handleBookingClick = (service = null) => {
                             <div className="flex-1">
                               <h4 className="font-semibold text-gray-900 mb-2">{service.name}</h4>
                               <p className="text-gray-600 text-sm mb-3">{service.description}</p>
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {service.tags.map((tag, index) => (
-                                  <span key={index} className="bg-violet-100 text-violet-700 px-2 py-1 rounded text-xs">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
+                              {service.tags && service.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  {service.tags.map((tag, index) => (
+                                    <span key={index} className="bg-violet-100 text-violet-700 px-2 py-1 rounded text-xs">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center justify-between">
@@ -562,27 +611,39 @@ const handleBookingClick = (service = null) => {
                     <h3 className="text-xl font-bold text-gray-900 mb-6">O nas</h3>
 
                     <div className="space-y-8">
-                      <div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Nasza historia</h4>
-                        <p className="text-gray-700 leading-relaxed">{studio.aboutUs.story}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Misja</h4>
-                        <p className="text-gray-700 leading-relaxed">{studio.aboutUs.mission}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Nasze wartości</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {studio.aboutUs.values.map((value, index) => (
-                            <div key={index} className="flex items-center space-x-3 p-3 bg-violet-50 rounded-lg">
-                              <CheckCircle className="w-5 h-5 text-violet-600 flex-shrink-0" />
-                              <span className="text-gray-900 font-medium">{value}</span>
-                            </div>
-                          ))}
+                      {studio.aboutUs?.story && (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900 mb-3">Nasza historia</h4>
+                          <p className="text-gray-700 leading-relaxed">{studio.aboutUs.story}</p>
                         </div>
-                      </div>
+                      )}
+
+                      {studio.aboutUs?.mission && (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900 mb-3">Misja</h4>
+                          <p className="text-gray-700 leading-relaxed">{studio.aboutUs.mission}</p>
+                        </div>
+                      )}
+
+                      {(!studio.aboutUs?.story && !studio.aboutUs?.mission) && (
+                        <div>
+                          <p className="text-gray-700 leading-relaxed">{studio.description || 'Brak dodatkowych informacji.'}</p>
+                        </div>
+                      )}
+
+                      {studio.aboutUs?.values && studio.aboutUs.values.length > 0 && (
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900 mb-4">Nasze wartości</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {studio.aboutUs.values.map((value, index) => (
+                              <div key={index} className="flex items-center space-x-3 p-3 bg-violet-50 rounded-lg">
+                                <CheckCircle className="w-5 h-5 text-violet-600 flex-shrink-0" />
+                                <span className="text-gray-900 font-medium">{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -591,11 +652,11 @@ const handleBookingClick = (service = null) => {
                 {activeTab === 'portfolio' && (
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-6">
-                      Portfolio ({studio.portfolioImages.length})
+                      Portfolio ({(studio.portfolioImages || studio.images || []).length})
                     </h3>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {studio.portfolioImages.map((image, index) => (
+                      {(studio.portfolioImages || studio.images || []).map((image, index) => (
                         <div key={index} className="aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group">
                           <img
                             src={image}
@@ -609,8 +670,10 @@ const handleBookingClick = (service = null) => {
                     <div className="mt-6 text-center">
                       <p className="text-gray-600">Zobacz więcej naszych prac na mediach społecznościowych</p>
                       <div className="flex justify-center space-x-3 mt-3">
-                        {Object.entries(studio.socialMedia).map(([platform, url]) => {
+                        {Object.entries(studio.socialMedia || {}).map(([platform, url]) => {
+                          if (!url) return null;
                           const Icon = socialIcons[platform];
+                          if (!Icon) return null;
                           if (platform === 'instagram' || platform === 'facebook') {
                             return (
                               <a
@@ -635,37 +698,44 @@ const handleBookingClick = (service = null) => {
                 {activeTab === 'team' && (
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-6">Nasz zespół</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {studio.team.map(member => (
-                        <div key={member.id} className="bg-gray-50 rounded-xl p-6">
-                          <div className="flex items-center space-x-4 mb-4">
-                            <img
-                              src={member.avatar}
-                              alt={member.name}
-                              className="w-16 h-16 rounded-full object-cover"
-                            />
-                            <div>
-                              <h4 className="text-lg font-semibold text-gray-900">{member.name}</h4>
-                              <p className="text-violet-600 font-medium">{member.role}</p>
-                              <p className="text-sm text-gray-500">{member.experience}</p>
+                    {(studio.team && studio.team.length > 0) ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {studio.team.map(member => (
+                          <div key={member.id} className="bg-gray-50 rounded-xl p-6">
+                            <div className="flex items-center space-x-4 mb-4">
+                              <img
+                                src={member.avatar}
+                                alt={member.name}
+                                className="w-16 h-16 rounded-full object-cover"
+                              />
+                              <div>
+                                <h4 className="text-lg font-semibold text-gray-900">{member.name}</h4>
+                                <p className="text-violet-600 font-medium">{member.role}</p>
+                                <p className="text-sm text-gray-500">{member.experience}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-1">
+                                <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                                <span className="font-medium text-gray-900">{member.rating}</span>
+                                <span className="text-sm text-gray-500">ocena</span>
+                              </div>
+                              <button
+                                onClick={() => handleBookingClick()}
+                                className="bg-white border border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-all"
+                              >
+                                Wybierz
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-1">
-                              <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                              <span className="font-medium text-gray-900">{member.rating}</span>
-                              <span className="text-sm text-gray-500">ocena</span>
-                            </div>
-                            <button
-                              onClick={() => handleBookingClick()}
-                              className="bg-white border border-violet-600 text-violet-600 hover:bg-violet-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-all"
-                            >
-                              Wybierz
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 py-8">
+                        <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p>Brak informacji o zespole</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -674,17 +744,18 @@ const handleBookingClick = (service = null) => {
                   <div>
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-xl font-bold text-gray-900">
-                        Opinie ({studio.reviews.length})
+                        Opinie ({(studio.reviews || []).length})
                       </h3>
                       <div className="flex items-center space-x-2">
                         <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                        <span className="text-lg font-bold text-gray-900">{studio.rating}</span>
+                        <span className="text-lg font-bold text-gray-900">{studio.rating || 0}</span>
                         <span className="text-gray-500">/ 5</span>
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      {(showAllReviews ? studio.reviews : studio.reviews.slice(0, 3)).map(review => (
+                    {(studio.reviews && studio.reviews.length > 0) ? (
+                      <div className="space-y-6">
+                        {(showAllReviews ? studio.reviews : studio.reviews.slice(0, 3)).map(review => (
                         <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
                           <div className="flex items-start justify-between mb-3">
                             <div>
@@ -713,19 +784,25 @@ const handleBookingClick = (service = null) => {
                               </div>
                             </div>
                           </div>
-                          <p className="text-gray-700 leading-relaxed">{review.text}</p>
+                          <p className="text-gray-700 leading-relaxed">{review.text}                          </p>
                         </div>
-                      ))}
+                        ))}
 
-                      {studio.reviews.length > 3 && (
-                        <button
-                          onClick={() => setShowAllReviews(!showAllReviews)}
-                          className="w-full text-center py-3 text-violet-600 hover:text-violet-700 font-medium transition-colors"
-                        >
-                          {showAllReviews ? 'Pokaż mniej opinii' : `Pokaż wszystkie opinie (${studio.reviews.length})`}
-                        </button>
-                      )}
-                    </div>
+                        {studio.reviews.length > 3 && (
+                          <button
+                            onClick={() => setShowAllReviews(!showAllReviews)}
+                            className="w-full text-center py-3 text-violet-600 hover:text-violet-700 font-medium transition-colors"
+                          >
+                            {showAllReviews ? 'Pokaż mniej opinii' : `Pokaż wszystkie opinie (${studio.reviews.length})`}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 py-8">
+                        <Star className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p>Brak opinii. Bądź pierwszym, który oceni ten salon!</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -743,11 +820,11 @@ const handleBookingClick = (service = null) => {
             >
               <div className="text-center mb-6">
                 <div className="text-3xl font-bold text-gray-900 mb-2">
-                  Od {Math.min(...studio.services.map(s => s.price))} zł
+                  Od {studio.services && studio.services.length > 0 ? Math.min(...studio.services.map(s => s.price)) : 0} zł
                 </div>
                 <div className="text-green-600 font-medium flex items-center justify-center">
                   <Clock className="w-4 h-4 mr-1" />
-                  {studio.nextAvailable}
+                  {studio.nextAvailable || 'Sprawdź dostępność'}
                 </div>
               </div>
               
@@ -807,7 +884,26 @@ const handleBookingClick = (service = null) => {
                 Godziny otwarcia
               </h3>
               <div className="space-y-2">
-                {Object.entries(studio.openingHours).map(([day, hours]) => (
+                {Object.entries(studio.openingHours || studio.workingHours || {}).map(([day, hours]) => {
+                  if (typeof hours === 'object' && hours !== null) {
+                    // Jeśli hours jest obiektem z open/close/closed
+                    if (hours.closed) {
+                      return (
+                        <div key={day} className="flex justify-between items-center py-2">
+                          <span className="text-gray-600">{dayNames[day] || day}</span>
+                          <span className="font-medium text-red-600">Zamknięte</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={day} className="flex justify-between items-center py-2">
+                        <span className="text-gray-600">{dayNames[day] || day}</span>
+                        <span className="font-medium text-gray-900">{hours.open} - {hours.close}</span>
+                      </div>
+                    );
+                  }
+                  // Jeśli hours jest stringiem
+                  return (
                   <div key={day} className="flex justify-between items-center py-2">
                     <span className="text-gray-600">{dayNames[day]}</span>
                     <span className={`font-medium ${hours === 'Zamknięte' ? 'text-red-600' : 'text-gray-900'
@@ -815,7 +911,8 @@ const handleBookingClick = (service = null) => {
                       {hours}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

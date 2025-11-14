@@ -1,36 +1,27 @@
 import mongoose from "mongoose";
 
 const ReservationSchema = new mongoose.Schema({
-  // Powiązanie z biznesem
-  businessId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Business', 
-    required: true 
-  },
+  // ID biznesu
+  businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
   
-  // Powiązanie z klientem (opcjonalne, może być gość)
-  clientId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
-  },
-  
-  // Dane klienta (dla gości lub backup)
+  // Dane klienta
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   clientName: { type: String, required: true },
   clientEmail: { type: String, required: true },
   clientPhone: { type: String, required: true },
   
-  // Szczegóły rezerwacji
+  // Szczegóły usługi
   service: { type: String, required: true },
   date: { type: Date, required: true },
-  time: { type: String, required: true }, // Format HH:mm
-  duration: { type: Number, default: 60 }, // Czas trwania w minutach
+  time: { type: String, required: true },
+  duration: { type: Number, required: true }, // w minutach
   price: { type: Number, required: true },
   
-  // Status rezerwacji
+  // Status
   status: { 
     type: String, 
-    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
-    default: 'pending'
+    enum: ['pending', 'confirmed', 'cancelled', 'completed'], 
+    default: 'pending' 
   },
   
   // Notatki
@@ -43,7 +34,7 @@ const ReservationSchema = new mongoose.Schema({
   
   // Metadata
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 }, {
   strict: true,
   validateBeforeSave: true
@@ -55,11 +46,5 @@ ReservationSchema.pre('save', function(next) {
   next();
 });
 
-// Indeksy dla szybkiego wyszukiwania
-ReservationSchema.index({ businessId: 1, date: 1 });
-ReservationSchema.index({ clientId: 1 });
-ReservationSchema.index({ date: 1, time: 1 });
-
 export default mongoose.models.Reservation || mongoose.model("Reservation", ReservationSchema);
-
 

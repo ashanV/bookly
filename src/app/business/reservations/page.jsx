@@ -28,7 +28,16 @@ import {
   Star,
   DollarSign
 } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy chart components
+const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
 
 export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +45,9 @@ export default function ReservationsPage() {
   const [dateFilter, setDateFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
+  const [editingReservation, setEditingReservation] = useState(null);
+  const [deletingReservation, setDeletingReservation] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const reservations = [
     {
@@ -268,6 +280,92 @@ export default function ReservationsPage() {
       red: 'from-red-500 to-red-600'
     };
     return colors[color] || colors.blue;
+  };
+
+  const handleEdit = (reservation) => {
+    setEditingReservation(reservation);
+    setEditForm({
+      service: reservation.service,
+      date: reservation.date,
+      time: reservation.time,
+      duration: reservation.duration,
+      price: reservation.price,
+      status: reservation.status,
+      notes: reservation.notes
+    });
+    setSelectedReservation(null);
+  };
+
+  const handleDelete = (reservation) => {
+    setDeletingReservation(reservation);
+    setSelectedReservation(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingReservation) return;
+    
+    try {
+      const response = await fetch('/api/reservations/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reservationId: editingReservation.id || editingReservation._id,
+          ...editForm
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Aktualizacja lokalnej listy rezerwacji
+        const reservationId = editingReservation.id || editingReservation._id;
+        const index = reservations.findIndex(r => (r.id || r._id) === reservationId);
+        if (index !== -1) {
+          reservations[index] = { ...reservations[index], ...editForm };
+        }
+        setEditingReservation(null);
+        setEditForm({});
+        // Odświeżenie strony (w przyszłości można dodać refetch danych z API)
+        window.location.reload();
+      } else {
+        alert('Błąd podczas zapisywania zmian: ' + (data.error || 'Nieznany błąd'));
+      }
+    } catch (error) {
+      console.error('Błąd podczas zapisywania:', error);
+      alert('Wystąpił błąd podczas zapisywania zmian');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingReservation) return;
+    
+    try {
+      const reservationId = deletingReservation.id || deletingReservation._id;
+      const response = await fetch(`/api/reservations/cancel?id=${reservationId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Usunięcie z lokalnej listy
+        const reservationId = deletingReservation.id || deletingReservation._id;
+        const index = reservations.findIndex(r => (r.id || r._id) === reservationId);
+        if (index !== -1) {
+          reservations.splice(index, 1);
+        }
+        setDeletingReservation(null);
+        // Odświeżenie strony
+        window.location.reload();
+      } else {
+        alert('Błąd podczas usuwania: ' + (data.error || 'Nieznany błąd'));
+      }
+    } catch (error) {
+      console.error('Błąd podczas usuwania:', error);
+      alert('Wystąpił błąd podczas usuwania rezerwacji');
+    }
   };
 
   return (
@@ -529,13 +627,19 @@ export default function ReservationsPage() {
                             <Eye size={18} />
                           </button>
                           <button 
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(reservation);
+                            }}
                             className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
                           >
                             <Edit size={18} />
                           </button>
                           <button 
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(reservation);
+                            }}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                           >
                             <Trash2 size={18} />
@@ -655,13 +759,211 @@ export default function ReservationsPage() {
 
               {/* Akcje */}
               <div className="flex gap-3 pt-4">
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-medium">
+                <button 
+                  onClick={() => handleEdit(selectedReservation)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+                >
                   <Edit size={18} />
                   Edytuj
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-medium">
+                <button 
+                  onClick={() => {
+                    setSelectedReservation(null);
+                    handleDelete(selectedReservation);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-medium"
+                >
                   <Trash2 size={18} />
+                  Usuń
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal edycji rezerwacji */}
+      {editingReservation && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setEditingReservation(null);
+            setEditForm({});
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Edytuj rezerwację</h2>
+                <button 
+                  onClick={() => {
+                    setEditingReservation(null);
+                    setEditForm({});
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Usługa
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.service || ''}
+                    onChange={(e) => setEditForm({ ...editForm, service: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={editForm.status || 'pending'}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="pending">Oczekująca</option>
+                    <option value="confirmed">Potwierdzona</option>
+                    <option value="cancelled">Anulowana</option>
+                    <option value="completed">Zakończona</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Data
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.date || ''}
+                    onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Godzina
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.time || ''}
+                    onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Czas trwania (min)
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.duration || ''}
+                    onChange={(e) => setEditForm({ ...editForm, duration: parseInt(e.target.value) })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Cena (zł)
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.price || ''}
+                    onChange={(e) => setEditForm({ ...editForm, price: parseFloat(e.target.value) })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Notatki
+                </label>
+                <textarea
+                  value={editForm.notes || ''}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Dodaj notatki do rezerwacji..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setEditingReservation(null);
+                    setEditForm({});
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+                >
                   Anuluj
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
+                >
+                  Zapisz zmiany
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal potwierdzenia usuwania */}
+      {deletingReservation && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setDeletingReservation(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                  <AlertCircle className="text-red-600" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Usuń rezerwację</h2>
+                  <p className="text-sm text-gray-500">Ta akcja jest nieodwracalna</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 mb-6">
+                Czy na pewno chcesz usunąć rezerwację dla <strong>{deletingReservation.client}</strong> 
+                {' '}z dnia <strong>{formatDate(deletingReservation.date)}</strong> o godzinie <strong>{deletingReservation.time}</strong>?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeletingReservation(null)}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-medium"
+                >
+                  Usuń
                 </button>
               </div>
             </div>
