@@ -32,8 +32,8 @@ import Navigation from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TypeText from "@/components/animations/TypeText";
 import AnimatedContent from '@/components/animations/AnimatedContent';
-import HeroBackground from "@/components/HeroBackground";
-import HeroPhoneMockup from "@/components/HeroPhoneMockup";
+import HeroBackground from "@/components/HeroComponents/HeroBackground";
+import HeroPhoneMockup from "@/components/HeroComponents/HeroPhoneMockup";
 
 
 function HeroSection() {

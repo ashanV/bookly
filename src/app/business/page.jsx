@@ -32,8 +32,8 @@ import {
     Instagram,
     Building2
 } from 'lucide-react';
-import HeroBackground from '../../components/HeroBackground';
-import BusinessHeroAsset from '../../components/BusinessHeroAsset';
+import HeroBackground from '../../components/HeroComponents/HeroBackground';
+import BusinessHeroAsset from '../../components/HeroComponents/BusinessHeroAsset';
 
 // Animacje
 const fadeInUp = {
@@ -67,8 +67,8 @@ function Navbar() {
 
     return (
         <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                ? "bg-slate-900/80 backdrop-blur-md border-b border-white/10 py-3 shadow-lg"
-                : "bg-transparent py-6"
+            ? "bg-slate-900/80 backdrop-blur-md border-b border-white/10 py-3 shadow-lg"
+            : "bg-transparent py-6"
             }`}>
             <div className="container mx-auto px-6">
                 <div className="flex justify-between items-center">
