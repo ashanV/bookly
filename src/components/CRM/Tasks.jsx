@@ -32,6 +32,20 @@ export default function Tasks() {
     const [editingColumn, setEditingColumn] = useState(null);
     const [editColumnTitle, setEditColumnTitle] = useState('');
 
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'delete'
+    const [currentTask, setCurrentTask] = useState(null);
+    const [taskForm, setTaskForm] = useState({
+        title: '',
+        assignee: '',
+        dueDate: '',
+        dueTime: '',
+        priority: 'medium',
+        description: '',
+        status: 'todo'
+    });
+
     const [columns, setColumns] = useState([
         { id: 'todo', title: 'Do zrobienia', color: 'bg-slate-100', icon: Circle },
         { id: 'in-progress', title: 'W trakcie', color: 'bg-blue-50', icon: Clock },
@@ -50,7 +64,6 @@ export default function Tasks() {
     const handleDragStart = (e, task) => {
         setDraggedTask(task);
         e.dataTransfer.effectAllowed = 'move';
-        // Set a transparent drag image or custom one if needed, but default is usually fine
     };
 
     const handleDragOver = (e) => {
@@ -80,16 +93,69 @@ export default function Tasks() {
         }));
     };
 
-    const handleDeleteTask = (taskId) => {
-        setTasks(tasks.filter(t => t.id !== taskId));
-        setOpenMenu(null);
+    // Modal Handlers
+    const handleAddTask = () => {
+        setModalMode('add');
+        const now = new Date();
+        setTaskForm({
+            title: '',
+            assignee: '',
+            dueDate: now.toISOString().split('T')[0],
+            dueTime: now.toTimeString().slice(0, 5),
+            priority: 'medium',
+            description: '',
+            status: 'todo'
+        });
+        setIsModalOpen(true);
     };
 
     const handleEditTask = (taskId) => {
-        // Placeholder for edit functionality - you can implement an edit modal/form here
-        console.log('Edit task:', taskId);
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            setModalMode('edit');
+            setCurrentTask(task);
+            const now = new Date();
+            setTaskForm({
+                ...task,
+                dueDate: task.dueDate || now.toISOString().split('T')[0],
+                dueTime: task.dueTime || now.toTimeString().slice(0, 5)
+            });
+            setIsModalOpen(true);
+        }
         setOpenMenu(null);
-        alert('Edycja zadania - funkcjonalność do implementacji');
+    };
+
+    const handleDeleteClick = (taskId) => {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            setModalMode('delete');
+            setCurrentTask(task);
+            setIsModalOpen(true);
+        }
+        setOpenMenu(null);
+    };
+
+    const confirmDelete = () => {
+        if (currentTask) {
+            setTasks(tasks.filter(t => t.id !== currentTask.id));
+            setIsModalOpen(false);
+            setCurrentTask(null);
+        }
+    };
+
+    const handleSaveTask = (e) => {
+        e.preventDefault();
+        if (modalMode === 'add') {
+            const newTask = {
+                ...taskForm,
+                id: Math.max(...tasks.map(t => t.id), 0) + 1,
+            };
+            setTasks([...tasks, newTask]);
+        } else if (modalMode === 'edit' && currentTask) {
+            setTasks(tasks.map(t => t.id === currentTask.id ? { ...taskForm, id: currentTask.id } : t));
+        }
+        setIsModalOpen(false);
+        setCurrentTask(null);
     };
 
     const handleSetPriority = (taskId, priority) => {
@@ -109,6 +175,20 @@ export default function Tasks() {
             return () => document.removeEventListener('click', handleClickOutside);
         }
     }, [openMenu]);
+
+    // Close modal on Escape key
+    React.useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setIsModalOpen(false);
+            }
+        };
+
+        if (isModalOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+            return () => window.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [isModalOpen]);
 
     const handleColumnEdit = (columnId) => {
         const column = columns.find(c => c.id === columnId);
@@ -132,7 +212,10 @@ export default function Tasks() {
                     <h2 className="text-2xl font-bold text-slate-900">Tablica zadań</h2>
                     <p className="text-slate-500 text-sm mt-1">Przeciągaj zadania między kolumnami</p>
                 </div>
-                <button className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors shadow-sm shadow-violet-200">
+                <button
+                    onClick={handleAddTask}
+                    className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors shadow-sm shadow-violet-200"
+                >
                     <Plus size={18} />
                     <span className="font-medium">Nowe zadanie</span>
                 </button>
@@ -286,7 +369,7 @@ export default function Tasks() {
                             </button>
                             <div className="border-t border-slate-100 my-1" />
                             <button
-                                onClick={() => handleDeleteTask(openMenu)}
+                                onClick={() => handleDeleteClick(openMenu)}
                                 className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
                             >
                                 <AlertCircle size={16} />
@@ -343,6 +426,166 @@ export default function Tasks() {
                             </div>
                         </motion.div>
                     </>
+                )}
+            </AnimatePresence>
+
+            {/* Modal Overlay */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                            onClick={() => setIsModalOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+                        >
+                            {modalMode === 'delete' ? (
+                                <div className="p-6">
+                                    <div className="flex items-center gap-4 mb-4 text-red-600">
+                                        <div className="p-3 bg-red-100 rounded-full">
+                                            <AlertCircle size={24} />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-slate-900">Usuń zadanie</h3>
+                                    </div>
+                                    <p className="text-slate-600 mb-6">
+                                        Czy na pewno chcesz usunąć zadanie <span className="font-semibold text-slate-900">"{currentTask?.title}"</span>? Tej operacji nie można cofnąć.
+                                    </p>
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            onClick={() => setIsModalOpen(false)}
+                                            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
+                                        >
+                                            Anuluj
+                                        </button>
+                                        <button
+                                            onClick={confirmDelete}
+                                            className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors"
+                                        >
+                                            Usuń
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleSaveTask} className="flex flex-col max-h-[90vh]">
+                                    <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+                                        <h3 className="text-xl font-bold text-slate-900">
+                                            {modalMode === 'add' ? 'Nowe zadanie' : 'Edytuj zadanie'}
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsModalOpen(false)}
+                                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            <Plus size={24} className="rotate-45" />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 space-y-4 overflow-y-auto">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">Tytuł</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={taskForm.title}
+                                                onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
+                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                                placeholder="Wpisz tytuł zadania..."
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Przypisane do</label>
+                                                <div className="relative">
+                                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                                    <input
+                                                        type="text"
+                                                        value={taskForm.assignee}
+                                                        onChange={e => setTaskForm({ ...taskForm, assignee: e.target.value })}
+                                                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                                        placeholder="Np. Jan K."
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Priorytet</label>
+                                                <select
+                                                    value={taskForm.priority}
+                                                    onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white"
+                                                >
+                                                    <option value="low">Niski</option>
+                                                    <option value="medium">Średni</option>
+                                                    <option value="high">Wysoki</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                                    <input
+                                                        type="date"
+                                                        value={taskForm.dueDate}
+                                                        onChange={e => setTaskForm({ ...taskForm, dueDate: e.target.value })}
+                                                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Godzina</label>
+                                                <div className="relative">
+                                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                                    <input
+                                                        type="time"
+                                                        value={taskForm.dueTime}
+                                                        onChange={e => setTaskForm({ ...taskForm, dueTime: e.target.value })}
+                                                        className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">Opis</label>
+                                            <textarea
+                                                rows="3"
+                                                value={taskForm.description}
+                                                onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
+                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+                                                placeholder="Dodaj szczegóły zadania..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsModalOpen(false)}
+                                            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
+                                        >
+                                            Anuluj
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-violet-600 text-white hover:bg-violet-700 rounded-lg font-medium transition-colors shadow-sm shadow-violet-200"
+                                        >
+                                            {modalMode === 'add' ? 'Dodaj zadanie' : 'Zapisz zmiany'}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </div>
