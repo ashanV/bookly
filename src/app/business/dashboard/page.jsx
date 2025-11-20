@@ -173,7 +173,7 @@ export default function DashboardPage() {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-700';
       case 'pending': return 'bg-yellow-100 text-yellow-700';
       case 'cancelled': return 'bg-red-100 text-red-700';
@@ -182,7 +182,7 @@ export default function DashboardPage() {
   };
 
   const getStatusText = (status) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed': return 'Potwierdzona';
       case 'pending': return 'Oczekująca';
       case 'cancelled': return 'Anulowana';
@@ -279,7 +279,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => router.push('/business/settings')}
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2 font-medium"
             >
@@ -406,11 +406,10 @@ export default function DashboardPage() {
                   <button
                     key={filter}
                     onClick={() => setTimeFilter(filter)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      timeFilter === filter
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeFilter === filter
                         ? 'bg-purple-600 text-white shadow-md'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {filter === 'day' ? 'Dzień' : filter === 'week' ? 'Tydzień' : 'Miesiąc'}
                   </button>
@@ -421,28 +420,28 @@ export default function DashboardPage() {
               <AreaChart data={chartData.revenue}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#9333ea" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '12px' }} />
                 <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e5e7eb', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }} 
+                  }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#9333ea" 
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#9333ea"
                   strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorValue)" 
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -478,8 +477,8 @@ export default function DashboardPage() {
               {chartData.services.map((service, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
+                    <div
+                      className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
                     <span className="text-sm text-gray-700">{service.name}</span>
@@ -509,8 +508,8 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               {recentReservations.map((reservation) => (
-                <div 
-                  key={reservation.id} 
+                <div
+                  key={reservation.id}
                   className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all group cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
@@ -579,6 +578,18 @@ export default function DashboardPage() {
                   </div>
                   <ArrowUpRight className="text-green-600" size={18} />
                 </button>
+                <button
+                  onClick={() => router.push('/business/crm')}
+                  className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 rounded-xl transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Users className="text-white" size={20} />
+                    </div>
+                    <span className="font-semibold text-gray-900">CRM & Klienci</span>
+                  </div>
+                  <ArrowUpRight className="text-rose-600" size={18} />
+                </button>
                 <button className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 rounded-xl transition-all group">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -615,7 +626,7 @@ export default function DashboardPage() {
                       <span className="font-semibold text-gray-900">{service.revenue.toLocaleString()} zł</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full transition-all duration-500 group-hover:scale-105"
                         style={{ width: `${(service.bookings / 89) * 100}%` }}
                       />
@@ -644,13 +655,13 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '12px' }} />
               <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e5e7eb', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }} 
+                }}
               />
               <Legend />
               <Bar dataKey="rezerwacje" fill="#9333ea" radius={[8, 8, 0, 0]} />
