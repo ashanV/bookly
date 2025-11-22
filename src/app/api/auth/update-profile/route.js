@@ -7,7 +7,7 @@ import Business from "../../../models/Business";
 
 export async function PUT(req) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Brak tokenu" }, { status: 401 });
@@ -15,24 +15,25 @@ export async function PUT(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const body = await req.json();
-    const { firstName, lastName, phone, birthDate } = body;
+    const { firstName, lastName, phone, birthDate, email } = body;
 
     await connectDB();
-    
+
     const role = decoded.role || 'client';
     let user = null;
 
-    // Sprawdź w odpowiedniej kolekcji
+    // Check the appropriate collection
     if (role === 'business') {
       user = await Business.findById(decoded.id);
       if (!user) {
         return NextResponse.json({ error: "Biznes nie istnieje" }, { status: 404 });
       }
-      
-      // Aktualizuj pola biznesowe
+
+      // Update business fields
       if (firstName !== undefined) user.firstName = firstName;
       if (lastName !== undefined) user.lastName = lastName;
       if (phone !== undefined) user.phone = phone;
+      if (email !== undefined) user.email = email;
       await user.save();
 
       return NextResponse.json({
@@ -48,7 +49,7 @@ export async function PUT(req) {
         },
       });
     } else {
-      // Dla klientów
+      // Update client fields
       user = await User.findById(decoded.id);
       if (!user) {
         return NextResponse.json({ error: "Użytkownik nie istnieje" }, { status: 404 });
@@ -57,6 +58,7 @@ export async function PUT(req) {
       if (firstName !== undefined) user.firstName = firstName;
       if (lastName !== undefined) user.lastName = lastName;
       if (phone !== undefined) user.phone = phone;
+      if (email !== undefined) user.email = email;
       if (birthDate !== undefined) user.birthDate = birthDate;
       await user.save();
 

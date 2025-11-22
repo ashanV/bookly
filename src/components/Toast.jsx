@@ -2,27 +2,28 @@
 import React, { useEffect, useState } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
-let toastId = 0;
-const toastListeners = new Set();
-
 export const toast = {
-  success: (message) => showToast('success', message),
-  error: (message) => showToast('error', message),
-  info: (message) => showToast('info', message),
-  warning: (message) => showToast('warning', message),
+  success: (message) => dispatchToast('success', message),
+  error: (message) => dispatchToast('error', message),
+  info: (message) => dispatchToast('info', message),
+  warning: (message) => dispatchToast('warning', message),
 };
 
-function showToast(type, message) {
-  const id = ++toastId;
-  toastListeners.forEach((listener) => listener({ id, type, message }));
-  return id;
+function dispatchToast(type, message) {
+  if (typeof window !== 'undefined') {
+    const event = new CustomEvent('bookly-toast', {
+      detail: { id: Date.now() + Math.random(), type, message }
+    });
+    window.dispatchEvent(event);
+  }
 }
 
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
-    const listener = (newToast) => {
+    const handleToast = (event) => {
+      const newToast = event.detail;
       setToasts((prev) => [...prev, newToast]);
 
       // Auto-remove after 5 seconds
@@ -31,9 +32,9 @@ export function ToastContainer() {
       }, 5000);
     };
 
-    toastListeners.add(listener);
+    window.addEventListener('bookly-toast', handleToast);
     return () => {
-      toastListeners.delete(listener);
+      window.removeEventListener('bookly-toast', handleToast);
     };
   }, []);
 

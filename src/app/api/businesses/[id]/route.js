@@ -6,13 +6,13 @@ export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "Brak ID biznesu" }, { status: 400 });
     }
 
-    // Pobranie biznesu - tylko aktywne
+    // Find active business
     const business = await Business.findOne({ _id: id, isActive: true })
       .select('-password -__v')
       .lean();
@@ -21,7 +21,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });
     }
 
-    // Transformacja danych do formatu używanego w frontendzie
+    // Transform services to frontend format
     let services = [];
     if (business.services && business.services.length > 0) {
       services = business.services.map((serviceName, idx) => ({
@@ -35,7 +35,7 @@ export async function GET(req, { params }) {
       }));
     }
 
-    // Jeśli brak usług, dodaj domyślną
+    // If no services, add default
     if (services.length === 0) {
       services = [{
         id: `${business._id}_default`,
@@ -48,11 +48,11 @@ export async function GET(req, { params }) {
       }];
     }
 
-    // Współrzędne (tymczasowo - można dodać do modelu)
+    // Set coordinates - temporary
     const lat = 52.2297;
     const lng = 21.0122;
 
-    // Obrazy (tymczasowo - można dodać do modelu)
+    // Set images
     const images = [
       `https://images.unsplash.com/photo-1562004760-acb5df6b5102?w=800&h=600&fit=crop`,
       `https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop`,
@@ -63,9 +63,9 @@ export async function GET(req, { params }) {
       id: business._id.toString(),
       name: business.companyName,
       description: business.description || `${business.companyType} w ${business.city}. ${business.companyName} oferuje wysokiej jakości usługi.`,
-      rating: 4.5, // Tymczasowa ocena
-      reviews: 50, // Tymczasowa liczba opinii
-      likes: 30, // Tymczasowa liczba polubień
+      rating: 4.5, // Temporary
+      reviews: 50, // Temporary
+      likes: 30, // Temporary
       location: `${business.city}, ${business.address}`,
       fullAddress: `${business.address}, ${business.postalCode} ${business.city}`,
       distance: "1.2 km",
@@ -84,7 +84,7 @@ export async function GET(req, { params }) {
       lng,
       categories: business.category ? [business.category] : [],
       services,
-      reviews: [], // Można dodać w przyszłości
+      reviews: [], // Temporary
       workingHours: business.workingHours || {
         monday: { open: '09:00', close: '18:00', closed: false },
         tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -109,3 +109,37 @@ export async function GET(req, { params }) {
   }
 }
 
+export async function PUT(req, { params }) {
+  try {
+    await connectDB();
+    const { id } = await params;
+    const data = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Brak ID biznesu" }, { status: 400 });
+    }
+
+    // Update business
+    const updatedBusiness = await Business.findByIdAndUpdate(
+      id,
+      { $set: data },
+      { new: true, runValidators: true }
+    ).select('-password -__v');
+
+    if (!updatedBusiness) {
+      return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      message: "Dane zostały zaktualizowane",
+      business: updatedBusiness
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error("Błąd aktualizacji biznesu:", error);
+    return NextResponse.json(
+      { error: error.message || "Wystąpił błąd serwera" },
+      { status: 500 }
+    );
+  }
+}
