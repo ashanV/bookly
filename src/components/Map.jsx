@@ -357,7 +357,7 @@ function MapModal({ isOpen, onClose, filteredStudios, topStudio, favorites, onFa
                   key={style}
                   onClick={() => setMapStyle(style)}
                   className={`w-10 h-10 rounded-full text-xl flex items-center justify-center transition-colors duration-300 ${mapStyle === style ? 'bg-violet-600 text-white' : 'hover:bg-gray-100'}`}
-                  title={style.charAt(0).toUpperCase() + style.slice(1)}
+                  title={style ? style.charAt(0).toUpperCase() + style.slice(1) : ''}
                 >
                   {style === 'streets' ? '🗺️' : style === 'satellite' ? '🛰️' : '🌙'}
                 </button>

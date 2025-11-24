@@ -163,6 +163,9 @@ export default function BusinessSettings() {
                             }));
                             setOpeningHours(mappedHours);
                         }
+                        if (business.services) {
+                            setServices(business.services);
+                        }
                     }
                 } catch (error) {
                     console.error('Failed to fetch business data:', error);
@@ -176,12 +179,10 @@ export default function BusinessSettings() {
     }, [user]);
 
     // Services state
-    const [services, setServices] = useState([
-        { id: 1, name: 'Strzyżenie męskie', duration: 30, price: 50, description: 'Klasyczne strzyżenie dla mężczyzn' },
-        { id: 2, name: 'Strzyżenie damskie', duration: 45, price: 80, description: 'Strzyżenie i modelowanie' }
-    ]);
+    const [services, setServices] = useState([]);
     const [showServiceForm, setShowServiceForm] = useState(false);
     const [newService, setNewService] = useState({ name: '', duration: '', price: '', description: '' });
+    const [editingServiceId, setEditingServiceId] = useState(null);
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -350,14 +351,64 @@ export default function BusinessSettings() {
 
     const addService = () => {
         if (newService.name && newService.duration && newService.price) {
-            setServices([...services, { ...newService, id: Date.now(), duration: parseInt(newService.duration), price: parseFloat(newService.price) }]);
+            if (editingServiceId) {
+                setServices(services.map(service =>
+                    service.id === editingServiceId
+                        ? { ...newService, id: editingServiceId, duration: parseInt(newService.duration), price: parseFloat(newService.price) }
+                        : service
+                ));
+                setEditingServiceId(null);
+                toast.success('Usługa została zaktualizowana');
+            } else {
+                setServices([...services, { ...newService, id: Date.now().toString(), duration: parseInt(newService.duration), price: parseFloat(newService.price) }]);
+                toast.success('Usługa została dodana');
+            }
             setNewService({ name: '', duration: '', price: '', description: '' });
             setShowServiceForm(false);
+        } else {
+            toast.error('Wypełnij wymagane pola (Nazwa, Czas, Cena)');
         }
+    };
+
+    const editService = (service) => {
+        setNewService({
+            name: service.name,
+            duration: service.duration,
+            price: service.price,
+            description: service.description || ''
+        });
+        setEditingServiceId(service.id);
+        setShowServiceForm(true);
     };
 
     const deleteService = (id) => {
         setServices(services.filter(service => service.id !== id));
+    };
+
+    const saveServices = async () => {
+        if (!user?.id) {
+            toast.error("Błąd: Brak ID użytkownika. Spróbuj odświeżyć stronę.");
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/businesses/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ services }),
+            });
+
+            if (response.ok) {
+                toast.success('Usługi zostały zaktualizowane!');
+            } else {
+                const data = await response.json();
+                toast.error(data.error || 'Błąd aktualizacji usług');
+            }
+        } catch (error) {
+            toast.error('Wystąpił błąd połączenia z serwerem');
+        }
     };
 
     const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
@@ -808,29 +859,28 @@ export default function BusinessSettings() {
                                             </div>
                                         </div>
                                     ))}
+                                    <button
+                                        onClick={() => setShowHoursConfirmModal(true)}
+                                        className="mt-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
+                                    >
+                                        <Save className="w-5 h-5" />
+                                        Zapisz Godziny
+                                    </button>
                                 </div>
-
-                                <button
-                                    onClick={() => setShowHoursConfirmModal(true)}
-                                    className="mt-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
-                                >
-                                    <Save className="w-5 h-5" />
-                                    Zapisz Godziny Otwarcia
-                                </button>
                             </div>
                         )}
 
                         {/* Services Section */}
                         {activeTab === 'services' && (
                             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                                <div className="flex justify-between items-center mb-8">
+                                <div className="flex items-center justify-between mb-8">
                                     <div>
-                                        <h2 className="text-2xl font-bold text-gray-900">Zarządzanie Usługami</h2>
-                                        <p className="text-sm text-gray-500 mt-1">Dodaj i edytuj oferowane usługi</p>
+                                        <h2 className="text-2xl font-bold text-gray-900">Usługi</h2>
+                                        <p className="text-sm text-gray-500 mt-1">Zarządzaj ofertą swojej firmy</p>
                                     </div>
                                     <button
-                                        onClick={() => setShowServiceForm(!showServiceForm)}
-                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
+                                        onClick={() => setShowServiceForm(true)}
+                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all"
                                     >
                                         <Plus className="w-5 h-5" />
                                         Dodaj Usługę
@@ -838,73 +888,93 @@ export default function BusinessSettings() {
                                 </div>
 
                                 {showServiceForm && (
-                                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 mb-8 border border-purple-200">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-6">Nowa Usługa</h3>
-                                        <div className="space-y-4">
-                                            <input
-                                                type="text"
-                                                placeholder="Nazwa usługi"
-                                                value={newService.name}
-                                                onChange={(e) => setNewService({ ...newService, name: e.target.value })}
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                                            />
-                                            <div className="grid grid-cols-2 gap-4">
+                                    <div className="mb-8 bg-gray-50 rounded-xl p-6 border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-200">
+                                        <h3 className="text-lg font-bold text-gray-900 mb-6">{editingServiceId ? 'Edytuj Usługę' : 'Nowa Usługa'}</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <label className="block text-gray-700 mb-2 font-medium">Nazwa usługi</label>
+                                                <input
+                                                    type="text"
+                                                    value={newService.name}
+                                                    onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                    placeholder="np. Strzyżenie męskie"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-gray-700 mb-2 font-medium">Czas trwania (min)</label>
                                                 <input
                                                     type="number"
-                                                    placeholder="Czas trwania (min)"
                                                     value={newService.duration}
                                                     onChange={(e) => setNewService({ ...newService, duration: e.target.value })}
-                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                    placeholder="np. 45"
                                                 />
+                                            </div>
+                                            <div>
+                                                <label className="block text-gray-700 mb-2 font-medium">Cena (PLN)</label>
                                                 <input
                                                     type="number"
-                                                    placeholder="Cena (PLN)"
                                                     value={newService.price}
                                                     onChange={(e) => setNewService({ ...newService, price: e.target.value })}
-                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                    placeholder="np. 100"
                                                 />
                                             </div>
-                                            <textarea
-                                                placeholder="Opis usługi"
-                                                value={newService.description}
-                                                onChange={(e) => setNewService({ ...newService, description: e.target.value })}
-                                                rows="3"
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                                            />
-                                            <div className="flex gap-3">
-                                                <button
-                                                    onClick={addService}
-                                                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg text-white px-6 py-3 rounded-xl font-semibold transition-all"
-                                                >
-                                                    Dodaj
-                                                </button>
-                                                <button
-                                                    onClick={() => setShowServiceForm(false)}
-                                                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-all"
-                                                >
-                                                    Anuluj
-                                                </button>
+                                            <div>
+                                                <label className="block text-gray-700 mb-2 font-medium">Opis (opcjonalnie)</label>
+                                                <input
+                                                    type="text"
+                                                    value={newService.description}
+                                                    onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                    placeholder="Krótki opis usługi"
+                                                />
                                             </div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={addService}
+                                                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg text-white px-6 py-3 rounded-xl font-semibold transition-all"
+                                            >
+                                                {editingServiceId ? 'Zapisz Zmiany' : 'Dodaj'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowServiceForm(false);
+                                                    setNewService({ name: '', duration: '', price: '', description: '' });
+                                                    setEditingServiceId(null);
+                                                }}
+                                                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-all"
+                                            >
+                                                Anuluj
+                                            </button>
                                         </div>
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {services.map(service => (
-                                        <div key={service.id} className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex-1">
-                                                    <h3 className="text-xl font-bold text-gray-900 mb-2">{service.name}</h3>
-                                                    <p className="text-gray-600 text-sm mb-3">{service.description}</p>
-                                                    <div className="flex items-center gap-4 text-sm">
-                                                        <div className="flex items-center gap-2 text-purple-600">
-                                                            <Clock size={16} />
-                                                            <span className="font-medium">{service.duration} min</span>
-                                                        </div>
-                                                        <div className="text-2xl font-bold text-gray-900">
-                                                            {service.price} PLN</div>
-                                                    </div>
+                                <div className="space-y-4">
+                                    {services.map((service) => (
+                                        <div key={service.id} className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all flex items-center justify-between group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-lg">
+                                                    {service.name?.charAt(0) ?? String(service.id ?? '?').charAt(0)}
                                                 </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900">{service.name}</h4>
+                                                    <p className="text-sm text-gray-500">{service.duration} min • {service.price} PLN</p>
+                                                    {service.description && (
+                                                        <p className="text-xs text-gray-400 mt-1">{service.description}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => editService(service)}
+                                                    className="p-2 hover:bg-purple-50 rounded-lg transition-all group"
+                                                >
+                                                    <Edit2 className="w-5 h-5 text-gray-400 group-hover:text-purple-600" />
+                                                </button>
                                                 <button
                                                     onClick={() => deleteService(service.id)}
                                                     className="p-2 hover:bg-red-50 rounded-lg transition-all group"
@@ -914,459 +984,481 @@ export default function BusinessSettings() {
                                             </div>
                                         </div>
                                     ))}
+
+                                    {services.length === 0 && !showServiceForm && (
+                                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                            <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                            <h3 className="text-lg font-medium text-gray-900">Brak usług</h3>
+                                            <p className="text-gray-500">Dodaj pierwszą usługę, aby klienci mogli się umawiać.</p>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {services.length > 0 && (
+                                    <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end">
+                                        <button
+                                            onClick={saveServices}
+                                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
+                                        >
+                                            <Save className="w-5 h-5" />
+                                            Zapisz Usługi
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {/* Employee Availability/Schedule Management Section */}
-                        {activeTab === 'availability' && (
-                            <div className="space-y-6">
-                                {/* Employee Selection */}
-                                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                                    <div className="mb-6">
-                                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                                            <CalendarDays className="text-purple-600" size={28} />
-                                            Zarządzanie dostępnością/grafikami pracowników
-                                        </h2>
-                                        <p className="text-sm text-gray-500 mt-2">Wybierz pracownika, aby zarządzać jego dostępnością i grafikiem</p>
-                                    </div>
+                        {
+                            activeTab === 'availability' && (
+                                <div className="space-y-6">
+                                    {/* Employee Selection */}
+                                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+                                        <div className="mb-6">
+                                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                                <CalendarDays className="text-purple-600" size={28} />
+                                                Zarządzanie dostępnością/grafikami pracowników
+                                            </h2>
+                                            <p className="text-sm text-gray-500 mt-2">Wybierz pracownika, aby zarządzać jego dostępnością i grafikiem</p>
+                                        </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                                        {employees.map(emp => (
-                                            <button
-                                                key={emp.id}
-                                                onClick={() => setSelectedEmployeeForSchedule(emp.id)}
-                                                className={`p-4 rounded-xl border-2 transition-all text-left ${selectedEmployeeForSchedule === emp.id
-                                                    ? 'border-purple-600 bg-purple-50 shadow-lg'
-                                                    : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    {emp.avatarImage ? (
-                                                        <img
-                                                            src={emp.avatarImage}
-                                                            alt={emp.name}
-                                                            className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-lg"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
-                                                            {emp.avatar}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                            {employees.map(emp => (
+                                                <button
+                                                    key={emp.id}
+                                                    onClick={() => setSelectedEmployeeForSchedule(emp.id)}
+                                                    className={`p-4 rounded-xl border-2 transition-all text-left ${selectedEmployeeForSchedule === emp.id
+                                                        ? 'border-purple-600 bg-purple-50 shadow-lg'
+                                                        : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        {emp.avatarImage ? (
+                                                            <img
+                                                                src={emp.avatarImage}
+                                                                alt={emp.name}
+                                                                className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-lg"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
+                                                                {emp.avatar}
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <h3 className="font-bold text-gray-900">{emp.name}</h3>
+                                                            <p className="text-sm text-purple-600">{emp.position || 'Brak stanowiska'}</p>
                                                         </div>
-                                                    )}
-                                                    <div className="flex-1">
-                                                        <h3 className="font-bold text-gray-900">{emp.name}</h3>
-                                                        <p className="text-sm text-purple-600">{emp.position || 'Brak stanowiska'}</p>
                                                     </div>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
 
-                                    {selectedEmployeeForSchedule && (() => {
-                                        const employee = employees.find(e => e.id === selectedEmployeeForSchedule);
-                                        if (!employee) return null;
+                                        {selectedEmployeeForSchedule && (() => {
+                                            const employee = employees.find(e => e.id === selectedEmployeeForSchedule);
+                                            if (!employee) return null;
 
-                                        return (
-                                            <div className="space-y-6">
-                                                {/* Individual Calendar - Availability Hours */}
-                                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
-                                                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                                        <Calendar className="text-purple-600" size={24} />
-                                                        Indywidualny Kalendarz - Godziny Dostępności
-                                                    </h3>
-                                                    <div className="space-y-3">
-                                                        {Object.entries(employee.availability || {}).map(([day, schedule]) => (
-                                                            <div key={day} className="bg-white rounded-lg p-4 border border-gray-200">
-                                                                <div className="flex items-center justify-between gap-4">
-                                                                    <label className="block text-gray-900 font-semibold capitalize w-32">
-                                                                        {day === 'monday' ? 'Poniedziałek' :
-                                                                            day === 'tuesday' ? 'Wtorek' :
-                                                                                day === 'wednesday' ? 'Środa' :
-                                                                                    day === 'thursday' ? 'Czwartek' :
-                                                                                        day === 'friday' ? 'Piątek' :
-                                                                                            day === 'saturday' ? 'Sobota' : 'Niedziela'}
-                                                                    </label>
-                                                                    <div className="flex items-center gap-2 flex-1">
-                                                                        <input
-                                                                            type="time"
-                                                                            value={schedule.open}
-                                                                            disabled={schedule.closed}
-                                                                            onChange={(e) => {
-                                                                                const updated = [...employees];
-                                                                                const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                                updated[empIndex].availability[day].open = e.target.value;
-                                                                                setEmployees(updated);
-                                                                            }}
-                                                                            className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
-                                                                        />
-                                                                        <span className="text-gray-500">-</span>
-                                                                        <input
-                                                                            type="time"
-                                                                            value={schedule.close}
-                                                                            disabled={schedule.closed}
-                                                                            onChange={(e) => {
-                                                                                const updated = [...employees];
-                                                                                const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                                updated[empIndex].availability[day].close = e.target.value;
-                                                                                setEmployees(updated);
-                                                                            }}
-                                                                            className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
-                                                                        />
-                                                                        <label className="flex items-center gap-2 cursor-pointer ml-4">
+                                            return (
+                                                <div className="space-y-6">
+                                                    {/* Individual Calendar - Availability Hours */}
+                                                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
+                                                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                                            <Calendar className="text-purple-600" size={24} />
+                                                            Indywidualny Kalendarz - Godziny Dostępności
+                                                        </h3>
+                                                        <div className="space-y-3">
+                                                            {Object.entries(employee.availability || {}).map(([day, schedule]) => (
+                                                                <div key={day} className="bg-white rounded-lg p-4 border border-gray-200">
+                                                                    <div className="flex items-center justify-between gap-4">
+                                                                        <label className="block text-gray-900 font-semibold capitalize w-32">
+                                                                            {day === 'monday' ? 'Poniedziałek' :
+                                                                                day === 'tuesday' ? 'Wtorek' :
+                                                                                    day === 'wednesday' ? 'Środa' :
+                                                                                        day === 'thursday' ? 'Czwartek' :
+                                                                                            day === 'friday' ? 'Piątek' :
+                                                                                                day === 'saturday' ? 'Sobota' : 'Niedziela'}
+                                                                        </label>
+                                                                        <div className="flex items-center gap-2 flex-1">
                                                                             <input
-                                                                                type="checkbox"
-                                                                                checked={schedule.closed}
+                                                                                type="time"
+                                                                                value={schedule.open}
+                                                                                disabled={schedule.closed}
                                                                                 onChange={(e) => {
                                                                                     const updated = [...employees];
                                                                                     const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                                    updated[empIndex].availability[day].closed = e.target.checked;
+                                                                                    updated[empIndex].availability[day].open = e.target.value;
                                                                                     setEmployees(updated);
                                                                                 }}
-                                                                                className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                                                                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                                                                             />
-                                                                            <span className="text-sm text-gray-700 font-medium">Nieczynne</span>
-                                                                        </label>
+                                                                            <span className="text-gray-500">-</span>
+                                                                            <input
+                                                                                type="time"
+                                                                                value={schedule.close}
+                                                                                disabled={schedule.closed}
+                                                                                onChange={(e) => {
+                                                                                    const updated = [...employees];
+                                                                                    const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                    updated[empIndex].availability[day].close = e.target.value;
+                                                                                    setEmployees(updated);
+                                                                                }}
+                                                                                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                                                                            />
+                                                                            <label className="flex items-center gap-2 cursor-pointer ml-4">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={schedule.closed}
+                                                                                    onChange={(e) => {
+                                                                                        const updated = [...employees];
+                                                                                        const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                        updated[empIndex].availability[day].closed = e.target.checked;
+                                                                                        setEmployees(updated);
+                                                                                    }}
+                                                                                    className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                                                                />
+                                                                                <span className="text-sm text-gray-700 font-medium">Nieczynne</span>
+                                                                            </label>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Vacations and Days Off */}
-                                                <div className="bg-white rounded-xl p-6 border border-gray-200">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                                            <Plane className="text-purple-600" size={24} />
-                                                            Urlopy i Dni Wolne
-                                                        </h3>
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewVacation({ employeeId: employee.id, startDate: '', endDate: '', reason: '' });
-                                                                setShowVacationForm(true);
-                                                            }}
-                                                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                            Dodaj urlop
-                                                        </button>
-                                                    </div>
-
-                                                    {showVacationForm && newVacation.employeeId === employee.id && (
-                                                        <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
-                                                            <h4 className="font-semibold text-gray-900 mb-3">Nowy Urlop</h4>
-                                                            <div className="space-y-3">
-                                                                <div className="grid grid-cols-2 gap-3">
-                                                                    <div>
-                                                                        <label className="block text-sm text-gray-700 mb-1">Data rozpoczęcia</label>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={newVacation.startDate}
-                                                                            onChange={(e) => setNewVacation({ ...newVacation, startDate: e.target.value })}
-                                                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <label className="block text-sm text-gray-700 mb-1">Data zakończenia</label>
-                                                                        <input
-                                                                            type="date"
-                                                                            value={newVacation.endDate}
-                                                                            onChange={(e) => setNewVacation({ ...newVacation, endDate: e.target.value })}
-                                                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Powód (opcjonalnie)"
-                                                                    value={newVacation.reason}
-                                                                    onChange={(e) => setNewVacation({ ...newVacation, reason: e.target.value })}
-                                                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                />
-                                                                <div className="flex gap-2">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = [...employees];
-                                                                            const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                            updated[empIndex].vacations = [...(updated[empIndex].vacations || []), { ...newVacation, id: Date.now() }];
-                                                                            setEmployees(updated);
-                                                                            setShowVacationForm(false);
-                                                                            setNewVacation({ employeeId: null, startDate: '', endDate: '', reason: '' });
-                                                                        }}
-                                                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
-                                                                    >
-                                                                        Dodaj
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setShowVacationForm(false);
-                                                                            setNewVacation({ employeeId: null, startDate: '', endDate: '', reason: '' });
-                                                                        }}
-                                                                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-all"
-                                                                    >
-                                                                        Anuluj
-                                                                    </button>
-                                                                </div>
-                                                            </div>
+                                                            ))}
                                                         </div>
-                                                    )}
-
-                                                    <div className="space-y-2">
-                                                        {(employee.vacations || []).length > 0 ? (
-                                                            (employee.vacations || []).map(vacation => (
-                                                                <div key={vacation.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between">
-                                                                    <div>
-                                                                        <span className="font-semibold text-gray-900">{vacation.startDate} - {vacation.endDate}</span>
-                                                                        {vacation.reason && <span className="text-gray-600 ml-2">({vacation.reason})</span>}
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = [...employees];
-                                                                            const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                            updated[empIndex].vacations = updated[empIndex].vacations.filter(v => v.id !== vacation.id);
-                                                                            setEmployees(updated);
-                                                                        }}
-                                                                        className="p-1 hover:bg-red-50 rounded transition-all"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                                    </button>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <p className="text-gray-500 text-sm text-center py-4">Brak urlopów</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Breaks */}
-                                                <div className="bg-white rounded-xl p-6 border border-gray-200">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                                            <Coffee className="text-purple-600" size={24} />
-                                                            Przerwy
-                                                        </h3>
-                                                        <button
-                                                            onClick={() => {
-                                                                setNewBreak({ employeeId: employee.id, day: '', startTime: '', endTime: '', reason: '' });
-                                                                setShowBreakForm(true);
-                                                            }}
-                                                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                            Dodaj przerwę
-                                                        </button>
                                                     </div>
 
-                                                    {showBreakForm && newBreak.employeeId === employee.id && (
-                                                        <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
-                                                            <h4 className="font-semibold text-gray-900 mb-3">Nowa Przerwa</h4>
-                                                            <div className="space-y-3">
-                                                                <select
-                                                                    value={newBreak.day}
-                                                                    onChange={(e) => setNewBreak({ ...newBreak, day: e.target.value })}
-                                                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                >
-                                                                    <option value="">Wybierz dzień</option>
-                                                                    <option value="monday">Poniedziałek</option>
-                                                                    <option value="tuesday">Wtorek</option>
-                                                                    <option value="wednesday">Środa</option>
-                                                                    <option value="thursday">Czwartek</option>
-                                                                    <option value="friday">Piątek</option>
-                                                                    <option value="saturday">Sobota</option>
-                                                                    <option value="sunday">Niedziela</option>
-                                                                </select>
-                                                                <div className="grid grid-cols-2 gap-3">
-                                                                    <div>
-                                                                        <label className="block text-sm text-gray-700 mb-1">Od</label>
-                                                                        <input
-                                                                            type="time"
-                                                                            value={newBreak.startTime}
-                                                                            onChange={(e) => setNewBreak({ ...newBreak, startTime: e.target.value })}
-                                                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <label className="block text-sm text-gray-700 mb-1">Do</label>
-                                                                        <input
-                                                                            type="time"
-                                                                            value={newBreak.endTime}
-                                                                            onChange={(e) => setNewBreak({ ...newBreak, endTime: e.target.value })}
-                                                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Powód (np. Przerwa obiadowa)"
-                                                                    value={newBreak.reason}
-                                                                    onChange={(e) => setNewBreak({ ...newBreak, reason: e.target.value })}
-                                                                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                                />
-                                                                <div className="flex gap-2">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = [...employees];
-                                                                            const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                            updated[empIndex].breaks = [...(updated[empIndex].breaks || []), { ...newBreak, id: Date.now() }];
-                                                                            setEmployees(updated);
-                                                                            setShowBreakForm(false);
-                                                                            setNewBreak({ employeeId: null, day: '', startTime: '', endTime: '', reason: '' });
-                                                                        }}
-                                                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
-                                                                    >
-                                                                        Dodaj
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setShowBreakForm(false);
-                                                                            setNewBreak({ employeeId: null, day: '', startTime: '', endTime: '', reason: '' });
-                                                                        }}
-                                                                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-all"
-                                                                    >
-                                                                        Anuluj
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="space-y-2">
-                                                        {(employee.breaks || []).length > 0 ? (
-                                                            (employee.breaks || []).map(breakItem => (
-                                                                <div key={breakItem.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between">
-                                                                    <div>
-                                                                        <span className="font-semibold text-gray-900 capitalize">
-                                                                            {breakItem.day === 'monday' ? 'Poniedziałek' :
-                                                                                breakItem.day === 'tuesday' ? 'Wtorek' :
-                                                                                    breakItem.day === 'wednesday' ? 'Środa' :
-                                                                                        breakItem.day === 'thursday' ? 'Czwartek' :
-                                                                                            breakItem.day === 'friday' ? 'Piątek' :
-                                                                                                breakItem.day === 'saturday' ? 'Sobota' : 'Niedziela'}
-                                                                        </span>
-                                                                        <span className="text-gray-600 ml-2">{breakItem.startTime} - {breakItem.endTime}</span>
-                                                                        {breakItem.reason && <span className="text-gray-500 ml-2">({breakItem.reason})</span>}
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            const updated = [...employees];
-                                                                            const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                            updated[empIndex].breaks = updated[empIndex].breaks.filter(b => b.id !== breakItem.id);
-                                                                            setEmployees(updated);
-                                                                        }}
-                                                                        className="p-1 hover:bg-red-50 rounded transition-all"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                                    </button>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <p className="text-gray-500 text-sm text-center py-4">Brak przerw</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Shift Schedule */}
-                                                <div className="bg-white rounded-xl p-6 border border-gray-200">
-                                                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                                        <Clock className="text-purple-600" size={24} />
-                                                        Grafik Zmianowy
-                                                    </h3>
-                                                    <p className="text-sm text-gray-600 mb-4">Godziny dostępności dla tego pracownika są widoczne w sekcji "Indywidualny Kalendarz" powyżej.</p>
-                                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                                                        <p className="text-sm text-gray-700">
-                                                            Grafik zmianowy jest oparty na indywidualnych godzinach dostępności pracownika.
-                                                            Zmiany są automatycznie uwzględniane na podstawie ustawionych godzin pracy i przerw.
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Service Assignment */}
-                                                <div className="bg-white rounded-xl p-6 border border-gray-200">
-                                                    <div className="flex justify-between items-center mb-4">
-                                                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                                            <Briefcase className="text-purple-600" size={24} />
-                                                            Przypisane Usługi
-                                                        </h3>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedServiceAssignment({ employeeId: employee.id, serviceId: null });
-                                                            }}
-                                                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                            Przypisz usługę
-                                                        </button>
-                                                    </div>
-
-                                                    {selectedServiceAssignment?.employeeId === employee.id && (
-                                                        <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
-                                                            <h4 className="font-semibold text-gray-900 mb-3">Wybierz usługę</h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                {services.filter(s => !(employee.assignedServices || []).includes(s.id)).map(service => (
-                                                                    <button
-                                                                        key={service.id}
-                                                                        onClick={() => {
-                                                                            const updated = [...employees];
-                                                                            const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                            updated[empIndex].assignedServices = [...(updated[empIndex].assignedServices || []), service.id];
-                                                                            setEmployees(updated);
-                                                                            setSelectedServiceAssignment({ employeeId: null, serviceId: null });
-                                                                        }}
-                                                                        className="bg-white border-2 border-purple-200 hover:border-purple-600 rounded-lg p-3 text-left transition-all"
-                                                                    >
-                                                                        <div className="font-semibold text-gray-900">{service.name}</div>
-                                                                        <div className="text-sm text-gray-600">{service.duration} min - {service.price} PLN</div>
-                                                                    </button>
-                                                                ))}
-                                                                {services.filter(s => !(employee.assignedServices || []).includes(s.id)).length === 0 && (
-                                                                    <p className="text-gray-500 text-sm col-span-2 text-center py-2">Wszystkie usługi są już przypisane</p>
-                                                                )}
-                                                            </div>
+                                                    {/* Vacations and Days Off */}
+                                                    <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                                                <Plane className="text-purple-600" size={24} />
+                                                                Urlopy i Dni Wolne
+                                                            </h3>
                                                             <button
-                                                                onClick={() => setSelectedServiceAssignment({ employeeId: null, serviceId: null })}
-                                                                className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-all"
+                                                                onClick={() => {
+                                                                    setNewVacation({ employeeId: employee.id, startDate: '', endDate: '', reason: '' });
+                                                                    setShowVacationForm(true);
+                                                                }}
+                                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm"
                                                             >
-                                                                Anuluj
+                                                                <Plus className="w-4 h-4" />
+                                                                Dodaj urlop
                                                             </button>
                                                         </div>
-                                                    )}
 
-                                                    <div className="space-y-2">
-                                                        {(employee.assignedServices || []).length > 0 ? (
-                                                            (employee.assignedServices || []).map(serviceId => {
-                                                                const service = services.find(s => s.id === serviceId);
-                                                                if (!service) return null;
-                                                                return (
-                                                                    <div key={serviceId} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+                                                        {showVacationForm && newVacation.employeeId === employee.id && (
+                                                            <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
+                                                                <h4 className="font-semibold text-gray-900 mb-3">Nowy Urlop</h4>
+                                                                <div className="space-y-3">
+                                                                    <div className="grid grid-cols-2 gap-3">
                                                                         <div>
-                                                                            <span className="font-semibold text-gray-900">{service.name}</span>
-                                                                            <span className="text-gray-600 ml-2">({service.duration} min - {service.price} PLN)</span>
+                                                                            <label className="block text-sm text-gray-700 mb-1">Data rozpoczęcia</label>
+                                                                            <input
+                                                                                type="date"
+                                                                                value={newVacation.startDate}
+                                                                                onChange={(e) => setNewVacation({ ...newVacation, startDate: e.target.value })}
+                                                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="block text-sm text-gray-700 mb-1">Data zakończenia</label>
+                                                                            <input
+                                                                                type="date"
+                                                                                value={newVacation.endDate}
+                                                                                onChange={(e) => setNewVacation({ ...newVacation, endDate: e.target.value })}
+                                                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Powód (opcjonalnie)"
+                                                                        value={newVacation.reason}
+                                                                        onChange={(e) => setNewVacation({ ...newVacation, reason: e.target.value })}
+                                                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                    />
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const updated = [...employees];
+                                                                                const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                updated[empIndex].vacations = [...(updated[empIndex].vacations || []), { ...newVacation, id: Date.now() }];
+                                                                                setEmployees(updated);
+                                                                                setShowVacationForm(false);
+                                                                                setNewVacation({ employeeId: null, startDate: '', endDate: '', reason: '' });
+                                                                            }}
+                                                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+                                                                        >
+                                                                            Dodaj
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setShowVacationForm(false);
+                                                                                setNewVacation({ employeeId: null, startDate: '', endDate: '', reason: '' });
+                                                                            }}
+                                                                            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-all"
+                                                                        >
+                                                                            Anuluj
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="space-y-2">
+                                                            {(employee.vacations || []).length > 0 ? (
+                                                                (employee.vacations || []).map(vacation => (
+                                                                    <div key={vacation.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+                                                                        <div>
+                                                                            <span className="font-semibold text-gray-900">{vacation.startDate} - {vacation.endDate}</span>
+                                                                            {vacation.reason && <span className="text-gray-600 ml-2">({vacation.reason})</span>}
                                                                         </div>
                                                                         <button
                                                                             onClick={() => {
                                                                                 const updated = [...employees];
                                                                                 const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                                updated[empIndex].assignedServices = updated[empIndex].assignedServices.filter(s => s !== serviceId);
+                                                                                updated[empIndex].vacations = updated[empIndex].vacations.filter(v => v.id !== vacation.id);
                                                                                 setEmployees(updated);
                                                                             }}
                                                                             className="p-1 hover:bg-red-50 rounded transition-all"
                                                                         >
-                                                                            <X className="w-4 h-4 text-red-500" />
+                                                                            <Trash2 className="w-4 h-4 text-red-500" />
                                                                         </button>
                                                                     </div>
-                                                                );
-                                                            })
-                                                        ) : (
-                                                            <p className="text-gray-500 text-sm text-center py-4">Brak przypisanych usług</p>
+                                                                ))
+                                                            ) : (
+                                                                <p className="text-gray-500 text-sm text-center py-4">Brak urlopów</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Breaks */}
+                                                    <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                                                <Coffee className="text-purple-600" size={24} />
+                                                                Przerwy
+                                                            </h3>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setNewBreak({ employeeId: employee.id, day: '', startTime: '', endTime: '', reason: '' });
+                                                                    setShowBreakForm(true);
+                                                                }}
+                                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm"
+                                                            >
+                                                                <Plus className="w-4 h-4" />
+                                                                Dodaj przerwę
+                                                            </button>
+                                                        </div>
+
+                                                        {showBreakForm && newBreak.employeeId === employee.id && (
+                                                            <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
+                                                                <h4 className="font-semibold text-gray-900 mb-3">Nowa Przerwa</h4>
+                                                                <div className="space-y-3">
+                                                                    <select
+                                                                        value={newBreak.day}
+                                                                        onChange={(e) => setNewBreak({ ...newBreak, day: e.target.value })}
+                                                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                    >
+                                                                        <option value="">Wybierz dzień</option>
+                                                                        <option value="monday">Poniedziałek</option>
+                                                                        <option value="tuesday">Wtorek</option>
+                                                                        <option value="wednesday">Środa</option>
+                                                                        <option value="thursday">Czwartek</option>
+                                                                        <option value="friday">Piątek</option>
+                                                                        <option value="saturday">Sobota</option>
+                                                                        <option value="sunday">Niedziela</option>
+                                                                    </select>
+                                                                    <div className="grid grid-cols-2 gap-3">
+                                                                        <div>
+                                                                            <label className="block text-sm text-gray-700 mb-1">Od</label>
+                                                                            <input
+                                                                                type="time"
+                                                                                value={newBreak.startTime}
+                                                                                onChange={(e) => setNewBreak({ ...newBreak, startTime: e.target.value })}
+                                                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="block text-sm text-gray-700 mb-1">Do</label>
+                                                                            <input
+                                                                                type="time"
+                                                                                value={newBreak.endTime}
+                                                                                onChange={(e) => setNewBreak({ ...newBreak, endTime: e.target.value })}
+                                                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Powód (np. Przerwa obiadowa)"
+                                                                        value={newBreak.reason}
+                                                                        onChange={(e) => setNewBreak({ ...newBreak, reason: e.target.value })}
+                                                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                                    />
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const updated = [...employees];
+                                                                                const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                updated[empIndex].breaks = [...(updated[empIndex].breaks || []), { ...newBreak, id: Date.now() }];
+                                                                                setEmployees(updated);
+                                                                                setShowBreakForm(false);
+                                                                                setNewBreak({ employeeId: null, day: '', startTime: '', endTime: '', reason: '' });
+                                                                            }}
+                                                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+                                                                        >
+                                                                            Dodaj
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setShowBreakForm(false);
+                                                                                setNewBreak({ employeeId: null, day: '', startTime: '', endTime: '', reason: '' });
+                                                                            }}
+                                                                            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-all"
+                                                                        >
+                                                                            Anuluj
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         )}
+
+                                                        <div className="space-y-2">
+                                                            {(employee.breaks || []).length > 0 ? (
+                                                                (employee.breaks || []).map(breakItem => (
+                                                                    <div key={breakItem.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+                                                                        <div>
+                                                                            <span className="font-semibold text-gray-900 capitalize">
+                                                                                {breakItem.day === 'monday' ? 'Poniedziałek' :
+                                                                                    breakItem.day === 'tuesday' ? 'Wtorek' :
+                                                                                        breakItem.day === 'wednesday' ? 'Środa' :
+                                                                                            breakItem.day === 'thursday' ? 'Czwartek' :
+                                                                                                breakItem.day === 'friday' ? 'Piątek' :
+                                                                                                    breakItem.day === 'saturday' ? 'Sobota' : 'Niedziela'}
+                                                                            </span>
+                                                                            <span className="text-gray-600 ml-2">{breakItem.startTime} - {breakItem.endTime}</span>
+                                                                            {breakItem.reason && <span className="text-gray-500 ml-2">({breakItem.reason})</span>}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                const updated = [...employees];
+                                                                                const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                updated[empIndex].breaks = updated[empIndex].breaks.filter(b => b.id !== breakItem.id);
+                                                                                setEmployees(updated);
+                                                                            }}
+                                                                            className="p-1 hover:bg-red-50 rounded transition-all"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                                                        </button>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <p className="text-gray-500 text-sm text-center py-4">Brak przerw</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Shift Schedule */}
+                                                    <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                                            <Clock className="text-purple-600" size={24} />
+                                                            Grafik Zmianowy
+                                                        </h3>
+                                                        <p className="text-sm text-gray-600 mb-4">Godziny dostępności dla tego pracownika są widoczne w sekcji "Indywidualny Kalendarz" powyżej.</p>
+                                                        <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                                                            <p className="text-sm text-gray-700">
+                                                                Grafik zmianowy jest oparty na indywidualnych godzinach dostępności pracownika.
+                                                                Zmiany są automatycznie uwzględniane na podstawie ustawionych godzin pracy i przerw.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Service Assignment */}
+                                                    <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                                                <Briefcase className="text-purple-600" size={24} />
+                                                                Przypisane Usługi
+                                                            </h3>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedServiceAssignment({ employeeId: employee.id, serviceId: null });
+                                                                }}
+                                                                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm"
+                                                            >
+                                                                <Plus className="w-4 h-4" />
+                                                                Przypisz usługę
+                                                            </button>
+                                                        </div>
+
+                                                        {selectedServiceAssignment?.employeeId === employee.id && (
+                                                            <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
+                                                                <h4 className="font-semibold text-gray-900 mb-3">Wybierz usługę</h4>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                    {services.filter(s => !(employee.assignedServices || []).includes(s.id)).map(service => (
+                                                                        <button
+                                                                            key={service.id}
+                                                                            onClick={() => {
+                                                                                const updated = [...employees];
+                                                                                const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                updated[empIndex].assignedServices = [...(updated[empIndex].assignedServices || []), service.id];
+                                                                                setEmployees(updated);
+                                                                                setSelectedServiceAssignment({ employeeId: null, serviceId: null });
+                                                                            }}
+                                                                            className="bg-white border-2 border-purple-200 hover:border-purple-600 rounded-lg p-3 text-left transition-all"
+                                                                        >
+                                                                            <div className="font-semibold text-gray-900">{service.name}</div>
+                                                                            <div className="text-sm text-gray-600">{service.duration} min - {service.price} PLN</div>
+                                                                        </button>
+                                                                    ))}
+                                                                    {services.filter(s => !(employee.assignedServices || []).includes(s.id)).length === 0 && (
+                                                                        <p className="text-gray-500 text-sm col-span-2 text-center py-2">Wszystkie usługi są już przypisane</p>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setSelectedServiceAssignment({ employeeId: null, serviceId: null })}
+                                                                    className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold transition-all"
+                                                                >
+                                                                    Anuluj
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="space-y-2">
+                                                            {(employee.assignedServices || []).length > 0 ? (
+                                                                (employee.assignedServices || []).map(serviceId => {
+                                                                    const service = services.find(s => s.id === serviceId);
+                                                                    if (!service) return null;
+                                                                    return (
+                                                                        <div key={serviceId} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between">
+                                                                            <div>
+                                                                                <span className="font-semibold text-gray-900">{service.name}</span>
+                                                                                <span className="text-gray-600 ml-2">({service.duration} min - {service.price} PLN)</span>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const updated = [...employees];
+                                                                                    const empIndex = updated.findIndex(e => e.id === employee.id);
+                                                                                    updated[empIndex].assignedServices = updated[empIndex].assignedServices.filter(s => s !== serviceId);
+                                                                                    setEmployees(updated);
+                                                                                }}
+                                                                                className="p-1 hover:bg-red-50 rounded transition-all"
+                                                                            >
+                                                                                <X className="w-4 h-4 text-red-500" />
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <p className="text-gray-500 text-sm text-center py-4">Brak przypisanych usług</p>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })()}
+                                            );
+                                        })()}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )
+                        }
 
                         {/* Employees Section */}
                         {activeTab === 'employees' && (
@@ -1494,34 +1586,37 @@ export default function BusinessSettings() {
                                                 {[
                                                     { id: 'admin', label: 'Administrator', icon: Shield, desc: 'Pełny dostęp do wszystkich funkcji i ustawień' },
                                                     { id: 'manager', label: 'Menedżer', icon: UserCog, desc: 'Zarządzanie rezerwacjami i pracownikami, dostęp do raportów' },
-                                                    { id: 'employee', label: 'Pracownik', icon: UserCheck, desc: 'Tylko obsługa rezerwacji, dostęp do swojego kalendarza' },
+                                                    { id: 'employee', label: 'Pracownik', icon: UserCheck, desc: 'Tylko obsługa rezerwacji i dostęp do swojego kalendarza' },
                                                     { id: 'calendar-only', label: 'Tylko dostęp do kalendarza', icon: Calendar, desc: 'Tylko przeglądanie kalendarza, brak możliwości edycji' },
                                                     { id: 'no-access', label: 'Brak dostępu do ustawień', icon: Lock, desc: 'Tylko przeglądanie, brak możliwości edycji czegokolwiek' }
-                                                ].map(role => (
-                                                    <label
-                                                        key={role.id}
-                                                        className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${newEmployee.role === role.id
-                                                            ? 'border-purple-600 bg-purple-50'
-                                                            : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
-                                                            }`}
-                                                    >
-                                                        <input
-                                                            type="radio"
-                                                            name="role"
-                                                            value={role.id}
-                                                            checked={newEmployee.role === role.id}
-                                                            onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
-                                                            className="mt-1 w-5 h-5 text-purple-600 border-gray-300 focus:ring-purple-500"
-                                                        />
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <role.icon className="text-purple-600" size={20} />
-                                                                <span className="font-semibold text-gray-900">{role.label}</span>
+                                                ].map(role => {
+                                                    const RoleIcon = role.icon;
+                                                    return (
+                                                        <label
+                                                            key={role.id}
+                                                            className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${newEmployee.role === role.id
+                                                                ? 'border-purple-600 bg-purple-50'
+                                                                : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
+                                                                }`}
+                                                        >
+                                                            <input
+                                                                type="radio"
+                                                                name="role"
+                                                                value={role.id}
+                                                                checked={newEmployee.role === role.id}
+                                                                onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
+                                                                className="mt-1 w-5 h-5 text-purple-600 border-gray-300 focus:ring-purple-500"
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <RoleIcon className="text-purple-600" size={20} />
+                                                                    <span className="font-semibold text-gray-900">{role.label}</span>
+                                                                </div>
+                                                                <p className="text-sm text-gray-600">{role.desc}</p>
                                                             </div>
-                                                            <p className="text-sm text-gray-600">{role.desc}</p>
-                                                        </div>
-                                                    </label>
-                                                ))}
+                                                        </label>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
 
@@ -1554,7 +1649,7 @@ export default function BusinessSettings() {
                                                                     />
                                                                     <div className="flex-1">
                                                                         <span className="font-semibold text-gray-900">{service.name}</span>
-                                                                        <p className="text-sm text-gray-600">{service.description}</p>
+                                                                        <p className="text-sm text-gray-600">{typeof service.description === 'string' ? service.description : ''}</p>
                                                                     </div>
                                                                 </label>
 
@@ -1809,5 +1904,6 @@ export default function BusinessSettings() {
                 </div>
             </div>
         </div>
+
     );
 }

@@ -21,19 +21,8 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });
     }
 
-    // Transform services to frontend format
-    let services = [];
-    if (business.services && business.services.length > 0) {
-      services = business.services.map((serviceName, idx) => ({
-        id: `${business._id}_${idx}`,
-        name: serviceName,
-        price: business.pricing ? parseFloat(business.pricing) || 100 : 100 + (idx * 10),
-        duration: 60 + (idx * 15),
-        tags: [business.category],
-        category: business.category,
-        description: `${serviceName} w ${business.companyName}`
-      }));
-    }
+    // Services are now stored in the correct format
+    let services = business.services || [];
 
     // If no services, add default
     if (services.length === 0) {
@@ -42,8 +31,6 @@ export async function GET(req, { params }) {
         name: business.category || 'Usługa',
         price: 100,
         duration: 60,
-        tags: [business.category],
-        category: business.category,
         description: `Usługa w ${business.companyName}`
       }];
     }

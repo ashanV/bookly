@@ -45,15 +45,18 @@ export async function GET(req) {
       // Utworzenie usług z cennika (jeśli pricing jest stringiem z danymi)
       let services = [];
       if (business.services && business.services.length > 0) {
-        // Jeśli services to tablica stringów, tworzymy obiekty usług
-        services = business.services.map((serviceName, idx) => ({
-          id: `${business._id}_${idx}`,
-          name: serviceName,
-          price: business.pricing ? parseFloat(business.pricing) || 100 : 100,
-          duration: 60,
-          tags: [business.category],
-          category: business.category
-        }));
+        // Obsługa zarówno tablicy stringów jak i obiektów
+        services = business.services.map((serviceItem, idx) => {
+          const isObject = typeof serviceItem === 'object' && serviceItem !== null;
+          return {
+            id: isObject ? (serviceItem.id || serviceItem._id || `${business._id}_${idx}`) : `${business._id}_${idx}`,
+            name: isObject ? serviceItem.name : serviceItem,
+            price: isObject ? (serviceItem.price || (business.pricing ? parseFloat(business.pricing) : 100)) : (business.pricing ? parseFloat(business.pricing) || 100 : 100),
+            duration: isObject ? (serviceItem.duration || 60) : 60,
+            tags: isObject ? (serviceItem.tags || [business.category]) : [business.category],
+            category: isObject ? (serviceItem.category || business.category) : business.category
+          };
+        });
       }
 
       // Utworzenie kategorii

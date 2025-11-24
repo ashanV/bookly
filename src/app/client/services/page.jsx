@@ -129,7 +129,6 @@ export default function ServicesPage() {
     setIsClient(true);
   }, []);
 
-  // Pobieranie biznesów z API
   useEffect(() => {
     const fetchBusinesses = async () => {
       try {
@@ -143,17 +142,31 @@ export default function ServicesPage() {
         const data = await response.json();
 
         if (response.ok) {
-          // Łączymy dane z API z mockowymi danymi (dla demo)
-          const allStudios = [...(data.businesses || []), ...mockStudios];
+          // Map backend data to UI structure
+          const mappedBusinesses = (data.businesses || []).map(b => ({
+            ...b,
+            id: b._id || b.id,
+            location: b.city ? `${b.city}, ${b.address}` : b.location || 'Brak lokalizacji',
+            categories: b.category ? [b.category] : (b.categories || []),
+            services: (b.services || []).map(s => ({
+              ...s,
+              tags: s.tags || []
+            })),
+            rating: b.rating || 0,
+            reviews: b.reviews || [],
+            likes: b.likes || 0,
+            isPromoted: b.isPromoted || false,
+            image: b.images?.[0] || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop"
+          }));
+
+          const allStudios = [...mappedBusinesses, ...mockStudios];
           setStudios(allStudios);
         } else {
           console.error('Błąd pobierania biznesów:', data.error);
-          // W razie błędu używamy tylko mockowych danych
           setStudios(mockStudios);
         }
       } catch (error) {
         console.error('Błąd pobierania biznesów:', error);
-        // W razie błędu używamy tylko mockowych danych
         setStudios(mockStudios);
       } finally {
         setLoading(false);

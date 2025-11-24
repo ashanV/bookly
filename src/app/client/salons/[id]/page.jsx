@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from "next/link";
-import { useParams, useRouter } from 'next/navigation'; // App Router hook
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Star, Heart, MapPin, Clock, Phone, Globe,
   Share2, Camera, Calendar, ChevronRight, Users, Award,
@@ -181,10 +181,10 @@ const dayNames = {
 };
 
 export default function StudioDetailsPage() {
-  const params = useParams(); // App Router way to get params
+  const params = useParams();
   const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const id = params?.id; // Get id from params
+  const id = params?.id;
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -202,52 +202,40 @@ export default function StudioDetailsPage() {
   const bookingCardRef = useRef(null);
   const sidebarRef = useRef(null);
 
-  // Pobieranie szczegółów biznesu z API
   useEffect(() => {
     const fetchStudio = async () => {
       if (!id) return;
-
       try {
         setLoadingStudio(true);
-        // Sprawdź czy ID jest numeryczne (mock) czy string (MongoDB ID)
         const isMockId = !isNaN(id);
-        
         if (isMockId) {
-          // Dla mockowych ID używamy getStudioDetails
           const mockStudio = getStudioDetails(parseInt(id));
           setStudio(mockStudio);
         } else {
-          // Dla MongoDB ID pobieramy z API
           const response = await fetch(`/api/businesses/${id}`);
           const data = await response.json();
-
           if (response.ok && data.business) {
             setStudio(data.business);
           } else {
-            // Jeśli nie znaleziono w API, spróbuj mockowych danych
             const mockStudio = getStudioDetails(parseInt(id));
             setStudio(mockStudio || null);
           }
         }
       } catch (error) {
         console.error('Błąd pobierania szczegółów salona:', error);
-        // W razie błędu spróbuj mockowych danych
         const mockStudio = getStudioDetails(parseInt(id));
         setStudio(mockStudio || null);
       } finally {
         setLoadingStudio(false);
       }
     };
-
     fetchStudio();
   }, [id]);
 
-  // Handle desktop detection
   useEffect(() => {
     const checkDesktop = () => {
       setIsDesktop(window.innerWidth >= 1024);
     };
-
     checkDesktop();
     window.addEventListener('resize', checkDesktop);
     return () => window.removeEventListener('resize', checkDesktop);
@@ -256,7 +244,6 @@ export default function StudioDetailsPage() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-
       if (scrollY > 100) {
         setIsVisible(false);
         setIsSticky(true);
@@ -265,13 +252,10 @@ export default function StudioDetailsPage() {
         setIsSticky(false);
       }
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-
-  // Loading state while params are being resolved or auth is loading
   if (!id || authLoading || loadingStudio) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -284,35 +268,32 @@ export default function StudioDetailsPage() {
   }
 
   if (!studio) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Studio nie zostało znalezione</h2>
-        <Link href="/client/services" className="text-violet-600 hover:text-violet-700">
-          ← Powrót do wyszukiwania
-        </Link>
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Studio nie zostało znalezione</h2>
+          <Link href="/client/services" className="text-violet-600 hover:text-violet-700">
+            ← Powrót do wyszukiwania
+          </Link>
+        </div>
       </div>
-    </div>;
+    );
   }
 
-  const serviceCategories = ['Wszystkie', ...new Set((studio.services || []).map(s => s.category))];
+  const serviceCategories = ['Wszystkie', ...new Set((studio.services || []).map(s => s.category).filter(Boolean))];
   const filteredServices = serviceFilter === 'Wszystkie'
     ? (studio.services || [])
     : (studio.services || []).filter(s => s.category === serviceFilter);
 
-const handleBookingClick = (service = null) => {
-  // Sprawdź czy użytkownik jest zalogowany
-  if (!isAuthenticated) {
-    // Przekieruj na stronę logowania z parametrem redirect
-    const currentPath = window.location.pathname;
-    router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
-    return;
-  }
-  
-  // Jeśli użytkownik jest zalogowany, otwórz modal rezerwacji
-  console.log('handleBookingClick called', service, isBookingOpen);
-  setSelectedService(service);
-  setIsBookingOpen(true);
-};
+  const handleBookingClick = (service = null) => {
+    if (!isAuthenticated) {
+      const currentPath = window.location.pathname;
+      router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+    setSelectedService(service);
+    setIsBookingOpen(true);
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -344,7 +325,6 @@ const handleBookingClick = (service = null) => {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-
             {(isSticky || !isVisible) && isDesktop ? (
               <div className="flex items-center space-x-4">
                 <h1 className="text-lg font-bold text-gray-900">{studio.name}</h1>
@@ -397,7 +377,6 @@ const handleBookingClick = (service = null) => {
                 </button>
               )}
 
-              {/* Wspólne ikony */}
               <button
                 onClick={handleShare}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
@@ -420,7 +399,6 @@ const handleBookingClick = (service = null) => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Image Gallery */}
             {(studio.images && studio.images.length > 0) && (
@@ -435,14 +413,14 @@ const handleBookingClick = (service = null) => {
                 {studio.images.length > 1 && (
                   <div className="flex mt-4 space-x-2 overflow-x-auto">
                     {studio.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex ? 'border-violet-500' : 'border-transparent'
-                      }`}
-                  >
-                      <img src={image} alt="" className="w-full h-full object-cover" />
-                    </button>
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === currentImageIndex ? 'border-violet-500' : 'border-transparent'
+                          }`}
+                      >
+                        <img src={image} alt="" className="w-full h-full object-cover" />
+                      </button>
                     ))}
                   </div>
                 )}
@@ -455,7 +433,7 @@ const handleBookingClick = (service = null) => {
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{studio.name}</h1>
                   <p className="text-gray-600 leading-relaxed mb-4">{studio.description}</p>
-                    <div className="flex items-center space-x-6 text-sm text-gray-500">
+                  <div className="flex items-center space-x-6 text-sm text-gray-500">
                     <div className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
                       <span className="font-medium text-gray-900">{studio.rating}</span>
@@ -478,7 +456,6 @@ const handleBookingClick = (service = null) => {
                 )}
               </div>
 
-              {/* Social Media Links */}
               {(studio.socialMedia && Object.values(studio.socialMedia).some(url => url)) && (
                 <div className="border-t pt-6 mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3">Śledź nas</h3>
@@ -503,7 +480,6 @@ const handleBookingClick = (service = null) => {
                 </div>
               )}
 
-              {/* Amenities */}
               {(studio.amenities && studio.amenities.length > 0) && (
                 <div className="border-t pt-6">
                   <h3 className="font-semibold text-gray-900 mb-3">Udogodnienia</h3>
@@ -518,7 +494,7 @@ const handleBookingClick = (service = null) => {
               )}
             </div>
 
-            {/* Navigation Tabs */}
+            {/* Tabs */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className="border-b border-gray-200">
                 <nav className="flex overflow-x-auto">
@@ -550,18 +526,20 @@ const handleBookingClick = (service = null) => {
                   <div>
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-xl font-bold text-gray-900">Usługi ({filteredServices.length})</h3>
-                      <div className="relative">
-                        <select
-                          value={serviceFilter}
-                          onChange={(e) => setServiceFilter(e.target.value)}
-                          className="appearance-none bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        >
-                          {serviceCategories.map(category => (
-                            <option key={category} value={category}>{category}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
+                      {serviceCategories.length > 1 && (
+                        <div className="relative">
+                          <select
+                            value={serviceFilter}
+                            onChange={(e) => setServiceFilter(e.target.value)}
+                            className="appearance-none bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          >
+                            {serviceCategories.map(category => (
+                              <option key={category} value={category}>{category}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-4">
@@ -609,7 +587,6 @@ const handleBookingClick = (service = null) => {
                 {activeTab === 'about' && (
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-6">O nas</h3>
-
                     <div className="space-y-8">
                       {studio.aboutUs?.story && (
                         <div>
@@ -617,20 +594,17 @@ const handleBookingClick = (service = null) => {
                           <p className="text-gray-700 leading-relaxed">{studio.aboutUs.story}</p>
                         </div>
                       )}
-
                       {studio.aboutUs?.mission && (
                         <div>
                           <h4 className="text-lg font-semibold text-gray-900 mb-3">Misja</h4>
                           <p className="text-gray-700 leading-relaxed">{studio.aboutUs.mission}</p>
                         </div>
                       )}
-
                       {(!studio.aboutUs?.story && !studio.aboutUs?.mission) && (
                         <div>
                           <p className="text-gray-700 leading-relaxed">{studio.description || 'Brak dodatkowych informacji.'}</p>
                         </div>
                       )}
-
                       {studio.aboutUs?.values && studio.aboutUs.values.length > 0 && (
                         <div>
                           <h4 className="text-lg font-semibold text-gray-900 mb-4">Nasze wartości</h4>
@@ -654,7 +628,6 @@ const handleBookingClick = (service = null) => {
                     <h3 className="text-xl font-bold text-gray-900 mb-6">
                       Portfolio ({(studio.portfolioImages || studio.images || []).length})
                     </h3>
-
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {(studio.portfolioImages || studio.images || []).map((image, index) => (
                         <div key={index} className="aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group">
@@ -666,7 +639,6 @@ const handleBookingClick = (service = null) => {
                         </div>
                       ))}
                     </div>
-
                     <div className="mt-6 text-center">
                       <p className="text-gray-600">Zobacz więcej naszych prac na mediach społecznościowych</p>
                       <div className="flex justify-center space-x-3 mt-3">
@@ -756,36 +728,36 @@ const handleBookingClick = (service = null) => {
                     {(studio.reviews && studio.reviews.length > 0) ? (
                       <div className="space-y-6">
                         {(showAllReviews ? studio.reviews : studio.reviews.slice(0, 3)).map(review => (
-                        <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="font-semibold text-gray-900">{review.author}</span>
-                                {review.verified && (
-                                  <CheckCircle className="w-4 h-4 text-green-500" />
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                <div className="flex">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-4 h-4 ${i < review.rating
-                                        ? 'text-yellow-400 fill-current'
-                                        : 'text-gray-300'
-                                        }`}
-                                    />
-                                  ))}
+                          <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <span className="font-semibold text-gray-900">{review.author}</span>
+                                  {review.verified && (
+                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                  )}
                                 </div>
-                                <span>•</span>
-                                <span>{review.date}</span>
-                                <span>•</span>
-                                <span className="text-violet-600">{review.service}</span>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                  <div className="flex">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-4 h-4 ${i < review.rating
+                                          ? 'text-yellow-400 fill-current'
+                                          : 'text-gray-300'
+                                          }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span>•</span>
+                                  <span>{review.date}</span>
+                                  <span>•</span>
+                                  <span className="text-violet-600">{review.service}</span>
+                                </div>
                               </div>
                             </div>
+                            <p className="text-gray-700 leading-relaxed">{review.text}</p>
                           </div>
-                          <p className="text-gray-700 leading-relaxed">{review.text}                          </p>
-                        </div>
                         ))}
 
                         {studio.reviews.length > 3 && (
@@ -827,7 +799,7 @@ const handleBookingClick = (service = null) => {
                   {studio.nextAvailable || 'Sprawdź dostępność'}
                 </div>
               </div>
-              
+
               <button
                 onClick={() => handleBookingClick()}
                 className="w-full bg-violet-600 hover:bg-violet-700 text-white py-4 px-6 rounded-xl font-semibold text-lg transition-all transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl mb-4"
@@ -886,7 +858,6 @@ const handleBookingClick = (service = null) => {
               <div className="space-y-2">
                 {Object.entries(studio.openingHours || studio.workingHours || {}).map(([day, hours]) => {
                   if (typeof hours === 'object' && hours !== null) {
-                    // Jeśli hours jest obiektem z open/close/closed
                     if (hours.closed) {
                       return (
                         <div key={day} className="flex justify-between items-center py-2">
@@ -902,15 +873,13 @@ const handleBookingClick = (service = null) => {
                       </div>
                     );
                   }
-                  // Jeśli hours jest stringiem
                   return (
-                  <div key={day} className="flex justify-between items-center py-2">
-                    <span className="text-gray-600">{dayNames[day]}</span>
-                    <span className={`font-medium ${hours === 'Zamknięte' ? 'text-red-600' : 'text-gray-900'
-                      }`}>
-                      {hours}
-                    </span>
-                  </div>
+                    <div key={day} className="flex justify-between items-center py-2">
+                      <span className="text-gray-600">{dayNames[day]}</span>
+                      <span className={`font-medium ${hours === 'Zamknięte' ? 'text-red-600' : 'text-gray-900'}`}>
+                        {hours}
+                      </span>
+                    </div>
                   );
                 })}
               </div>

@@ -235,8 +235,8 @@ export default function BusinessHeroAsset() {
                                 { name: "Marek Z.", time: "15:30", type: "Konsultacja", color: "from-cyan-500 to-blue-500" }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group/item">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg bg-gradient-to-br ${item.color}`}>
-                                        {item.name.charAt(0)}
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg bg-gradient-to-br ${item.color}`}>
+                                        {item.name?.charAt(0) ?? item.name?.[0] ?? '?'}
                                     </div>
                                     <div className="flex-1">
                                         <div className="text-xs font-bold text-white group-hover/item:text-violet-300 transition-colors">{item.name}</div>
