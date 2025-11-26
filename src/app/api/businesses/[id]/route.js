@@ -46,6 +46,15 @@ export async function GET(req, { params }) {
       `https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800&h=600&fit=crop`,
     ];
 
+    // Use real images from database or fallback to mock images
+    const businessImages = business.bannerImage 
+      ? [business.bannerImage, ...(business.portfolioImages || []).slice(0, 2)]
+      : images;
+    
+    const businessPortfolioImages = business.portfolioImages && business.portfolioImages.length > 0
+      ? business.portfolioImages
+      : images.slice(0, 3);
+
     const transformedBusiness = {
       id: business._id.toString(),
       name: business.companyName,
@@ -67,8 +76,11 @@ export async function GET(req, { params }) {
         twitter: '',
         youtube: ''
       },
-      images,
-      portfolioImages: images.slice(0, 3),
+      // Images from database or fallback
+      profileImage: business.profileImage || null,
+      bannerImage: business.bannerImage || null,
+      images: businessImages,
+      portfolioImages: businessPortfolioImages,
       lat,
       lng,
       categories: business.category ? [business.category] : [],
@@ -96,7 +108,15 @@ export async function GET(req, { params }) {
         assignedServices: emp.assignedServices || []
       })),
       companyType: business.companyType,
-      isVerified: business.isVerified || false
+      isVerified: business.isVerified || false,
+      // Additional fields for settings page
+      companyName: business.companyName,
+      facebook: business.facebook || '',
+      instagram: business.instagram || '',
+      // Location fields
+      city: business.city || '',
+      address: business.address || '',
+      postalCode: business.postalCode || ''
     };
 
     return NextResponse.json({ business: transformedBusiness }, { status: 200 });

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import { Camera, Save, Plus, Trash2, Edit2, X, Star, Upload, Building2, Settings, ArrowLeft, Phone, Mail, Lock, Facebook, Instagram, Globe, User, Users, Image as ImageIcon, MessageSquare, Clock, Briefcase, Calendar, CalendarDays, Coffee, Plane, Shield, UserCheck, UserCog, CheckSquare, Square, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Camera, Save, Plus, Trash2, Edit2, X, Star, Upload, Building2, Settings, ArrowLeft, Phone, Mail, Lock, Facebook, Instagram, Globe, User, Users, Image as ImageIcon, MessageSquare, Clock, Briefcase, Calendar, CalendarDays, Coffee, Plane, Shield, UserCheck, UserCog, CheckSquare, Square, AlertTriangle, RefreshCw, MapPin } from 'lucide-react';
 
 export default function BusinessSettings() {
     const { user, updateProfile } = useAuth();
@@ -17,6 +17,10 @@ export default function BusinessSettings() {
     const [website, setWebsite] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
+    // Location state
+    const [city, setCity] = useState('');
+    const [address, setAddress] = useState('');
+    const [postalCode, setPostalCode] = useState('');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showPasswordConfirmModal, setShowPasswordConfirmModal] = useState(false);
     const [showHoursConfirmModal, setShowHoursConfirmModal] = useState(false);
@@ -172,6 +176,45 @@ export default function BusinessSettings() {
                     } else {
                         setReviews([]);
                     }
+                    // Load images from database
+                    if (business.profileImage) {
+                        setProfileImage(business.profileImage);
+                    }
+                    if (business.bannerImage) {
+                        setBannerImage(business.bannerImage);
+                    }
+                    if (business.portfolioImages && Array.isArray(business.portfolioImages)) {
+                        setPortfolio(business.portfolioImages.map((url, index) => ({
+                            id: `portfolio-${index}`,
+                            url: url
+                        })));
+                    }
+                    // Load business info
+                    if (business.companyName) {
+                        setBusinessName(business.companyName);
+                    }
+                    if (business.description) {
+                        setDescription(business.description);
+                    }
+                    if (business.facebook) {
+                        setFacebook(business.facebook);
+                    }
+                    if (business.instagram) {
+                        setInstagram(business.instagram);
+                    }
+                    if (business.website) {
+                        setWebsite(business.website);
+                    }
+                    // Load location data
+                    if (business.city) {
+                        setCity(business.city);
+                    }
+                    if (business.address) {
+                        setAddress(business.address);
+                    }
+                    if (business.postalCode) {
+                        setPostalCode(business.postalCode);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch business data:', error);
@@ -191,47 +234,171 @@ export default function BusinessSettings() {
     const [newService, setNewService] = useState({ name: '', duration: '', price: '', description: '' });
     const [editingServiceId, setEditingServiceId] = useState(null);
 
-    const handleImageUpload = (e) => {
+    // Upload image to Cloudinary
+    const uploadImage = async (file, type) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+            formData.append('folder', `bookly/${user?.id || 'default'}`);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                return data.url;
+            } else {
+                throw new Error(data.error || 'Błąd uploadowania obrazu');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Błąd uploadowania obrazu: ' + error.message);
+            return null;
+        }
+    };
+
+    const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Show loading/preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setProfileImage(reader.result);
             };
             reader.readAsDataURL(file);
+
+            // Upload to Cloudinary
+            toast.info('Uploadowanie zdjęcia...');
+            const url = await uploadImage(file, 'profile');
+            if (url) {
+                setProfileImage(url);
+                // Save to database
+                await saveBusinessProfile({ profileImage: url });
+                toast.success('Zdjęcie profilowe zostało zapisane!');
+            }
         }
     };
 
-    const handleBannerUpload = (e) => {
+    const handleBannerUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Show loading/preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setBannerImage(reader.result);
             };
             reader.readAsDataURL(file);
+
+            // Upload to Cloudinary
+            toast.info('Uploadowanie banera...');
+            const url = await uploadImage(file, 'banner');
+            if (url) {
+                setBannerImage(url);
+                // Save to database
+                await saveBusinessProfile({ bannerImage: url });
+                toast.success('Baner został zapisany!');
+            }
         }
     };
 
-    const handlePortfolioUpload = (e) => {
+    const handlePortfolioUpload = async (e) => {
         const files = Array.from(e.target.files);
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPortfolio(prev => [...prev, { id: Date.now() + Math.random(), url: reader.result }]);
-            };
-            reader.readAsDataURL(file);
+        if (files.length === 0) return;
+
+        toast.info(`Uploadowanie ${files.length} zdjęć...`);
+        
+        const uploadPromises = files.map(async (file) => {
+            const url = await uploadImage(file, 'portfolio');
+            if (url) {
+                return { id: Date.now() + Math.random(), url };
+            }
+            return null;
         });
+
+        const uploadedImages = (await Promise.all(uploadPromises)).filter(img => img !== null);
+        
+        if (uploadedImages.length > 0) {
+            const newPortfolio = [...portfolio, ...uploadedImages];
+            setPortfolio(newPortfolio);
+            // Save to database
+            await saveBusinessProfile({ 
+                portfolioImages: newPortfolio.map(img => img.url) 
+            });
+            toast.success(`Dodano ${uploadedImages.length} zdjęć do portfolio!`);
+        }
     };
 
-    const handleEmployeeAvatarUpload = (e) => {
+    const handleEmployeeAvatarUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Show loading/preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setNewEmployee({ ...newEmployee, avatarImage: reader.result });
             };
             reader.readAsDataURL(file);
+
+            // Upload to Cloudinary
+            toast.info('Uploadowanie zdjęcia pracownika...');
+            const url = await uploadImage(file, 'employee');
+            if (url) {
+                setNewEmployee({ ...newEmployee, avatarImage: url });
+                toast.success('Zdjęcie pracownika zostało zapisane!');
+            }
+        }
+    };
+
+    // Save business profile data
+    const saveBusinessProfile = async (updates = {}) => {
+        if (!user?.id) {
+            toast.error("Błąd: Brak ID użytkownika. Spróbuj odświeżyć stronę.");
+            return;
+        }
+
+        try {
+            const updateData = {
+                companyName: businessName,
+                description: description,
+                facebook: facebook,
+                instagram: instagram,
+                website: website,
+                city: city,
+                address: address,
+                postalCode: postalCode,
+                ...updates
+            };
+
+            const response = await fetch(`/api/businesses/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData),
+            });
+
+            if (response.ok) {
+                return { success: true };
+            } else {
+                const data = await response.json();
+                throw new Error(data.error || 'Błąd zapisywania danych');
+            }
+        } catch (error) {
+            console.error('Error saving business profile:', error);
+            toast.error(error.message || 'Wystąpił błąd podczas zapisywania');
+            return { success: false, error: error.message };
+        }
+    };
+
+    // Handle save profile button
+    const handleSaveProfile = async () => {
+        toast.info('Zapisywanie zmian...');
+        const result = await saveBusinessProfile();
+        if (result.success) {
+            toast.success('Dane firmy zostały zaktualizowane!');
         }
     };
 
@@ -365,8 +532,50 @@ export default function BusinessSettings() {
         await saveEmployees(updatedEmployees);
     };
 
-    const deletePortfolioImage = (id) => {
-        setPortfolio(portfolio.filter(img => img.id !== id));
+    const deletePortfolioImage = async (id) => {
+        const imageToDelete = portfolio.find(img => img.id === id);
+        if (!imageToDelete) return;
+
+        // Extract public_id from Cloudinary URL if possible
+        const url = imageToDelete.url;
+        let public_id = null;
+        
+        if (url && url.includes('cloudinary.com')) {
+            try {
+                // Extract public_id from Cloudinary URL
+                // Format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/image.jpg
+                const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\..+)?$/);
+                if (match && match[1]) {
+                    public_id = match[1];
+                }
+            } catch (error) {
+                console.error('Error extracting public_id:', error);
+            }
+        }
+
+        // Update UI immediately
+        const updatedPortfolio = portfolio.filter(img => img.id !== id);
+        setPortfolio(updatedPortfolio);
+
+        // Delete from Cloudinary if public_id is available
+        if (public_id) {
+            try {
+                const response = await fetch(`/api/upload?public_id=${encodeURIComponent(public_id)}`, {
+                    method: 'DELETE',
+                });
+                if (!response.ok) {
+                    console.error('Failed to delete from Cloudinary');
+                }
+            } catch (error) {
+                console.error('Error deleting from Cloudinary:', error);
+            }
+        }
+
+        // Save updated portfolio to database
+        await saveBusinessProfile({ 
+            portfolioImages: updatedPortfolio.map(img => img.url) 
+        });
+        toast.success('Zdjęcie zostało usunięte!');
     };
 
     const updateOpeningHours = (index, field, value) => {
@@ -799,7 +1008,72 @@ export default function BusinessSettings() {
                                     </div>
                                 </div>
 
-                                <button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all">
+                                {/* Location Section */}
+                                <div className="space-y-6 mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                        <MapPin className="text-blue-600" size={24} />
+                                        Lokalizacja
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-gray-700 mb-2 font-medium">
+                                                Miasto
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={city}
+                                                onChange={(e) => setCity(e.target.value)}
+                                                placeholder="Warszawa"
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 mb-2 font-medium">
+                                                Ulica i numer
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={address}
+                                                onChange={(e) => setAddress(e.target.value)}
+                                                placeholder="ul. Przykładowa 123"
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 mb-2 font-medium">
+                                                Kod pocztowy
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={postalCode}
+                                                onChange={(e) => {
+                                                    let value = e.target.value.replace(/\D/g, ''); // Usuń wszystko oprócz cyfr
+                                                    if (value.length > 2) {
+                                                        value = value.slice(0, 2) + '-' + value.slice(2, 5);
+                                                    }
+                                                    setPostalCode(value);
+                                                }}
+                                                placeholder="00-000"
+                                                maxLength={6}
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Format: 00-000</p>
+                                        </div>
+                                    </div>
+                                    {(city || address || postalCode) && (
+                                        <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
+                                            <p className="text-sm text-gray-600">
+                                                <MapPin className="inline w-4 h-4 mr-1 text-blue-600" />
+                                                <strong>Pełny adres:</strong> {address ? `${address}, ` : ''}{postalCode ? `${postalCode} ` : ''}{city || ''}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button 
+                                    onClick={handleSaveProfile}
+                                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
+                                >
                                     <Save className="w-5 h-5" />
                                     Zapisz Zmiany
                                 </button>

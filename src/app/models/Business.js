@@ -13,6 +13,11 @@ const BusinessSchema = new mongoose.Schema({
   companyType: { type: String, required: true },
   category: { type: String, required: true },
   description: { type: String, default: '' },
+  
+  // Obrazy firmy (Cloudinary URLs)
+  profileImage: { type: String, default: '' }, // Avatar/logo firmy
+  bannerImage: { type: String, default: '' }, // Baner główny
+  portfolioImages: [{ type: String }], // Tablica URL-i do portfolio
 
   // Lokalizacja
   city: { type: String, required: true },
