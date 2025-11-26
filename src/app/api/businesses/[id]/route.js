@@ -50,8 +50,10 @@ export async function GET(req, { params }) {
       id: business._id.toString(),
       name: business.companyName,
       description: business.description || `${business.companyType} w ${business.city}. ${business.companyName} oferuje wysokiej jakości usługi.`,
-      rating: 4.5, // Temporary
-      reviews: 50, // Temporary
+      rating: business.reviews && business.reviews.length > 0
+        ? (business.reviews.reduce((acc, review) => acc + review.rating, 0) / business.reviews.length).toFixed(1)
+        : 0,
+      reviews: business.reviews ? business.reviews.length : 0,
       likes: 30, // Temporary
       location: `${business.city}, ${business.address}`,
       fullAddress: `${business.address}, ${business.postalCode} ${business.city}`,
@@ -71,7 +73,7 @@ export async function GET(req, { params }) {
       lng,
       categories: business.category ? [business.category] : [],
       services,
-      reviews: [], // Temporary
+      reviewsList: business.reviews || [], // Return actual reviews
       workingHours: business.workingHours || {
         monday: { open: '09:00', close: '18:00', closed: false },
         tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -82,6 +84,17 @@ export async function GET(req, { params }) {
         sunday: { open: '10:00', close: '16:00', closed: true }
       },
       teamSize: business.teamSize || '',
+      employees: business.employees || [],
+      team: (business.employees || []).map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        role: emp.position || 'Pracownik',
+        experience: 'Doświadczony', // Placeholder or add to schema if needed
+        rating: 5.0, // Placeholder
+        avatar: emp.avatarImage || null, // Use avatarImage if available
+        vacations: emp.vacations || [],
+        assignedServices: emp.assignedServices || []
+      })),
       companyType: business.companyType,
       isVerified: business.isVerified || false
     };

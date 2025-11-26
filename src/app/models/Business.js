@@ -39,6 +39,57 @@ const BusinessSchema = new mongoose.Schema({
   pricing: { type: String, default: '' },
   teamSize: { type: String, default: '' },
 
+  // Pracownicy
+  employees: [{
+    id: { type: Number }, // Timestamp based ID
+    name: { type: String, required: true },
+    position: { type: String },
+    phone: { type: String },
+    email: { type: String },
+    bio: { type: String },
+    avatar: { type: String }, // Initials
+    avatarImage: { type: String }, // Base64 or URL
+    role: { type: String, enum: ['admin', 'manager', 'employee', 'calendar-only', 'no-access'], default: 'employee' },
+    assignedServices: [{
+      serviceId: { type: String }, // Changed to String to match service ID type
+      duration: { type: Number },
+      price: { type: Number },
+      available: { type: Boolean, default: true }
+    }],
+    availability: {
+      monday: { open: String, close: String, closed: Boolean },
+      tuesday: { open: String, close: String, closed: Boolean },
+      wednesday: { open: String, close: String, closed: Boolean },
+      thursday: { open: String, close: String, closed: Boolean },
+      friday: { open: String, close: String, closed: Boolean },
+      saturday: { open: String, close: String, closed: Boolean },
+      sunday: { open: String, close: String, closed: Boolean }
+    },
+    vacations: [{
+      id: { type: Number },
+      startDate: { type: String },
+      endDate: { type: String },
+      reason: { type: String }
+    }],
+    breaks: [{
+      id: { type: Number },
+      day: { type: String },
+      startTime: { type: String },
+      endTime: { type: String },
+      reason: { type: String }
+    }]
+  }],
+
+  // Opinie
+  reviews: [{
+    author: { type: String, required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    text: { type: String, required: true },
+    date: { type: Date, default: Date.now },
+    service: { type: String },
+    verified: { type: Boolean, default: false }
+  }],
+
   // Social Media i marketing
   website: { type: String, default: '' },
   instagram: { type: String, default: '' },

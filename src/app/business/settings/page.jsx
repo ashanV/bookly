@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import { Camera, Save, Plus, Trash2, Edit2, X, Star, Upload, Building2, Settings, ArrowLeft, Phone, Mail, Lock, Facebook, Instagram, Globe, User, Users, Image as ImageIcon, MessageSquare, Clock, Briefcase, Calendar, CalendarDays, Coffee, Plane, Shield, UserCheck, UserCog, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import { Camera, Save, Plus, Trash2, Edit2, X, Star, Upload, Building2, Settings, ArrowLeft, Phone, Mail, Lock, Facebook, Instagram, Globe, User, Users, Image as ImageIcon, MessageSquare, Clock, Briefcase, Calendar, CalendarDays, Coffee, Plane, Shield, UserCheck, UserCog, CheckSquare, Square, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default function BusinessSettings() {
     const { user, updateProfile } = useAuth();
@@ -111,11 +111,7 @@ export default function BusinessSettings() {
         }
     ]);
     const [portfolio, setPortfolio] = useState([]);
-    const [reviews] = useState([
-        { id: 1, author: 'Anna Nowak', rating: 5, comment: 'Świetna obsługa! Bardzo profesjonalne podejście do klienta.', date: '2025-10-15', avatar: 'AN' },
-        { id: 2, author: 'Piotr Wiśniewski', rating: 4, comment: 'Profesjonalnie wykonana usługa, polecam!', date: '2025-10-10', avatar: 'PW' },
-        { id: 3, author: 'Maria Kowalczyk', rating: 5, comment: 'Jestem bardzo zadowolona z rezultatu. Na pewno wrócę!', date: '2025-10-05', avatar: 'MK' }
-    ]);
+    const [reviews, setReviews] = useState([]);
 
     const [showEmployeeForm, setShowEmployeeForm] = useState(false);
     const [newEmployee, setNewEmployee] = useState({
@@ -148,31 +144,42 @@ export default function BusinessSettings() {
         { day: 'Niedziela', key: 'sunday', open: '00:00', close: '00:00', closed: true }
     ]);
 
-    useEffect(() => {
-        const fetchBusinessData = async () => {
-            if (user?.id) {
-                try {
-                    const response = await fetch(`/api/businesses/${user.id}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        const business = data.business;
-                        if (business.workingHours) {
-                            const mappedHours = openingHours.map(day => ({
-                                ...day,
-                                ...business.workingHours[day.key]
-                            }));
-                            setOpeningHours(mappedHours);
-                        }
-                        if (business.services) {
-                            setServices(business.services);
-                        }
+    const fetchBusinessData = async () => {
+        if (user?.id) {
+            try {
+                const response = await fetch(`/api/businesses/${user.id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const business = data.business;
+                    if (business.workingHours) {
+                        const mappedHours = openingHours.map(day => ({
+                            ...day,
+                            ...business.workingHours[day.key]
+                        }));
+                        setOpeningHours(mappedHours);
                     }
-                } catch (error) {
-                    console.error('Failed to fetch business data:', error);
+                    if (business.services) {
+                        setServices(business.services);
+                    }
+                    if (business.employees) {
+                        setEmployees(business.employees);
+                    }
+                    // Get reviews from reviewsList (preferred) or reviews field
+                    const reviewsData = business.reviewsList || business.reviews;
+                    if (reviewsData) {
+                        // Ensure reviews is always an array
+                        setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+                    } else {
+                        setReviews([]);
+                    }
                 }
+            } catch (error) {
+                console.error('Failed to fetch business data:', error);
             }
-        };
+        }
+    };
 
+    useEffect(() => {
         if (user) {
             fetchBusinessData();
         }
@@ -228,10 +235,57 @@ export default function BusinessSettings() {
         }
     };
 
-    const addEmployee = () => {
+    const saveEmployees = async (updatedEmployees) => {
+        if (!user?.id) {
+            toast.error("Błąd: Brak ID użytkownika. Spróbuj odświeżyć stronę.");
+            return;
+        }
+
+        // Normalize assignedServices to ensure they are objects
+        const normalizedEmployees = updatedEmployees.map(emp => ({
+            ...emp,
+            assignedServices: (emp.assignedServices || []).map(as => {
+                if (typeof as === 'string') {
+                    const service = services.find(s => s.id === as);
+                    if (service) {
+                        return {
+                            serviceId: as,
+                            duration: service.duration,
+                            price: service.price,
+                            available: true
+                        };
+                    }
+                    return null;
+                }
+                return as;
+            }).filter(Boolean)
+        }));
+
+        try {
+            const response = await fetch(`/api/businesses/${user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ employees: normalizedEmployees }),
+            });
+
+            if (response.ok) {
+                setEmployees(updatedEmployees);
+                toast.success('Lista pracowników została zaktualizowana!');
+            } else {
+                const data = await response.json();
+                toast.error(data.error || 'Błąd aktualizacji pracowników');
+            }
+        } catch (error) {
+            toast.error('Wystąpił błąd połączenia z serwerem');
+        }
+    };
+
+    const addEmployee = async () => {
         if (newEmployee.name && newEmployee.email) {
             const initials = newEmployee.name.split(' ').map(n => n[0]).join('').toUpperCase();
-            setEmployees([...employees, {
+            const updatedEmployees = [...employees, {
                 name: newEmployee.name,
                 position: newEmployee.position,
                 phone: newEmployee.phone,
@@ -241,19 +295,27 @@ export default function BusinessSettings() {
                 avatar: initials, // Fallback to initials if no image
                 role: newEmployee.role,
                 id: Date.now(),
-                availability: {
-                    monday: { open: '09:00', close: '17:00', closed: false },
-                    tuesday: { open: '09:00', close: '17:00', closed: false },
-                    wednesday: { open: '09:00', close: '17:00', closed: false },
-                    thursday: { open: '09:00', close: '17:00', closed: false },
-                    friday: { open: '09:00', close: '17:00', closed: false },
-                    saturday: { open: '10:00', close: '14:00', closed: false },
-                    sunday: { open: '00:00', close: '00:00', closed: true }
-                },
+                availability: openingHours.reduce((acc, day) => {
+                    const dayKey = day.day === 'Poniedziałek' ? 'monday' :
+                        day.day === 'Wtorek' ? 'tuesday' :
+                            day.day === 'Środa' ? 'wednesday' :
+                                day.day === 'Czwartek' ? 'thursday' :
+                                    day.day === 'Piątek' ? 'friday' :
+                                        day.day === 'Sobota' ? 'saturday' : 'sunday';
+                    acc[dayKey] = {
+                        open: day.open,
+                        close: day.close,
+                        closed: day.closed
+                    };
+                    return acc;
+                }, {}),
                 vacations: [],
                 breaks: [],
                 assignedServices: newEmployee.assignedServices || []
-            }]);
+            }];
+
+            await saveEmployees(updatedEmployees);
+
             setNewEmployee({
                 name: '',
                 position: '',
@@ -298,8 +360,9 @@ export default function BusinessSettings() {
         });
     };
 
-    const deleteEmployee = (id) => {
-        setEmployees(employees.filter(emp => emp.id !== id));
+    const deleteEmployee = async (id) => {
+        const updatedEmployees = employees.filter(emp => emp.id !== id);
+        await saveEmployees(updatedEmployees);
     };
 
     const deletePortfolioImage = (id) => {
@@ -401,7 +464,7 @@ export default function BusinessSettings() {
             });
 
             if (response.ok) {
-                toast.success('Usługi zostały zaktualizowane!');
+                toast.success('Usługi zostały zaktualizowana!');
             } else {
                 const data = await response.json();
                 toast.error(data.error || 'Błąd aktualizacji usług');
@@ -411,7 +474,35 @@ export default function BusinessSettings() {
         }
     };
 
-    const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+    const applyHoursToAllEmployees = async () => {
+        if (confirm('Czy na pewno chcesz zastosować te godziny pracy dla WSZYSTKICH pracowników? To nadpisze ich indywidualne ustawienia.')) {
+            const newAvailability = openingHours.reduce((acc, day) => {
+                const dayKey = day.day === 'Poniedziałek' ? 'monday' :
+                    day.day === 'Wtorek' ? 'tuesday' :
+                        day.day === 'Środa' ? 'wednesday' :
+                            day.day === 'Czwartek' ? 'thursday' :
+                                day.day === 'Piątek' ? 'friday' :
+                                    day.day === 'Sobota' ? 'saturday' : 'sunday';
+                acc[dayKey] = {
+                    open: day.open,
+                    close: day.close,
+                    closed: day.closed
+                };
+                return acc;
+            }, {});
+
+            const updatedEmployees = employees.map(emp => ({
+                ...emp,
+                availability: JSON.parse(JSON.stringify(newAvailability)) // Deep copy
+            }));
+
+            await saveEmployees(updatedEmployees);
+        }
+    };
+
+    // Ensure reviews is always an array for safe operations
+    const reviewsArray = Array.isArray(reviews) ? reviews : [];
+    const avgRating = reviewsArray.length > 0 ? reviewsArray.reduce((acc, r) => acc + (r.rating || 0), 0) / reviewsArray.length : 0;
 
     const tabs = [
         { id: 'profile', label: 'Profil Firmy', icon: Building2 },
@@ -859,13 +950,22 @@ export default function BusinessSettings() {
                                             </div>
                                         </div>
                                     ))}
-                                    <button
-                                        onClick={() => setShowHoursConfirmModal(true)}
-                                        className="mt-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
-                                    >
-                                        <Save className="w-5 h-5" />
-                                        Zapisz Godziny
-                                    </button>
+                                    <div className="flex gap-3 mt-6">
+                                        <button
+                                            onClick={() => setShowHoursConfirmModal(true)}
+                                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
+                                        >
+                                            <Save className="w-5 h-5" />
+                                            Zapisz Godziny
+                                        </button>
+                                        <button
+                                            onClick={applyHoursToAllEmployees}
+                                            className="bg-white border-2 border-purple-600 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
+                                        >
+                                            <Users className="w-5 h-5" />
+                                            Zastosuj do wszystkich pracowników
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1086,6 +1186,7 @@ export default function BusinessSettings() {
                                                                                     const updated = [...employees];
                                                                                     const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                     updated[empIndex].availability[day].open = e.target.value;
+                                                                                    saveEmployees(updated);
                                                                                     setEmployees(updated);
                                                                                 }}
                                                                                 className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
@@ -1099,6 +1200,7 @@ export default function BusinessSettings() {
                                                                                     const updated = [...employees];
                                                                                     const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                     updated[empIndex].availability[day].close = e.target.value;
+                                                                                    saveEmployees(updated);
                                                                                     setEmployees(updated);
                                                                                 }}
                                                                                 className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
@@ -1111,6 +1213,7 @@ export default function BusinessSettings() {
                                                                                         const updated = [...employees];
                                                                                         const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                         updated[empIndex].availability[day].closed = e.target.checked;
+                                                                                        saveEmployees(updated);
                                                                                         setEmployees(updated);
                                                                                     }}
                                                                                     className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
@@ -1180,6 +1283,7 @@ export default function BusinessSettings() {
                                                                                 const updated = [...employees];
                                                                                 const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                 updated[empIndex].vacations = [...(updated[empIndex].vacations || []), { ...newVacation, id: Date.now() }];
+                                                                                saveEmployees(updated);
                                                                                 setEmployees(updated);
                                                                                 setShowVacationForm(false);
                                                                                 setNewVacation({ employeeId: null, startDate: '', endDate: '', reason: '' });
@@ -1215,6 +1319,7 @@ export default function BusinessSettings() {
                                                                                 const updated = [...employees];
                                                                                 const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                 updated[empIndex].vacations = updated[empIndex].vacations.filter(v => v.id !== vacation.id);
+                                                                                saveEmployees(updated);
                                                                                 setEmployees(updated);
                                                                             }}
                                                                             className="p-1 hover:bg-red-50 rounded transition-all"
@@ -1299,6 +1404,7 @@ export default function BusinessSettings() {
                                                                                 const updated = [...employees];
                                                                                 const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                 updated[empIndex].breaks = [...(updated[empIndex].breaks || []), { ...newBreak, id: Date.now() }];
+                                                                                saveEmployees(updated);
                                                                                 setEmployees(updated);
                                                                                 setShowBreakForm(false);
                                                                                 setNewBreak({ employeeId: null, day: '', startTime: '', endTime: '', reason: '' });
@@ -1342,6 +1448,7 @@ export default function BusinessSettings() {
                                                                                 const updated = [...employees];
                                                                                 const empIndex = updated.findIndex(e => e.id === employee.id);
                                                                                 updated[empIndex].breaks = updated[empIndex].breaks.filter(b => b.id !== breakItem.id);
+                                                                                saveEmployees(updated);
                                                                                 setEmployees(updated);
                                                                             }}
                                                                             className="p-1 hover:bg-red-50 rounded transition-all"
@@ -1393,13 +1500,14 @@ export default function BusinessSettings() {
                                                             <div className="bg-purple-50 rounded-lg p-4 mb-4 border border-purple-200">
                                                                 <h4 className="font-semibold text-gray-900 mb-3">Wybierz usługę</h4>
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                                    {services.filter(s => !(employee.assignedServices || []).includes(s.id)).map(service => (
+                                                                    {services.filter(s => !(employee.assignedServices || []).some(as => as.serviceId === s.id)).map(service => (
                                                                         <button
                                                                             key={service.id}
                                                                             onClick={() => {
                                                                                 const updated = [...employees];
                                                                                 const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                                updated[empIndex].assignedServices = [...(updated[empIndex].assignedServices || []), service.id];
+                                                                                updated[empIndex].assignedServices = [...(updated[empIndex].assignedServices || []), { serviceId: service.id, duration: service.duration, price: service.price, available: true }];
+                                                                                saveEmployees(updated);
                                                                                 setEmployees(updated);
                                                                                 setSelectedServiceAssignment({ employeeId: null, serviceId: null });
                                                                             }}
@@ -1409,7 +1517,7 @@ export default function BusinessSettings() {
                                                                             <div className="text-sm text-gray-600">{service.duration} min - {service.price} PLN</div>
                                                                         </button>
                                                                     ))}
-                                                                    {services.filter(s => !(employee.assignedServices || []).includes(s.id)).length === 0 && (
+                                                                    {services.filter(s => !(employee.assignedServices || []).some(as => as.serviceId === s.id)).length === 0 && (
                                                                         <p className="text-gray-500 text-sm col-span-2 text-center py-2">Wszystkie usługi są już przypisane</p>
                                                                     )}
                                                                 </div>
@@ -1424,7 +1532,8 @@ export default function BusinessSettings() {
 
                                                         <div className="space-y-2">
                                                             {(employee.assignedServices || []).length > 0 ? (
-                                                                (employee.assignedServices || []).map(serviceId => {
+                                                                (employee.assignedServices || []).map(assignment => {
+                                                                    const serviceId = typeof assignment === 'object' ? assignment.serviceId : assignment;
                                                                     const service = services.find(s => s.id === serviceId);
                                                                     if (!service) return null;
                                                                     return (
@@ -1437,7 +1546,11 @@ export default function BusinessSettings() {
                                                                                 onClick={() => {
                                                                                     const updated = [...employees];
                                                                                     const empIndex = updated.findIndex(e => e.id === employee.id);
-                                                                                    updated[empIndex].assignedServices = updated[empIndex].assignedServices.filter(s => s !== serviceId);
+                                                                                    updated[empIndex].assignedServices = updated[empIndex].assignedServices.filter(s => {
+                                                                                        const sId = typeof s === 'object' ? s.serviceId : s;
+                                                                                        return sId !== serviceId;
+                                                                                    });
+                                                                                    saveEmployees(updated);
                                                                                     setEmployees(updated);
                                                                                 }}
                                                                                 className="p-1 hover:bg-red-50 rounded transition-all"
@@ -1848,9 +1961,19 @@ export default function BusinessSettings() {
                         {/* Reviews Section */}
                         {activeTab === 'reviews' && (
                             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                                <div className="mb-8">
-                                    <h2 className="text-2xl font-bold text-gray-900">Opinie Klientów</h2>
-                                    <p className="text-sm text-gray-500 mt-1">Przegląd opinii i ocen</p>
+                                <div className="mb-8 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-gray-900">Opinie Klientów</h2>
+                                        <p className="text-sm text-gray-500 mt-1">Przegląd opinii i ocen</p>
+                                    </div>
+                                    <button
+                                        onClick={fetchBusinessData}
+                                        className="flex items-center gap-2 px-4 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg transition-colors text-sm font-medium"
+                                        title="Odśwież opinie"
+                                    >
+                                        <RefreshCw className="w-4 h-4" />
+                                        Odśwież
+                                    </button>
                                 </div>
 
                                 <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-8 mb-8 border border-purple-200">
@@ -1866,37 +1989,52 @@ export default function BusinessSettings() {
                                                     />
                                                 ))}
                                             </div>
-                                            <p className="text-sm text-gray-600">{reviews.length} opinii</p>
+                                            <p className="text-sm text-gray-600">{reviewsArray.length} opinii</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
-                                    {reviews.map(review => (
-                                        <div key={review.id} className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
-                                                    {review.avatar}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h3 className="font-bold text-gray-900">{review.author}</h3>
-                                                        <span className="text-sm text-gray-500">{review.date}</span>
+                                    {reviewsArray.length === 0 ? (
+                                        <div className="text-center py-12 text-gray-500">
+                                            Brak opinii.
+                                        </div>
+                                    ) : (
+                                        reviewsArray.map((review, index) => (
+                                            <div key={review.id || index} className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
+                                                        {review.author ? review.author.charAt(0).toUpperCase() : '?'}
                                                     </div>
-                                                    <div className="flex items-center gap-1 mb-3">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star
-                                                                key={i}
-                                                                className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
-                                                                size={16}
-                                                            />
-                                                        ))}
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h3 className="font-bold text-gray-900">{review.author || 'Anonimowy użytkownik'}</h3>
+                                                            <span className="text-sm text-gray-500">
+                                                                {review.date ? new Date(review.date).toLocaleDateString('pl-PL', { 
+                                                                    year: 'numeric', 
+                                                                    month: 'long', 
+                                                                    day: 'numeric' 
+                                                                }) : 'Brak daty'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 mb-3">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <Star
+                                                                    key={i}
+                                                                    className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
+                                                                    size={16}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <p className="text-gray-700">{review.text || review.comment}</p>
+                                                        {review.service && (
+                                                            <p className="text-xs text-purple-600 mt-2 font-medium">Usługa: {review.service}</p>
+                                                        )}
                                                     </div>
-                                                    <p className="text-gray-700">{review.comment}</p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
