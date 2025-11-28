@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const toast = {
   success: (message) => dispatchToast('success', message),
@@ -18,6 +19,80 @@ function dispatchToast(type, message) {
   }
 }
 
+const AnimatedCheck = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+    <motion.path
+      d="M20 6L9 17l-5-5"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    />
+  </svg>
+);
+
+const AnimatedError = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+    <motion.path
+      d="M18 6L6 18"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    />
+    <motion.path
+      d="M6 6l12 12"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut", delay: 0.15 }}
+    />
+  </svg>
+);
+
+const AnimatedInfo = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+    <motion.circle
+      cx="12" cy="12" r="10"
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.4, type: "spring" }}
+    />
+    <motion.path
+      d="M12 16v-4"
+      initial={{ pathLength: 0 }}
+      animate={{ pathLength: 1 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
+    />
+    <motion.path
+      d="M12 8h.01"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 0.2, delay: 0.4 }}
+    />
+  </svg>
+);
+
+const AnimatedWarning = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+    <motion.path
+      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    />
+    <motion.path
+      d="M12 9v4"
+      initial={{ pathLength: 0 }}
+      animate={{ pathLength: 1 }}
+      transition={{ duration: 0.3, delay: 0.3 }}
+    />
+    <motion.path
+      d="M12 17h.01"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 0.2, delay: 0.5 }}
+    />
+  </svg>
+);
+
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
 
@@ -26,10 +101,10 @@ export function ToastContainer() {
       const newToast = event.detail;
       setToasts((prev) => [...prev, newToast]);
 
-      // Auto-remove after 5 seconds
+      // Auto-remove after 4 seconds for a snappier feel
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
-      }, 5000);
+      }, 4000);
     };
 
     window.addEventListener('bookly-toast', handleToast);
@@ -44,110 +119,74 @@ export function ToastContainer() {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5" />;
-      case 'error':
-        return <AlertCircle className="w-5 h-5" />;
-      case 'warning':
-        return <AlertTriangle className="w-5 h-5" />;
-      case 'info':
-        return <Info className="w-5 h-5" />;
-      default:
-        return <Info className="w-5 h-5" />;
+      case 'success': return <AnimatedCheck />;
+      case 'error': return <AnimatedError />;
+      case 'warning': return <AnimatedWarning />;
+      case 'info': return <AnimatedInfo />;
+      default: return <AnimatedInfo />;
     }
   };
 
-  const getColors = (type) => {
+  const getToastStyles = (type) => {
     switch (type) {
       case 'success':
-        return {
-          bg: 'bg-green-50',
-          border: 'border-green-200',
-          text: 'text-green-800',
-          icon: 'text-green-600',
-          button: 'hover:bg-green-100 text-green-600'
-        };
+        return 'bg-emerald-50/95 border-emerald-200/50 text-emerald-900';
       case 'error':
-        return {
-          bg: 'bg-red-50',
-          border: 'border-red-200',
-          text: 'text-red-800',
-          icon: 'text-red-600',
-          button: 'hover:bg-red-100 text-red-600'
-        };
+        return 'bg-red-50/95 border-red-200/50 text-red-900';
       case 'warning':
-        return {
-          bg: 'bg-yellow-50',
-          border: 'border-yellow-200',
-          text: 'text-yellow-800',
-          icon: 'text-yellow-600',
-          button: 'hover:bg-yellow-100 text-yellow-600'
-        };
+        return 'bg-amber-50/95 border-amber-200/50 text-amber-900';
       case 'info':
-        return {
-          bg: 'bg-blue-50',
-          border: 'border-blue-200',
-          text: 'text-blue-800',
-          icon: 'text-blue-600',
-          button: 'hover:bg-blue-100 text-blue-600'
-        };
+        return 'bg-blue-50/95 border-blue-200/50 text-blue-900';
       default:
-        return {
-          bg: 'bg-gray-50',
-          border: 'border-gray-200',
-          text: 'text-gray-800',
-          icon: 'text-gray-600',
-          button: 'hover:bg-gray-100 text-gray-600'
-        };
+        return 'bg-white/95 border-gray-200/50 text-gray-900';
     }
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
-      {toasts.map((toast) => {
-        const colors = getColors(toast.type);
-        return (
-          <div
+    <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none min-w-[300px] max-w-[400px]">
+      <AnimatePresence mode="popLayout">
+        {toasts.map((toast) => (
+          <motion.div
             key={toast.id}
+            layout
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
             className={`
-              ${colors.bg} ${colors.border} ${colors.text}
-              border-2 rounded-xl shadow-lg p-4 min-w-[300px] max-w-[400px]
+              backdrop-blur-md
+              border
+              shadow-[0_8px_30px_rgb(0,0,0,0.04)]
+              rounded-2xl p-4
               pointer-events-auto
-              animate-slideInRight
-              flex items-start gap-3
+              flex items-center gap-4
+              group
+              ${getToastStyles(toast.type)}
             `}
           >
-            <div className={`${colors.icon} flex-shrink-0 mt-0.5`}>
+            <div className="flex-shrink-0">
               {getIcon(toast.type)}
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">{toast.message}</p>
-            </div>
+
+            <p className="flex-1 text-[13px] font-medium leading-snug">
+              {toast.message}
+            </p>
+
             <button
               onClick={() => removeToast(toast.id)}
-              className={`${colors.button} flex-shrink-0 p-1 rounded transition-colors`}
+              className="
+                flex-shrink-0 opacity-40
+                hover:opacity-100 hover:bg-black/5
+                transition-all duration-200 
+                p-1.5 rounded-full
+              "
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
-          </div>
-        );
-      })}
-      <style jsx>{`
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slideInRight {
-          animation: slideInRight 0.3s ease-out;
-        }
-      `}</style>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
-
