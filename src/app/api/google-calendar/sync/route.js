@@ -15,7 +15,7 @@ const oauth2Client = new google.auth.OAuth2(
 async function getAuthenticatedClient(businessId) {
   await connectDB();
   const business = await Business.findById(businessId);
-  
+
   if (!business || !business.googleCalendarConnected || !business.googleCalendarTokens?.accessToken) {
     throw new Error('Google Calendar nie jest połączony');
   }
@@ -29,14 +29,14 @@ async function getAuthenticatedClient(businessId) {
   // Sprawdzenie czy token wygasł i odświeżenie jeśli potrzeba
   if (business.googleCalendarTokens.expiryDate && new Date() >= business.googleCalendarTokens.expiryDate) {
     const { credentials } = await oauth2Client.refreshAccessToken();
-    
+
     business.googleCalendarTokens = {
       accessToken: credentials.access_token,
       refreshToken: credentials.refresh_token || business.googleCalendarTokens.refreshToken,
       expiryDate: credentials.expiry_date ? new Date(credentials.expiry_date) : null
     };
     await business.save();
-    
+
     oauth2Client.setCredentials(credentials);
   }
 
@@ -45,16 +45,19 @@ async function getAuthenticatedClient(businessId) {
 
 export async function POST(req) {
   try {
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     // Pobranie tokenu z cookies
     const token = req.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
     // Weryfikacja tokenu
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     if (decoded.role !== 'business') {
       return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
     }

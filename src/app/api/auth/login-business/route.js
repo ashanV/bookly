@@ -20,10 +20,13 @@ export async function POST(req) {
       return NextResponse.json({ error: "Nieprawidłowe hasło" }, { status: 400 });
     }
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     const token = jwt.sign({ id: business._id, role: 'business' }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    
-    const response = NextResponse.json({ 
-      message: "Zalogowano", 
+
+    const response = NextResponse.json({
+      message: "Zalogowano",
       user: {
         id: business._id,
         email: business.email,

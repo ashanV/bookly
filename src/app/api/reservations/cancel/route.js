@@ -9,14 +9,17 @@ export async function DELETE(req) {
 
     // Pobranie tokenu z cookies
     const token = req.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
     // Weryfikacja tokenu
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     if (decoded.role !== 'business') {
       return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
     }
@@ -44,9 +47,9 @@ export async function DELETE(req) {
     // Usunięcie rezerwacji
     await Reservation.findByIdAndDelete(reservationId);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Rezerwacja została usunięta" 
+    return NextResponse.json({
+      success: true,
+      message: "Rezerwacja została usunięta"
     }, { status: 200 });
   } catch (error) {
     console.error("Błąd usuwania rezerwacji:", error);

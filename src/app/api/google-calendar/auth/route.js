@@ -14,14 +14,17 @@ export async function GET(req) {
   try {
     // Pobranie tokenu z cookies
     const token = req.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
     // Weryfikacja tokenu
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     if (decoded.role !== 'business') {
       return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
     }

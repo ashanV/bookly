@@ -6,6 +6,9 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     const { email, password } = await req.json();
     await connectDB();
 
@@ -21,9 +24,9 @@ export async function POST(req) {
     }
 
     const token = jwt.sign({ id: user._id, role: 'client' }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    
-    const response = NextResponse.json({ 
-      message: "Zalogowano", 
+
+    const response = NextResponse.json({
+      message: "Zalogowano",
       user: {
         id: user._id,
         email: user.email,

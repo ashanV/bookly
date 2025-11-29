@@ -14,6 +14,9 @@ export async function GET() {
       return NextResponse.json({ error: "Brak tokenu" }, { status: 401 });
     }
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     await connectDB();
 

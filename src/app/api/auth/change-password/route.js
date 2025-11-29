@@ -16,6 +16,9 @@ export async function PUT(req) {
         }
 
         let decoded;
+        if (!process.env.JWT_SECRET) {
+            throw new Error('JWT_SECRET is not defined');
+        }
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
         } catch (err) {
