@@ -1,8 +1,8 @@
 import { connectDB } from "@/lib/mongodb";
 import User from "../../../models/User";
 import Business from "../../../models/Business";
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export async function POST(req) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req) {
     // Sprawdzenie, czy użytkownik o podanym emailu już istnieje (w User lub Business)
     const existingUser = await User.findOne({ email });
     const existingBusiness = await Business.findOne({ email });
-    
+
     if (existingUser || existingBusiness) {
       return NextResponse.json(
         { error: "Użytkownik o tym adresie email już istnieje" },
@@ -23,22 +23,28 @@ export async function POST(req) {
       );
     }
 
-    // Hashowanie hasła dla bezpieczeństwa
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Walidacja hasła
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: passwordValidation.message },
+        { status: 400 }
+      );
+    }
 
     // Stworzenie nowego użytkownika w bazie danych
+    // Hasło zostanie zahashowane przez middleware w modelu User
     const newUser = new User({
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password,
       phone,
       birthDate,
     });
 
     await newUser.save();
-    
+
     console.log(`✅ Użytkownik ${email} został pomyślnie zarejestrowany.`);
 
     // Wysłanie odpowiedzi o sukcesie

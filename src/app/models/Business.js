@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const BusinessSchema = new mongoose.Schema({
   // Dane kontaktowe właściciela
@@ -13,7 +14,7 @@ const BusinessSchema = new mongoose.Schema({
   companyType: { type: String, required: true },
   category: { type: String, required: true },
   description: { type: String, default: '' },
-  
+
   // Obrazy firmy (Cloudinary URLs)
   profileImage: { type: String, default: '' }, // Avatar/logo firmy
   bannerImage: { type: String, default: '' }, // Baner główny
@@ -121,10 +122,21 @@ const BusinessSchema = new mongoose.Schema({
   validateBeforeSave: true
 });
 
-// Automatyczna aktualizacja updatedAt
-BusinessSchema.pre('save', function (next) {
+// Automatyczna aktualizacja updatedAt i hashowanie hasła
+BusinessSchema.pre('save', async function (next) {
   this.updatedAt = Date.now();
-  next();
+
+  if (!this.isModified('password')) {
+    return next();
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default mongoose.models.Business || mongoose.model("Business", BusinessSchema);

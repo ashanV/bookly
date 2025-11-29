@@ -1,8 +1,8 @@
 import { connectDB } from "@/lib/mongodb";
 import Business from "../../../models/Business";
 import User from "../../../models/User";
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export async function POST(req) {
   try {
@@ -36,7 +36,7 @@ export async function POST(req) {
     // Sprawdzenie, czy użytkownik o podanym emailu już istnieje (w User lub Business)
     const existingUser = await User.findOne({ email });
     const existingBusiness = await Business.findOne({ email });
-    
+
     if (existingUser || existingBusiness) {
       return NextResponse.json(
         { error: "Użytkownik o tym adresie email już istnieje" },
@@ -59,18 +59,47 @@ export async function POST(req) {
       );
     }
 
-    if (password.length < 6) {
+    // Walidacja hasła
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
       return NextResponse.json(
-        { error: "Hasło musi mieć co najmniej 6 znaków" },
+        { error: passwordValidation.message },
         { status: 400 }
       );
     }
 
-    // Hashowanie hasła
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Mapowanie usług (jeśli są stringami) na obiekty
+    const serviceDefaults = {
+      'haircut': { name: 'Strzyżenie', duration: 60, price: 100 },
+      'coloring': { name: 'Koloryzacja', duration: 120, price: 200 },
+      'styling': { name: 'Stylizacja', duration: 45, price: 80 },
+      'facial': { name: 'Zabiegi na twarz', duration: 60, price: 150 },
+      'manicure': { name: 'Manicure', duration: 60, price: 80 },
+      'pedicure': { name: 'Pedicure', duration: 60, price: 100 },
+      'massage': { name: 'Masaż', duration: 60, price: 150 },
+      'waxing': { name: 'Depilacja', duration: 30, price: 50 },
+      'makeup': { name: 'Makijaż', duration: 60, price: 150 },
+      'lashes': { name: 'Rzęsy', duration: 90, price: 120 },
+      'brows': { name: 'Brwi', duration: 30, price: 40 },
+      'spa': { name: 'SPA', duration: 120, price: 300 }
+    };
+
+    const formattedServices = (services || []).map(service => {
+      if (typeof service === 'string') {
+        const defaults = serviceDefaults[service] || { name: service, duration: 60, price: 100 };
+        return {
+          id: service, // Use the string ID as the service ID
+          name: defaults.name,
+          duration: defaults.duration,
+          price: defaults.price,
+          description: `Usługa ${defaults.name}`
+        };
+      }
+      return service; // Already an object
+    });
 
     // Stworzenie nowego biznesu w bazie danych
+    // Hasło zostanie zahashowane przez middleware w modelu Business
     const newBusiness = new Business({
       companyName,
       companyType,
@@ -79,12 +108,12 @@ export async function POST(req) {
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password, // Przekazujemy plain text, middleware zahashuje
       phone,
       city,
       address,
       postalCode,
-      services: services || [],
+      services: formattedServices,
       workingHours: workingHours || {
         monday: { open: '09:00', close: '18:00', closed: false },
         tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -103,7 +132,7 @@ export async function POST(req) {
     });
 
     await newBusiness.save();
-    
+
     console.log(`✅ Użytkownik biznesowy ${email} (${companyName}) został pomyślnie zarejestrowany.`);
 
     // Wysłanie odpowiedzi o sukcesie
@@ -114,7 +143,7 @@ export async function POST(req) {
 
   } catch (error) {
     console.error("Błąd podczas rejestracji biznesu:", error);
-    
+
     // Obsługa błędów unikalności email
     if (error.code === 11000 && error.keyPattern?.email) {
       return NextResponse.json(
@@ -122,11 +151,10 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Wystąpił błąd serwera podczas rejestracji." },
       { status: 500 }
     );
   }
 }
-
