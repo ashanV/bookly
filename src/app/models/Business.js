@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+import { encrypt, decrypt } from "../../lib/crypto";
+
 const BusinessSchema = new mongoose.Schema({
   // Dane kontaktowe właściciela
   firstName: { type: String, required: true },
@@ -126,14 +128,51 @@ const BusinessSchema = new mongoose.Schema({
 
   // Integracja z Google Calendar
   googleCalendarTokens: {
-    accessToken: { type: String, default: null },
-    refreshToken: { type: String, default: null },
+    accessToken: { type: String, default: null, set: encrypt, get: decrypt },
+    refreshToken: { type: String, default: null, set: encrypt, get: decrypt },
     expiryDate: { type: Date, default: null }
   },
   googleCalendarConnected: { type: Boolean, default: false },
 }, {
   strict: true,
-  validateBeforeSave: true
+  validateBeforeSave: true,
+  toJSON: { getters: true },
+  toObject: { getters: true }
+});
+
+// Helper functions for validation
+const validateTimeFormat = (time) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
+
+const validateDaySchedule = (daySchedule) => {
+  if (!daySchedule || daySchedule.closed) return true;
+
+  // Check if open and close times are present
+  if (!daySchedule.open || !daySchedule.close) return false;
+
+  // Check format
+  if (!validateTimeFormat(daySchedule.open) || !validateTimeFormat(daySchedule.close)) return false;
+
+  // Check logic (open < close)
+  const [openH, openM] = daySchedule.open.split(':').map(Number);
+  const [closeH, closeM] = daySchedule.close.split(':').map(Number);
+
+  if (openH > closeH || (openH === closeH && openM >= closeM)) {
+    return false;
+  }
+  return true;
+};
+
+// Walidacja godzin otwarcia przed walidacją modelu
+BusinessSchema.pre('validate', function (next) {
+  if (this.isModified('workingHours')) {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    for (const day of days) {
+      if (this.workingHours[day] && !validateDaySchedule(this.workingHours[day])) {
+        this.invalidate(`workingHours.${day}`, `Invalid working hours for ${day}. Check format (HH:MM) and ensure open time is before close time.`);
+      }
+    }
+  }
+  next();
 });
 
 // Automatyczna aktualizacja updatedAt i hashowanie hasła
