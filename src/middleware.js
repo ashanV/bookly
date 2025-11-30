@@ -1,14 +1,40 @@
 import { NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export function middleware(request) {
+const protectedRoutes = ['/business'];
+
+export async function middleware(request) {
   const pathname = request.nextUrl.pathname;
-  
-  // Pozwól na wszystkie requesty - autoryzacja będzie obsługiwana przez hooki
-  // Middleware będzie używany tylko do podstawowych przekierowań
 
-  console.log('🔍 Middleware (uproszczony) - Ścieżka:', pathname);
-  
-  // Przepuść wszystko - hooki 
+  // Check if the route is protected
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isAuthPage = pathname.startsWith('/business/auth');
+
+  if (isProtectedRoute && !isAuthPage) {
+    const token = request.cookies.get('token')?.value;
+
+    if (!token) {
+      // No token - redirect to login
+      const url = new URL('/business/auth', request.url);
+      url.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(url);
+    }
+
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      await jwtVerify(token, secret);
+      // Token is valid
+      return NextResponse.next();
+    } catch (error) {
+      // Token is invalid or expired
+      console.error('Middleware - Błąd weryfikacji tokenu:', error);
+      const url = new URL('/business/auth', request.url);
+      url.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // For public routes, allow the request to proceed
   return NextResponse.next();
 }
 
