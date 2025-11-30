@@ -5,14 +5,24 @@ const BusinessSchema = new mongoose.Schema({
   // Dane kontaktowe właściciela
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  email: { type: String, unique: true, required: true },
-  phone: { type: String, required: true },
+  email: {
+    type: String,
+    unique: true,
+    required: true,
+    index: true, // Explicitly indexed as requested
+    match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address.']
+  },
+  phone: {
+    type: String,
+    required: true,
+    match: [/^\+?[0-9\s\-\(\)]{9,}$/, 'Please use a valid phone number.']
+  },
   password: { type: String, required: true },
 
   // Dane firmy
   companyName: { type: String, required: true },
   companyType: { type: String, required: true },
-  category: { type: String, required: true },
+  category: { type: String, required: true, index: true }, // Added index
   description: { type: String, default: '' },
 
   // Obrazy firmy (Cloudinary URLs)
@@ -21,14 +31,18 @@ const BusinessSchema = new mongoose.Schema({
   portfolioImages: [{ type: String }], // Tablica URL-i do portfolio
 
   // Lokalizacja
-  city: { type: String, required: true },
+  city: { type: String, required: true, index: true }, // Added index
   address: { type: String, required: true },
-  postalCode: { type: String, required: true },
+  postalCode: {
+    type: String,
+    required: true,
+    match: [/^\d{2}-\d{3}$/, 'Invalid postal code format (XX-XXX).']
+  },
 
   // Usługi i działalność
   services: [{
     id: { type: String },
-    name: { type: String, required: true },
+    name: { type: String, required: true, index: true }, // Added index for frequent searches
     duration: { type: Number, required: true },
     price: { type: Number, required: true },
     description: { type: String }

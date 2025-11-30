@@ -5,8 +5,16 @@ const UserSchema = new mongoose.Schema({
   // Dane osobowe
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  email: { type: String, unique: true, required: true },
-  phone: { type: String },
+  email: {
+    type: String,
+    unique: true,
+    required: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address.']
+  },
+  phone: {
+    type: String,
+    match: [/^\+?[0-9\s\-\(\)]{9,}$/, 'Please use a valid phone number.']
+  },
   birthDate: { type: String },
   password: { type: String, required: true },
 
