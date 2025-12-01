@@ -1,26 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  X, Calendar, Clock, MapPin, Star, CreditCard, CheckCircle, ArrowLeft,
-  ArrowRight, User, Users, Loader2, PartyPopper, ChevronLeft, ChevronRight
+  X, Calendar, Clock, CheckCircle, ArrowLeft,
+  ArrowRight, Loader2, PartyPopper, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { format, addMinutes, getDay, startOfDay, addDays, isSameDay, isToday, isBefore, startOfToday, parseISO } from 'date-fns';
+import { format, addMinutes, getDay, startOfDay, isSameDay, isToday, isBefore, startOfToday, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
-// Mapowanie dni tygodnia (0 = niedziela, 1 = poniedziałek, ...)
-const dayMapping = {
-  0: 'sunday',
-  1: 'monday',
-  2: 'tuesday',
-  3: 'wednesday',
-  4: 'thursday',
-  5: 'friday',
-  6: 'saturday'
-};
-
-
-// --- GŁÓWNY KOMPONENT MODALU ---
-
-const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], workingHours = {}, studioName = '' }) => {
+const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioName, services }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -30,7 +16,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
   const initialBookingData = {
     date: undefined,
     time: '',
-    staff: null,
+    service: null,
     customer: {
       firstName: '',
       lastName: '',
@@ -43,32 +29,10 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
   const [bookingData, setBookingData] = useState(initialBookingData);
 
-  // Filtrowanie pracowników, którzy mają przypisaną wybraną usługę
-  const availableStaff = useMemo(() => {
-    if (!service || !employees || employees.length === 0) return [];
-    
-    return employees.filter(emp => {
-      // Jeśli pracownik nie ma przypisanych usług, pokaż go (dla kompatybilności)
-      if (!emp.assignedServices || emp.assignedServices.length === 0) return true;
-      
-      // Sprawdź czy pracownik ma przypisaną wybraną usługę
-      const assignedServiceIds = emp.assignedServices.map(as => 
-        typeof as === 'object' ? as.serviceId : as
-      );
-      
-      return assignedServiceIds.includes(service.id?.toString());
-    }).map(emp => ({
-      id: emp.id,
-      name: emp.name,
-      position: emp.position || 'Pracownik',
-      avatar: emp.avatarImage || emp.avatar || emp.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    }));
-  }, [service, employees]);
-
-  // Pobieranie dostępnych terminów dla wybranego pracownika i dnia
+  // Pobieranie dostępnych terminów dla wybranego dnia
   useEffect(() => {
     const fetchAvailableSlots = async () => {
-      if (!bookingData.date || !bookingData.staff || !businessId) {
+      if (!bookingData.date || !employee || !businessId) {
         setAvailableSlots([]);
         return;
       }
@@ -77,7 +41,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
       try {
         const dateStr = format(bookingData.date, 'yyyy-MM-dd');
         const response = await fetch(
-          `/api/employees/${bookingData.staff.id}/availability?businessId=${businessId}&date=${dateStr}`
+          `/api/employees/${employee.id}/availability?businessId=${businessId}&date=${dateStr}`
         );
         
         if (response.ok) {
@@ -100,9 +64,20 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [bookingData.date, bookingData.staff?.id, businessId]);
+  }, [bookingData.date, employee?.id, businessId]);
 
-  // --- NAWIGACJA I OBSŁUGA ---
+  // Filtrowanie usług przypisanych do pracownika
+  const employeeServices = useMemo(() => {
+    if (!employee || !services) return [];
+    
+    const assignedServiceIds = (employee.assignedServices || []).map(as => 
+      typeof as === 'object' ? as.serviceId : as
+    );
+    
+    return services.filter(service => 
+      assignedServiceIds.includes(service.id?.toString())
+    );
+  }, [employee, services]);
 
   const handleNext = () => setCurrentStep(prev => prev + 1);
   const handleBack = () => setCurrentStep(prev => prev - 1);
@@ -121,6 +96,13 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     setIsSubmitting(true);
     
     try {
+      const selectedService = employeeServices.find(s => s.id === bookingData.service?.id);
+      if (!selectedService) {
+        alert('Błąd: Nie wybrano usługi');
+        setIsSubmitting(false);
+        return;
+      }
+
       const response = await fetch('/api/reservations/create', {
         method: 'POST',
         headers: {
@@ -128,13 +110,13 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
         },
         body: JSON.stringify({
           businessId: businessId,
-          employeeId: bookingData.staff?.id?.toString() || null,
-          service: service.name,
-          serviceId: service.id?.toString() || null,
+          employeeId: employee.id.toString(),
+          service: selectedService.name,
+          serviceId: selectedService.id?.toString(),
           date: format(bookingData.date, 'yyyy-MM-dd'),
           time: bookingData.time,
-          duration: service.duration || 60,
-          price: service.price || 0,
+          duration: selectedService.duration || 60,
+          price: selectedService.price || 0,
           clientName: `${bookingData.customer.firstName} ${bookingData.customer.lastName}`,
           clientEmail: bookingData.customer.email,
           clientPhone: bookingData.customer.phone,
@@ -147,40 +129,26 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
       } else {
         const errorData = await response.json();
         alert(errorData.error || 'Błąd podczas tworzenia rezerwacji');
-        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Error creating reservation:', error);
       alert('Wystąpił błąd podczas tworzenia rezerwacji');
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- KALENDARZ KOMPONENTY ---
-
-  // Funkcja pomocnicza do sprawdzania czy dzień jest otwarty
-  const isDayOpen = (date) => {
-    if (!workingHours || Object.keys(workingHours).length === 0) return true; // Domyślnie otwarte jeśli brak danych
-    
-    const dayOfWeek = getDay(date);
-    const dayKey = dayMapping[dayOfWeek];
-    const dayHours = workingHours[dayKey];
-    
-    if (!dayHours) return true; // Domyślnie otwarte
-    return !dayHours.closed && dayHours.open && dayHours.close;
-  };
-
+  // Kalendarz
   const CustomCalendar = () => {
     const today = startOfToday();
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-    // Generujemy dni miesiąca z paddingiem
     const days = [];
     const startDate = new Date(monthStart);
-    startDate.setDate(startDate.getDate() - monthStart.getDay() + 1); // Rozpoczynamy od poniedziałku
+    startDate.setDate(startDate.getDate() - monthStart.getDay() + 1);
 
-    for (let i = 0; i < 42; i++) { // 6 tygodni x 7 dni
+    for (let i = 0; i < 42; i++) {
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
       days.push(currentDate);
@@ -191,8 +159,6 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
       const isSelected = bookingData.date && isSameDay(date, bookingData.date);
       const isPast = isBefore(date, today);
       const isTodayDate = isToday(date);
-      const dayOfWeek = getDay(date);
-      const isClosed = !isDayOpen(date);
 
       let baseClass = "relative w-10 h-10 flex items-center justify-center text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer hover:scale-105";
 
@@ -202,10 +168,6 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
       if (isPast) {
         return `${baseClass} text-gray-400 cursor-not-allowed`;
-      }
-
-      if (isClosed) {
-        return `${baseClass} text-gray-400 bg-gray-100 cursor-not-allowed`;
       }
 
       if (isSelected) {
@@ -222,14 +184,11 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     const canSelectDay = (date) => {
       const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
       const isPast = isBefore(date, today);
-      const isClosed = !isDayOpen(date);
-
-      return isCurrentMonth && !isPast && !isClosed;
+      return isCurrentMonth && !isPast;
     };
 
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        {/* Header kalendarza */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
@@ -250,7 +209,6 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
           </button>
         </div>
 
-        {/* Dni tygodnia */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'].map(day => (
             <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
@@ -259,7 +217,6 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
           ))}
         </div>
 
-        {/* Dni miesiąca */}
         <div className="grid grid-cols-7 gap-1">
           {days.map((date, index) => (
             <button
@@ -272,34 +229,13 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
             </button>
           ))}
         </div>
-
-        {/* Legenda */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs font-medium text-gray-500 mb-3">Dostępność terminów:</p>
-          <div className="flex flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">Dużo wolnych</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-gray-600">Średnio wolnych</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-gray-600">Mało wolnych</span>
-            </div>
-          </div>
-        </div>
       </div>
     );
   };
 
-  // --- PODKOMPONENTY DLA CZYTELNOŚCI ---
-
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1: return <Step1_DateTime />;
+      case 1: return <Step1_ServiceDateTime />;
       case 2: return <Step2_CustomerDetails />;
       case 3: return <Step3_Confirmation />;
       case 4: return <Step4_Success />;
@@ -307,72 +243,61 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     }
   };
 
-  const Step1_DateTime = () => (
+  const Step1_ServiceDateTime = () => (
     <div className="space-y-8">
       <div className="text-center">
-        <h3 className="text-3xl font-bold text-gray-900 mb-2">Wybierz termin</h3>
-        <p className="text-gray-500">Zarezerwuj dogodny dla siebie termin</p>
+        <h3 className="text-3xl font-bold text-gray-900 mb-2">Wybierz usługę i termin</h3>
+        <p className="text-gray-500">Zarezerwuj wizytę u {employee?.name}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Kalendarz */}
-        <div className="order-2 lg:order-1">
-          <CustomCalendar />
-        </div>
-
-        {/* Specjaliści i godziny */}
-        <div className="space-y-6 order-1 lg:order-2">
-          {/* Wybór specjalisty */}
-          {availableStaff.length > 0 ? (
-            <div className="bg-gray-50/50 rounded-2xl p-6">
-              <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <Users className="w-5 h-5 mr-2 text-violet-500" />
-                Wybierz specjalistę
-              </h4>
+        {/* Wybór usługi */}
+        <div className="space-y-6">
+          <div className="bg-gray-50/50 rounded-2xl p-6">
+            <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-violet-500" />
+              Wybierz usługę
+            </h4>
+            {employeeServices.length > 0 ? (
               <div className="space-y-3">
-                {availableStaff.map((staff) => (
+                {employeeServices.map((service) => (
                   <button
-                    key={staff.id}
-                    onClick={() => setBookingData(prev => ({ ...prev, staff, time: '' }))}
-                    className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${bookingData.staff?.id === staff.id
+                    key={service.id}
+                    onClick={() => setBookingData(prev => ({ ...prev, service, time: '' }))}
+                    className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${
+                      bookingData.service?.id === service.id
                         ? 'bg-violet-600 text-white shadow-lg ring-2 ring-violet-200'
                         : 'bg-white hover:bg-violet-50 border border-gray-200 hover:border-violet-300'
-                      }`}
+                    }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      {typeof staff.avatar === 'string' && staff.avatar.startsWith('http') ? (
-                        <img 
-                          src={staff.avatar} 
-                          alt={staff.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                          {staff.avatar || staff.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
-                        </div>
-                      )}
+                    <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="font-semibold">{staff.name}</p>
-                        <p className={`text-sm ${bookingData.staff?.id === staff.id ? 'text-violet-200' : 'text-gray-500'}`}>
-                          {staff.position}
+                        <p className="font-semibold">{service.name}</p>
+                        <p className={`text-sm ${bookingData.service?.id === service.id ? 'text-violet-200' : 'text-gray-500'}`}>
+                          {service.duration} min • {service.price} zł
                         </p>
                       </div>
-                      {bookingData.staff?.id === staff.id && (
+                      {bookingData.service?.id === service.id && (
                         <CheckCircle className="w-5 h-5 text-white" />
                       )}
                     </div>
                   </button>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="bg-gray-50/50 rounded-2xl p-6">
-              <p className="text-gray-500 text-center">Brak dostępnych pracowników dla tej usługi</p>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Brak dostępnych usług dla tego pracownika</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Kalendarz i godziny */}
+        <div className="space-y-6">
+          <CustomCalendar />
 
           {/* Wybór godziny */}
-          {bookingData.date && bookingData.staff && (
+          {bookingData.date && bookingData.service && (
             <div className="bg-gray-50/50 rounded-2xl p-6 animate-fade-in">
               <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                 <Clock className="w-5 h-5 mr-2 text-violet-500" />
@@ -391,10 +316,11 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
                     <button
                       key={time}
                       onClick={() => setBookingData(prev => ({ ...prev, time }))}
-                      className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 ${bookingData.time === time
+                      className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 ${
+                        bookingData.time === time
                           ? 'bg-violet-600 text-white shadow-lg'
                           : 'bg-white text-gray-700 hover:bg-violet-100 border border-gray-200 hover:border-violet-300'
-                        }`}
+                      }`}
                     >
                       {time}
                     </button>
@@ -404,7 +330,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">😔</div>
                   <p className="text-gray-500">
-                    Brak dostępnych terminów dla wybranego dnia i specjalisty
+                    Brak dostępnych terminów dla wybranego dnia
                   </p>
                 </div>
               )}
@@ -482,75 +408,38 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     </div>
   ));
 
-  const Step3_Confirmation = () => (
-    <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
-      <div className="text-center">
-        <h3 className="text-3xl font-bold text-gray-900 mb-2">Potwierdź rezerwację</h3>
-        <p className="text-gray-500">Sprawdź szczegóły przed płatnością</p>
-      </div>
+  const Step3_Confirmation = () => {
+    const selectedService = employeeServices.find(s => s.id === bookingData.service?.id);
+    
+    return (
+      <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
+        <div className="text-center">
+          <h3 className="text-3xl font-bold text-gray-900 mb-2">Potwierdź rezerwację</h3>
+          <p className="text-gray-500">Sprawdź szczegóły przed potwierdzeniem</p>
+        </div>
 
-      <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl p-6 border border-violet-100">
-        <h4 className="font-semibold text-xl text-gray-900 mb-4">Podsumowanie rezerwacji</h4>
-        <div className="space-y-4">
-          <SummaryRow label="Usługa" value={service.name} />
-          <SummaryRow
-            label="Data i godzina"
-            value={`${format(bookingData.date, 'd MMMM yyyy', { locale: pl })} o ${bookingData.time}`}
-          />
-          {bookingData.staff && (
-            <SummaryRow label="Specjalista" value={bookingData.staff.name} />
-          )}
-          <SummaryRow
-            label="Klient"
-            value={`${bookingData.customer.firstName} ${bookingData.customer.lastName}`}
-          />
-          <div className="flex justify-between items-center border-t border-violet-200 pt-4 mt-4">
-            <span className="text-xl font-bold text-gray-900">Do zapłaty:</span>
-            <span className="text-3xl font-bold text-violet-600">{service.price} zł</span>
+        <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl p-6 border border-violet-100">
+          <h4 className="font-semibold text-xl text-gray-900 mb-4">Podsumowanie rezerwacji</h4>
+          <div className="space-y-4">
+            <SummaryRow label="Usługa" value={selectedService?.name || ''} />
+            <SummaryRow
+              label="Data i godzina"
+              value={`${format(bookingData.date, 'd MMMM yyyy', { locale: pl })} o ${bookingData.time}`}
+            />
+            <SummaryRow label="Pracownik" value={employee?.name || ''} />
+            <SummaryRow
+              label="Klient"
+              value={`${bookingData.customer.firstName} ${bookingData.customer.lastName}`}
+            />
+            <div className="flex justify-between items-center border-t border-violet-200 pt-4 mt-4">
+              <span className="text-xl font-bold text-gray-900">Do zapłaty:</span>
+              <span className="text-3xl font-bold text-violet-600">{selectedService?.price || 0} zł</span>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="bg-white rounded-2xl p-6 border border-gray-200">
-        <h4 className="font-semibold text-lg text-gray-900 mb-4">Metoda płatności</h4>
-        <div className="space-y-3">
-          <PaymentOption
-            value="online"
-            title="Płatność online"
-            subtitle="Zapłać teraz kartą, BLIKiem lub Apple Pay"
-            icon="💳"
-          />
-          <PaymentOption
-            value="cash"
-            title="Płatność na miejscu"
-            subtitle="Gotówka lub karta w salonie"
-            icon="💰"
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const PaymentOption = ({ value, title, subtitle, icon }) => (
-    <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${bookingData.paymentMethod === value
-        ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
-        : 'border-gray-200 hover:border-violet-300 hover:bg-gray-50'
-      }`}>
-      <div className="text-2xl mr-4">{icon}</div>
-      <div className="flex-1">
-        <p className="font-semibold text-gray-900">{title}</p>
-        <p className="text-sm text-gray-600">{subtitle}</p>
-      </div>
-      <input
-        type="radio"
-        name="payment"
-        value={value}
-        checked={bookingData.paymentMethod === value}
-        onChange={(e) => setBookingData(prev => ({ ...prev, paymentMethod: e.target.value }))}
-        className="w-5 h-5 text-violet-600 focus:ring-violet-500"
-      />
-    </label>
-  );
+    );
+  };
 
   const SummaryRow = ({ label, value }) => (
     <div className="flex justify-between items-start text-sm">
@@ -559,45 +448,44 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     </div>
   );
 
-  const Step4_Success = () => (
-    <div className="text-center flex flex-col items-center justify-center py-12 animate-fade-in">
-      <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
-        <PartyPopper className="w-16 h-16 text-white" />
-      </div>
-      <h3 className="text-4xl font-bold text-gray-900 mb-4">Gotowe! 🎉</h3>
-      <p className="text-xl text-gray-600 mb-2">Twoja rezerwacja została potwierdzona</p>
-      <p className="text-gray-500 mb-8 max-w-md">
-        Wysłaliśmy szczegóły na adres {bookingData.customer.email}.
-        Do zobaczenia w naszym salonie!
-      </p>
-
-      <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl p-6 w-full max-w-md border border-violet-100">
-        <h4 className="font-semibold text-gray-900 mb-4">Szczegóły rezerwacji</h4>
-        <div className="space-y-3 text-left">
-          <SummaryRow label="Usługa" value={service.name} />
-          <SummaryRow
-            label="Termin"
-            value={`${format(bookingData.date, 'd MMMM yyyy', { locale: pl })} o ${bookingData.time}`}
-          />
-          {bookingData.staff && (
-            <SummaryRow label="Specjalista" value={bookingData.staff.name} />
-          )}
+  const Step4_Success = () => {
+    const selectedService = employeeServices.find(s => s.id === bookingData.service?.id);
+    
+    return (
+      <div className="text-center flex flex-col items-center justify-center py-12 animate-fade-in">
+        <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
+          <PartyPopper className="w-16 h-16 text-white" />
         </div>
+        <h3 className="text-4xl font-bold text-gray-900 mb-4">Gotowe! 🎉</h3>
+        <p className="text-xl text-gray-600 mb-2">Twoja rezerwacja została potwierdzona</p>
+        <p className="text-gray-500 mb-8 max-w-md">
+          Wysłaliśmy szczegóły na adres {bookingData.customer.email}.
+          Do zobaczenia w salonie!
+        </p>
+
+        <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl p-6 w-full max-w-md border border-violet-100">
+          <h4 className="font-semibold text-gray-900 mb-4">Szczegóły rezerwacji</h4>
+          <div className="space-y-3 text-left">
+            <SummaryRow label="Usługa" value={selectedService?.name || ''} />
+            <SummaryRow
+              label="Termin"
+              value={`${format(bookingData.date, 'd MMMM yyyy', { locale: pl })} o ${bookingData.time}`}
+            />
+            <SummaryRow label="Pracownik" value={employee?.name || ''} />
+          </div>
+        </div>
+
+        <button
+          onClick={resetAndClose}
+          className="w-full max-w-md mt-8 px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 transform hover:-translate-y-1 shadow-lg"
+        >
+          Zamknij
+        </button>
       </div>
+    );
+  };
 
-      <button
-        onClick={resetAndClose}
-        className="w-full max-w-md mt-8 px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 transform hover:-translate-y-1 shadow-lg"
-      >
-        Zamknij
-      </button>
-    </div>
-  );
-
-  // --- SPRAWDZANIE POPRAWNOŚCI DANYCH DLA KAŻDEGO KROKU ---
-
-  // Jeśli są dostępni pracownicy, wymagaj wyboru; jeśli nie ma, można zarezerwować bez pracownika
-  const isStep1Valid = bookingData.date && bookingData.time && (availableStaff.length === 0 || bookingData.staff);
+  const isStep1Valid = bookingData.date && bookingData.time && bookingData.service;
   const isStep2Valid = bookingData.customer.firstName && bookingData.customer.lastName &&
     bookingData.customer.email.includes('@') && bookingData.customer.phone;
   const isStep3Valid = bookingData.paymentMethod;
@@ -611,13 +499,12 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     }
   };
 
-  if (!isOpen || !service) return null;
+  if (!isOpen || !employee) return null;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden flex flex-col">
-
-        {/* === HEADER === */}
+        {/* Header */}
         <div className="relative bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 text-white p-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -630,8 +517,8 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
                 </button>
               )}
               <div>
-                <h2 className="text-2xl font-bold">{service.name}</h2>
-                <p className="text-violet-200 text-sm">{studioName || service.salon || 'Salon'}</p>
+                <h2 className="text-2xl font-bold">Rezerwacja u {employee.name}</h2>
+                <p className="text-violet-200 text-sm">{studioName}</p>
               </div>
             </div>
             <button
@@ -650,26 +537,30 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
           )}
         </div>
 
-        {/* === CONTENT === */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-8">
             {renderStepContent()}
           </div>
         </div>
 
-        {/* === FOOTER NAVIGATION === */}
+        {/* Footer Navigation */}
         {currentStep < 4 && (
           <div className="bg-gray-50 border-t border-gray-200 p-6">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
               <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {service.duration} min
-                </div>
-                <div className="flex items-center">
-                  <CreditCard className="w-4 h-4 mr-1" />
-                  {service.price} zł
-                </div>
+                {bookingData.service && (
+                  <>
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {bookingData.service.duration} min
+                    </div>
+                    <div className="flex items-center">
+                      <span className="mr-1">💰</span>
+                      {bookingData.service.price} zł
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex space-x-3">
@@ -706,10 +597,10 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
   );
 };
 
-// === KOMPONENT PROGRESS INDICATOR ===
+// Progress Indicator
 const ProgressIndicator = ({ currentStep }) => {
   const steps = [
-    { number: 1, title: 'Termin' },
+    { number: 1, title: 'Usługa i termin' },
     { number: 2, title: 'Dane' },
     { number: 3, title: 'Potwierdzenie' },
   ];
@@ -719,22 +610,25 @@ const ProgressIndicator = ({ currentStep }) => {
       {steps.map((step, index) => (
         <React.Fragment key={step.number}>
           <div className="flex items-center">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${currentStep > step.number
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+              currentStep > step.number
                 ? 'bg-white text-violet-600'
                 : currentStep === step.number
                   ? 'bg-white text-violet-600 ring-4 ring-white/30'
                   : 'bg-white/30 text-white'
-              }`}>
+            }`}>
               {currentStep > step.number ? <CheckCircle className="w-5 h-5" /> : step.number}
             </div>
-            <span className={`ml-2 text-sm font-medium hidden sm:block ${currentStep >= step.number ? 'text-white' : 'text-white/70'
-              }`}>
+            <span className={`ml-2 text-sm font-medium hidden sm:block ${
+              currentStep >= step.number ? 'text-white' : 'text-white/70'
+            }`}>
               {step.title}
             </span>
           </div>
           {index < steps.length - 1 && (
-            <div className={`w-8 sm:w-12 h-0.5 transition-all duration-300 ${currentStep > step.number ? 'bg-white' : 'bg-white/30'
-              }`} />
+            <div className={`w-8 sm:w-12 h-0.5 transition-all duration-300 ${
+              currentStep > step.number ? 'bg-white' : 'bg-white/30'
+            }`} />
           )}
         </React.Fragment>
       ))}
@@ -742,4 +636,5 @@ const ProgressIndicator = ({ currentStep }) => {
   );
 };
 
-export default BookingModal;
+export default EmployeeBookingModal;
+

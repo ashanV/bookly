@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import BookingModal from '../../../../components/BookingModal';
+import EmployeeBookingModal from '../../../../components/EmployeeBookingModal';
 import { useAuth } from '../../../../hooks/useAuth';
 
 // --- Mock Data & Helpers ---
@@ -406,6 +407,8 @@ export default function StudioDetailsPage() {
   const [scrolled, setScrolled] = useState(false);
   const [serviceFilter, setServiceFilter] = useState('Wszystkie');
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isEmployeeBookingOpen, setIsEmployeeBookingOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -718,29 +721,42 @@ export default function StudioDetailsPage() {
                     exit={{ opacity: 0, y: -10 }}
                     className="grid grid-cols-1 sm:grid-cols-2 gap-6"
                   >
-                    {studio.team?.map(member => (
-                      <div key={member.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all text-center group">
-                        <div className="relative w-24 h-24 mx-auto mb-4">
-                          <img
-                            src={member.avatar}
-                            alt={member.name}
-                            className="w-full h-full rounded-full object-cover border-4 border-white shadow-md group-hover:scale-105 transition-transform"
-                          />
-                          <div className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-sm">
-                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                    {studio.team?.map(member => {
+                      // Znajdź pełne dane pracownika z employees array (zawiera availability)
+                      const fullEmployee = studio.employees?.find(emp => emp.id === member.id) || member;
+                      
+                      return (
+                        <div key={member.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all text-center group">
+                          <div className="relative w-24 h-24 mx-auto mb-4">
+                            <img
+                              src={member.avatar || fullEmployee.avatarImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=violet&color=fff`}
+                              alt={member.name}
+                              className="w-full h-full rounded-full object-cover border-4 border-white shadow-md group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-sm">
+                              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            </div>
                           </div>
+                          <h4 className="text-lg font-bold text-gray-900">{member.name}</h4>
+                          <p className="text-violet-600 font-medium text-sm mb-2">{member.role}</p>
+                          <p className="text-gray-500 text-xs mb-4">{member.experience}</p>
+                          <button
+                            onClick={() => {
+                              if (!isAuthenticated) {
+                                router.push(`/client/auth?redirect=${encodeURIComponent(window.location.pathname)}`);
+                                return;
+                              }
+                              // Użyj pełnych danych pracownika z availability
+                              setSelectedEmployee(fullEmployee);
+                              setIsEmployeeBookingOpen(true);
+                            }}
+                            className="w-full bg-gray-50 hover:bg-violet-50 text-gray-900 hover:text-violet-700 py-2 rounded-xl text-sm font-medium transition-colors"
+                          >
+                            Umów wizytę
+                          </button>
                         </div>
-                        <h4 className="text-lg font-bold text-gray-900">{member.name}</h4>
-                        <p className="text-violet-600 font-medium text-sm mb-2">{member.role}</p>
-                        <p className="text-gray-500 text-xs mb-4">{member.experience}</p>
-                        <button
-                          onClick={() => handleBookingClick()}
-                          className="w-full bg-gray-50 hover:bg-violet-50 text-gray-900 hover:text-violet-700 py-2 rounded-xl text-sm font-medium transition-colors"
-                        >
-                          Umów wizytę
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </motion.div>
                 )}
 
@@ -984,6 +1000,9 @@ export default function StudioDetailsPage() {
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
         service={selectedService}
+        businessId={studio.id || id}
+        employees={studio.employees || []}
+        workingHours={studio.workingHours || {}}
         studioName={studio.name}
       />
 
@@ -991,6 +1010,18 @@ export default function StudioDetailsPage() {
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
         onSubmit={handleAddReview}
+        services={studio.services || []}
+      />
+
+      <EmployeeBookingModal
+        isOpen={isEmployeeBookingOpen}
+        onClose={() => {
+          setIsEmployeeBookingOpen(false);
+          setSelectedEmployee(null);
+        }}
+        employee={selectedEmployee}
+        businessId={studio.id || id}
+        studioName={studio.name}
         services={studio.services || []}
       />
     </div>

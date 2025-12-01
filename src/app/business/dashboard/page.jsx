@@ -93,7 +93,7 @@ export default function DashboardPage() {
     ]
   });
 
-  const [recentReservations] = useState([
+  const [recentReservations, setRecentReservations] = useState([
     {
       id: 1,
       client: 'Anna Kowalska',
@@ -152,6 +152,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user && user.role === 'business') {
       fetchBusinessData();
+      fetchRecentReservations();
+      fetchReservationsStats();
     }
   }, [user]);
 
@@ -164,6 +166,111 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Błąd pobierania danych:', error);
+    }
+  };
+
+  const fetchRecentReservations = async () => {
+    try {
+      const response = await fetch('/api/reservations/list?status=confirmed,pending', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Pobierz najbliższe rezerwacje (następne 4)
+        const upcoming = data.reservations
+          .filter(res => {
+            const resDate = new Date(res.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return resDate >= today && res.status !== 'cancelled';
+          })
+          .sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.time}`);
+            const dateB = new Date(`${b.date}T${b.time}`);
+            return dateA - dateB;
+          })
+          .slice(0, 4)
+          .map(res => {
+            const resDate = new Date(res.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateOnly = new Date(resDate);
+            dateOnly.setHours(0, 0, 0, 0);
+            
+            let dateLabel = '';
+            if (dateOnly.getTime() === today.getTime()) {
+              dateLabel = 'Dzisiaj';
+            } else if (dateOnly.getTime() === tomorrow.getTime()) {
+              dateLabel = 'Jutro';
+            } else {
+              dateLabel = resDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' });
+            }
+
+            return {
+              id: res._id || res.id,
+              client: res.clientName,
+              service: res.service,
+              time: res.time,
+              date: dateLabel,
+              price: res.price,
+              status: res.status,
+              avatar: res.clientName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
+              employee: res.employee
+            };
+          });
+        
+        setRecentReservations(upcoming);
+      }
+    } catch (error) {
+      console.error('Błąd pobierania rezerwacji:', error);
+    }
+  };
+
+  const fetchReservationsStats = async () => {
+    try {
+      const response = await fetch('/api/reservations/list', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const reservations = data.reservations || [];
+        
+        // Oblicz statystyki
+        const totalReservations = reservations.length;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(today);
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        const todayReservations = reservations.filter(res => {
+          const resDate = new Date(res.date);
+          return resDate >= today && resDate <= todayEnd && res.status !== 'cancelled';
+        }).length;
+        
+        // Oblicz przychód (suma cen wszystkich potwierdzonych i zakończonych rezerwacji)
+        const revenue = reservations
+          .filter(res => res.status === 'confirmed' || res.status === 'completed')
+          .reduce((sum, res) => sum + (res.price || 0), 0);
+        
+        // Unikalni klienci
+        const uniqueClients = new Set(reservations.map(res => res.clientEmail || res.clientName));
+        const totalClients = uniqueClients.size;
+        
+        // Aktualizuj statystyki
+        setStats(prevStats => ({
+          ...prevStats,
+          totalReservations,
+          todayReservations,
+          totalClients,
+          revenue
+        }));
+      }
+    } catch (error) {
+      console.error('Błąd pobierania statystyk rezerwacji:', error);
     }
   };
 
@@ -519,6 +626,9 @@ export default function DashboardPage() {
                     <div>
                       <p className="font-semibold text-gray-900">{reservation.client}</p>
                       <p className="text-sm text-gray-500">{reservation.service}</p>
+                      {reservation.employee && (
+                        <p className="text-xs text-violet-600 mt-1">👤 {reservation.employee.name}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <Clock size={14} className="text-gray-400" />
                         <span className="text-xs text-gray-600">{reservation.date}, {reservation.time}</span>

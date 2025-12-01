@@ -10,8 +10,12 @@ const ReservationSchema = new mongoose.Schema({
   clientEmail: { type: String, required: true },
   clientPhone: { type: String, required: true },
   
+  // Pracownik
+  employeeId: { type: String, default: null }, // ID pracownika z employees array
+  
   // Szczegóły usługi
   service: { type: String, required: true },
+  serviceId: { type: String, default: null }, // ID usługi z services array
   date: { type: Date, required: true },
   time: { type: String, required: true },
   duration: { type: Number, required: true }, // w minutach

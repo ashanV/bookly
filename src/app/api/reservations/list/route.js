@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import Reservation from "../../../models/Reservation";
+import Business from "@/app/models/Business";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
@@ -41,7 +42,12 @@ export async function GET(req) {
     }
 
     if (status) {
-      query.status = status;
+      // Obsługa wielu statusów oddzielonych przecinkiem
+      if (status.includes(',')) {
+        query.status = { $in: status.split(',').map(s => s.trim()) };
+      } else {
+        query.status = status;
+      }
     }
 
     // Pobranie rezerwacji
@@ -49,7 +55,28 @@ export async function GET(req) {
       .sort({ date: 1, time: 1 })
       .lean();
 
-    return NextResponse.json({ reservations }, { status: 200 });
+    // Pobranie danych biznesu, aby uzyskać informacje o pracownikach
+    const business = await Business.findById(decoded.id).lean();
+    const employees = business?.employees || [];
+
+    // Dodanie informacji o pracowniku do każdej rezerwacji
+    const reservationsWithEmployee = reservations.map(reservation => {
+      const employeeInfo = reservation.employeeId 
+        ? employees.find(emp => emp.id?.toString() === reservation.employeeId?.toString() || emp.id === parseInt(reservation.employeeId))
+        : null;
+
+      return {
+        ...reservation,
+        employee: employeeInfo ? {
+          id: employeeInfo.id,
+          name: employeeInfo.name,
+          position: employeeInfo.position,
+          avatar: employeeInfo.avatarImage || employeeInfo.avatar
+        } : null
+      };
+    });
+
+    return NextResponse.json({ reservations: reservationsWithEmployee }, { status: 200 });
   } catch (error) {
     console.error("Błąd pobierania rezerwacji:", error);
     return NextResponse.json(

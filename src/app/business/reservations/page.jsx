@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Calendar,
   Clock,
@@ -40,6 +41,7 @@ const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr
 const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
 
 export default function ReservationsPage() {
+  const { user, isAuthenticated } = useAuth('/business/auth');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -48,8 +50,54 @@ export default function ReservationsPage() {
   const [editingReservation, setEditingReservation] = useState(null);
   const [deletingReservation, setDeletingReservation] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const reservations = [
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'business') {
+      fetchReservations();
+    }
+  }, [isAuthenticated, user]);
+
+  const fetchReservations = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/reservations/list', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Transformacja danych z API do formatu używanego w komponencie
+        const transformedReservations = data.reservations.map(res => ({
+          id: res._id || res.id,
+          _id: res._id,
+          client: res.clientName,
+          email: res.clientEmail,
+          phone: res.clientPhone,
+          service: res.service,
+          date: new Date(res.date).toISOString().split('T')[0],
+          time: res.time,
+          duration: res.duration,
+          price: res.price,
+          status: res.status,
+          notes: res.notes || '',
+          avatar: res.clientName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
+          employee: res.employee
+        }));
+        setReservations(transformedReservations);
+      } else {
+        console.error('Błąd pobierania rezerwacji');
+      }
+    } catch (error) {
+      console.error('Błąd pobierania rezerwacji:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock data - fallback (można usunąć po testach)
+  const mockReservations = [
     {
       id: 1,
       client: 'Anna Kowalska',
@@ -167,7 +215,7 @@ export default function ReservationsPage() {
   const stats = [
     {
       label: 'Wszystkie rezerwacje',
-      value: reservations.length,
+      value: reservations.length || 0,
       change: '+12%',
       trend: 'up',
       icon: Calendar,
@@ -246,23 +294,35 @@ export default function ReservationsPage() {
     
     let matchesDate = true;
     if (dateFilter === 'today') {
-      matchesDate = reservation.date === '2025-11-07';
+      const today = new Date().toISOString().split('T')[0];
+      matchesDate = reservation.date === today;
     } else if (dateFilter === 'tomorrow') {
-      matchesDate = reservation.date === '2025-11-08';
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      matchesDate = reservation.date === tomorrow.toISOString().split('T')[0];
     } else if (dateFilter === 'week') {
-      matchesDate = true; // Simplified for demo
+      const reservationDate = new Date(reservation.date);
+      const today = new Date();
+      const weekFromNow = new Date(today);
+      weekFromNow.setDate(weekFromNow.getDate() + 7);
+      matchesDate = reservationDate >= today && reservationDate <= weekFromNow;
     }
     
     return matchesSearch && matchesStatus && matchesDate;
   });
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
-    const today = new Date('2025-11-07');
-    const tomorrow = new Date('2025-11-08');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
     
-    if (date.toDateString() === today.toDateString()) return 'Dzisiaj';
-    if (date.toDateString() === tomorrow.toDateString()) return 'Jutro';
+    if (dateOnly.getTime() === today.getTime()) return 'Dzisiaj';
+    if (dateOnly.getTime() === tomorrow.getTime()) return 'Jutro';
     
     return date.toLocaleDateString('pl-PL', { 
       weekday: 'long', 
@@ -327,8 +387,8 @@ export default function ReservationsPage() {
         }
         setEditingReservation(null);
         setEditForm({});
-        // Odświeżenie strony (w przyszłości można dodać refetch danych z API)
-        window.location.reload();
+        // Odświeżenie danych
+        fetchReservations();
       } else {
         alert('Błąd podczas zapisywania zmian: ' + (data.error || 'Nieznany błąd'));
       }
@@ -357,8 +417,8 @@ export default function ReservationsPage() {
           reservations.splice(index, 1);
         }
         setDeletingReservation(null);
-        // Odświeżenie strony
-        window.location.reload();
+        // Odświeżenie danych
+        fetchReservations();
       } else {
         alert('Błąd podczas usuwania: ' + (data.error || 'Nieznany błąd'));
       }
@@ -545,6 +605,11 @@ export default function ReservationsPage() {
           </div>
 
           <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              </div>
+            ) : (
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -553,6 +618,9 @@ export default function ReservationsPage() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Usługa
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Pracownik
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Data i godzina
@@ -593,6 +661,36 @@ export default function ReservationsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium text-gray-900">{reservation.service}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        {reservation.employee ? (
+                          <div className="flex items-center gap-2">
+                            {reservation.employee.avatar && (
+                              <img 
+                                src={reservation.employee.avatar} 
+                                alt={reservation.employee.name}
+                                className="w-8 h-8 rounded-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                            )}
+                            <div 
+                              className={`w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold ${reservation.employee.avatar ? 'hidden' : ''}`}
+                            >
+                              {reservation.employee.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">{reservation.employee.name}</p>
+                              {reservation.employee.position && (
+                                <p className="text-xs text-gray-500">{reservation.employee.position}</p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Brak przypisania</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -651,6 +749,7 @@ export default function ReservationsPage() {
                 })}
               </tbody>
             </table>
+            )}
           </div>
         </div>
       </div>
@@ -718,6 +817,23 @@ export default function ReservationsPage() {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <p className="text-xs text-gray-500 mb-1">Usługa</p>
                     <p className="font-semibold text-gray-900">{selectedReservation.service}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 mb-1">Pracownik</p>
+                    {selectedReservation.employee ? (
+                      <div className="flex items-center gap-2">
+                        {selectedReservation.employee.avatar && (
+                          <img 
+                            src={selectedReservation.employee.avatar} 
+                            alt={selectedReservation.employee.name}
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        )}
+                        <p className="font-semibold text-gray-900">{selectedReservation.employee.name}</p>
+                      </div>
+                    ) : (
+                      <p className="font-semibold text-gray-400">Brak przypisania</p>
+                    )}
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <p className="text-xs text-gray-500 mb-1">Cena</p>
