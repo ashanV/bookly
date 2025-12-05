@@ -60,7 +60,7 @@ function CalendarContent() {
       setNotification({ type: 'success', message: 'Pomyślnie połączono z Google Calendar!' });
       checkGoogleCalendarConnection();
       // Usunięcie parametru z URL
-      router.replace('/business/calendar');
+      router.replace('/business/dashboard/calendar');
     } else if (error) {
       const errorMessages = {
         auth_failed: 'Autoryzacja nie powiodła się',
@@ -72,7 +72,7 @@ function CalendarContent() {
         message: errorMessages[error] || 'Wystąpił błąd'
       });
       // Usunięcie parametru z URL
-      router.replace('/business/calendar');
+      router.replace('/business/dashboard/calendar');
     }
   }, [searchParams, router]);
 
@@ -272,7 +272,7 @@ function CalendarContent() {
                 </button>
               )}
               <button
-                onClick={() => router.push('/business/settings')}
+                onClick={() => router.push('/business/dashboard/settings')}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
               >
                 <Settings size={20} />
@@ -293,8 +293,8 @@ function CalendarContent() {
         {/* Powiadomienia */}
         {notification && (
           <div className={`mb-6 p-4 rounded-xl shadow-lg ${notification.type === 'success'
-              ? 'bg-green-50 border-2 border-green-200 text-green-800'
-              : 'bg-red-50 border-2 border-red-200 text-red-800'
+            ? 'bg-green-50 border-2 border-green-200 text-green-800'
+            : 'bg-red-50 border-2 border-red-200 text-red-800'
             }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

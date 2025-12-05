@@ -4,24 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users,
-    CreditCard,
     ArrowLeft,
-    Search,
-    Filter,
-    Plus,
-    Download,
-    MoreVertical,
-    Star,
-    Phone,
-    Mail,
-    Calendar,
-    Clock,
-    Tag,
-    Ban,
-    FileText,
-    TrendingUp,
-    DollarSign,
-    PieChart,
     Gift,
     CheckSquare,
     BookOpen
@@ -29,14 +12,12 @@ import {
 import Link from 'next/link';
 import ClientList from '@/components/CRM/ClientList';
 import ClientDetails from '@/components/CRM/ClientDetails';
-import Financials from '@/components/CRM/Financials';
-import Marketing from '@/components/CRM/Marketing';
 import Loyalty from '@/components/CRM/Loyalty';
 import Tasks from '@/components/CRM/Tasks';
 import Notepad from '@/components/CRM/Notepad';
 
 export default function CRMPage() {
-    const [activeTab, setActiveTab] = useState('clients'); // 'clients', 'financials', 'marketing', 'loyalty', 'tasks', 'notepad'
+    const [activeTab, setActiveTab] = useState('clients'); // 'clients', 'loyalty', 'tasks', 'notepad'
     const [selectedClient, setSelectedClient] = useState(null);
 
     return (
@@ -52,7 +33,7 @@ export default function CRMPage() {
                             >
                                 <ArrowLeft size={20} />
                             </Link>
-                            <h1 className="text-xl font-bold text-slate-900">CRM & Finanse</h1>
+                            <h1 className="text-xl font-bold text-slate-900">CRM</h1>
                         </div>
 
                         <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg overflow-x-auto">
@@ -66,30 +47,6 @@ export default function CRMPage() {
                                 <div className="flex items-center gap-2">
                                     <Users size={16} />
                                     Klienci
-                                </div>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('financials')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'financials'
-                                    ? 'bg-white text-violet-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <CreditCard size={16} />
-                                    Finanse
-                                </div>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('marketing')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'marketing'
-                                    ? 'bg-white text-violet-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp size={16} />
-                                    Marketing
                                 </div>
                             </button>
                             <button
@@ -164,26 +121,6 @@ export default function CRMPage() {
                                     </div>
                                 )}
                             </div>
-                        </motion.div>
-                    ) : activeTab === 'financials' ? (
-                        <motion.div
-                            key="financials"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <Financials />
-                        </motion.div>
-                    ) : activeTab === 'marketing' ? (
-                        <motion.div
-                            key="marketing"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <Marketing />
                         </motion.div>
                     ) : activeTab === 'loyalty' ? (
                         <motion.div

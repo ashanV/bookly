@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Calendar,
@@ -41,7 +42,8 @@ const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr
 const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
 
 export default function ReservationsPage() {
-  const { user, isAuthenticated } = useAuth('/business/auth');
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth('/business/auth');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
@@ -65,7 +67,7 @@ export default function ReservationsPage() {
       const response = await fetch('/api/reservations/list', {
         credentials: 'include'
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         // Transformacja danych z API do formatu używanego w komponencie
@@ -258,7 +260,7 @@ export default function ReservationsPage() {
   ];
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-700 border-green-200';
       case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
@@ -267,7 +269,7 @@ export default function ReservationsPage() {
   };
 
   const getStatusText = (status) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed': return 'Potwierdzona';
       case 'pending': return 'Oczekująca';
       case 'cancelled': return 'Anulowana';
@@ -276,7 +278,7 @@ export default function ReservationsPage() {
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed': return CheckCircle;
       case 'pending': return Clock;
       case 'cancelled': return XCircle;
@@ -285,13 +287,13 @@ export default function ReservationsPage() {
   };
 
   const filteredReservations = reservations.filter(reservation => {
-    const matchesSearch = 
+    const matchesSearch =
       reservation.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reservation.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reservation.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || reservation.status === statusFilter;
-    
+
     let matchesDate = true;
     if (dateFilter === 'today') {
       const today = new Date().toISOString().split('T')[0];
@@ -307,7 +309,7 @@ export default function ReservationsPage() {
       weekFromNow.setDate(weekFromNow.getDate() + 7);
       matchesDate = reservationDate >= today && reservationDate <= weekFromNow;
     }
-    
+
     return matchesSearch && matchesStatus && matchesDate;
   });
 
@@ -320,15 +322,15 @@ export default function ReservationsPage() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
-    
+
     if (dateOnly.getTime() === today.getTime()) return 'Dzisiaj';
     if (dateOnly.getTime() === tomorrow.getTime()) return 'Jutro';
-    
-    return date.toLocaleDateString('pl-PL', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+
+    return date.toLocaleDateString('pl-PL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -363,7 +365,7 @@ export default function ReservationsPage() {
 
   const handleSaveEdit = async () => {
     if (!editingReservation) return;
-    
+
     try {
       const response = await fetch('/api/reservations/update', {
         method: 'PUT',
@@ -400,7 +402,7 @@ export default function ReservationsPage() {
 
   const handleConfirmDelete = async () => {
     if (!deletingReservation) return;
-    
+
     try {
       const reservationId = deletingReservation.id || deletingReservation._id;
       const response = await fetch(`/api/reservations/cancel?id=${reservationId}`, {
@@ -435,8 +437,8 @@ export default function ReservationsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button 
-                onClick={() => window.history.back()}
+              <button
+                onClick={() => router.push('/business/dashboard')}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
               >
                 <ArrowLeft size={20} />
@@ -460,10 +462,19 @@ export default function ReservationsPage() {
                   {new Date().toLocaleDateString('pl-PL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">
+              <button
+                onClick={() => router.push('/business/dashboard/settings')}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+              >
                 <Settings size={20} />
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">
+              <button
+                onClick={async () => {
+                  await logout();
+                  router.push('/business/auth');
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+              >
                 <LogOut size={18} />
                 <span className="hidden sm:inline">Wyloguj</span>
               </button>
@@ -512,13 +523,13 @@ export default function ReservationsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" stroke="#9ca3af" style={{ fontSize: '12px' }} />
               <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e5e7eb', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }} 
+                }}
               />
               <Bar dataKey="rezerwacje" fill="#9333ea" radius={[8, 8, 0, 0]} />
             </BarChart>
@@ -538,7 +549,7 @@ export default function ReservationsPage() {
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               />
             </div>
-            
+
             <div className="flex gap-3">
               <div className="relative">
                 <button
@@ -580,7 +591,7 @@ export default function ReservationsPage() {
                   </div>
                 )}
               </div>
-              
+
               <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-medium">
                 <Download size={20} />
                 <span className="hidden sm:inline">Eksportuj</span>
@@ -610,145 +621,145 @@ export default function ReservationsPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
               </div>
             ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Klient
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Usługa
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Pracownik
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Data i godzina
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Czas trwania
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Cena
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Akcje
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredReservations.map((reservation) => {
-                  const StatusIcon = getStatusIcon(reservation.status);
-                  return (
-                    <tr 
-                      key={reservation.id} 
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedReservation(reservation)}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
-                            {reservation.avatar}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{reservation.client}</p>
-                            <p className="text-sm text-gray-500">{reservation.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{reservation.service}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        {reservation.employee ? (
-                          <div className="flex items-center gap-2">
-                            {reservation.employee.avatar && (
-                              <img 
-                                src={reservation.employee.avatar} 
-                                alt={reservation.employee.name}
-                                className="w-8 h-8 rounded-full object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
-                                }}
-                              />
-                            )}
-                            <div 
-                              className={`w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold ${reservation.employee.avatar ? 'hidden' : ''}`}
-                            >
-                              {reservation.employee.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Klient
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Usługa
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Pracownik
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Data i godzina
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Czas trwania
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Cena
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Akcje
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredReservations.map((reservation) => {
+                    const StatusIcon = getStatusIcon(reservation.status);
+                    return (
+                      <tr
+                        key={reservation.id}
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedReservation(reservation)}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
+                              {reservation.avatar}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{reservation.employee.name}</p>
-                              {reservation.employee.position && (
-                                <p className="text-xs text-gray-500">{reservation.employee.position}</p>
-                              )}
+                              <p className="font-semibold text-gray-900">{reservation.client}</p>
+                              <p className="text-sm text-gray-500">{reservation.email}</p>
                             </div>
                           </div>
-                        ) : (
-                          <span className="text-gray-400 text-sm">Brak przypisania</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <p className="font-medium text-gray-900">{formatDate(reservation.date)}</p>
-                          <p className="text-sm text-gray-500 flex items-center gap-1">
-                            <Clock size={14} />
-                            {reservation.time}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-gray-700">{reservation.duration} min</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-gray-900">{reservation.price} zł</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(reservation.status)}`}>
-                          <StatusIcon size={14} />
-                          {getStatusText(reservation.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedReservation(reservation);
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(reservation);
-                            }}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(reservation);
-                            }}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-gray-900">{reservation.service}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          {reservation.employee ? (
+                            <div className="flex items-center gap-2">
+                              {reservation.employee.avatar && (
+                                <img
+                                  src={reservation.employee.avatar}
+                                  alt={reservation.employee.name}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              )}
+                              <div
+                                className={`w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold ${reservation.employee.avatar ? 'hidden' : ''}`}
+                              >
+                                {reservation.employee.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900 text-sm">{reservation.employee.name}</p>
+                                {reservation.employee.position && (
+                                  <p className="text-xs text-gray-500">{reservation.employee.position}</p>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Brak przypisania</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <p className="font-medium text-gray-900">{formatDate(reservation.date)}</p>
+                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <Clock size={14} />
+                              {reservation.time}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-gray-700">{reservation.duration} min</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-gray-900">{reservation.price} zł</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(reservation.status)}`}>
+                            <StatusIcon size={14} />
+                            {getStatusText(reservation.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedReservation(reservation);
+                              }}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(reservation);
+                              }}
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+                            >
+                              <Edit size={18} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(reservation);
+                              }}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
@@ -756,18 +767,18 @@ export default function ReservationsPage() {
 
       {/* Modal szczegółów rezerwacji */}
       {selectedReservation && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedReservation(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Szczegóły rezerwacji</h2>
-                <button 
+                <button
                   onClick={() => setSelectedReservation(null)}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
                 >
@@ -823,8 +834,8 @@ export default function ReservationsPage() {
                     {selectedReservation.employee ? (
                       <div className="flex items-center gap-2">
                         {selectedReservation.employee.avatar && (
-                          <img 
-                            src={selectedReservation.employee.avatar} 
+                          <img
+                            src={selectedReservation.employee.avatar}
                             alt={selectedReservation.employee.name}
                             className="w-6 h-6 rounded-full object-cover"
                           />
@@ -875,14 +886,14 @@ export default function ReservationsPage() {
 
               {/* Akcje */}
               <div className="flex gap-3 pt-4">
-                <button 
+                <button
                   onClick={() => handleEdit(selectedReservation)}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
                 >
                   <Edit size={18} />
                   Edytuj
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setSelectedReservation(null);
                     handleDelete(selectedReservation);
@@ -900,21 +911,21 @@ export default function ReservationsPage() {
 
       {/* Modal edycji rezerwacji */}
       {editingReservation && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => {
             setEditingReservation(null);
             setEditForm({});
           }}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">Edytuj rezerwację</h2>
-                <button 
+                <button
                   onClick={() => {
                     setEditingReservation(null);
                     setEditForm({});
@@ -1042,11 +1053,11 @@ export default function ReservationsPage() {
 
       {/* Modal potwierdzenia usuwania */}
       {deletingReservation && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setDeletingReservation(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1064,7 +1075,7 @@ export default function ReservationsPage() {
 
             <div className="p-6">
               <p className="text-gray-700 mb-6">
-                Czy na pewno chcesz usunąć rezerwację dla <strong>{deletingReservation.client}</strong> 
+                Czy na pewno chcesz usunąć rezerwację dla <strong>{deletingReservation.client}</strong>
                 {' '}z dnia <strong>{formatDate(deletingReservation.date)}</strong> o godzinie <strong>{deletingReservation.time}</strong>?
               </p>
 
