@@ -47,6 +47,13 @@ const BusinessSchema = new mongoose.Schema({
     name: { type: String, required: true, index: true }, // Added index for frequent searches
     duration: { type: Number, required: true },
     price: { type: Number, required: true },
+    description: { type: String },
+    category: { type: String, default: 'Ogólne', index: true },
+    employees: [{ type: Number }] // Array of employee IDs
+  }],
+  categories: [{
+    name: { type: String, required: true },
+    color: { type: String },
     description: { type: String }
   }],
   workingHours: {
@@ -192,5 +199,10 @@ BusinessSchema.pre('save', async function (next) {
   }
 });
 
-export default mongoose.models.Business || mongoose.model("Business", BusinessSchema);
+// Delete cached model to force schema refresh (useful during development)
+if (mongoose.models.Business) {
+  delete mongoose.models.Business;
+}
+
+export default mongoose.model("Business", BusinessSchema);
 

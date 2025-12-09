@@ -43,7 +43,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
         const response = await fetch(
           `/api/employees/${employee.id}/availability?businessId=${businessId}&date=${dateStr}`
         );
-        
+
         if (response.ok) {
           const data = await response.json();
           setAvailableSlots(data.availableSlots || []);
@@ -69,14 +69,17 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
   // Filtrowanie usług przypisanych do pracownika
   const employeeServices = useMemo(() => {
     if (!employee || !services) return [];
-    
-    const assignedServiceIds = (employee.assignedServices || []).map(as => 
-      typeof as === 'object' ? as.serviceId : as
-    );
-    
-    return services.filter(service => 
-      assignedServiceIds.includes(service.id?.toString())
-    );
+
+    // Filter services where this employee is assigned (checking service.employees array)
+    return services.filter(service => {
+      // If service doesn't specify employees, show it (backward compatibility)
+      if (!service.employees || service.employees.length === 0) {
+        return true;
+      }
+
+      // Check if employee ID is in service.employees array
+      return service.employees.includes(employee.id);
+    });
   }, [employee, services]);
 
   const handleNext = () => setCurrentStep(prev => prev + 1);
@@ -94,7 +97,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
 
   const handleConfirmBooking = async () => {
     setIsSubmitting(true);
-    
+
     try {
       const selectedService = employeeServices.find(s => s.id === bookingData.service?.id);
       if (!selectedService) {
@@ -264,11 +267,10 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
                   <button
                     key={service.id}
                     onClick={() => setBookingData(prev => ({ ...prev, service, time: '' }))}
-                    className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${
-                      bookingData.service?.id === service.id
+                    className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${bookingData.service?.id === service.id
                         ? 'bg-violet-600 text-white shadow-lg ring-2 ring-violet-200'
                         : 'bg-white hover:bg-violet-50 border border-gray-200 hover:border-violet-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -316,11 +318,10 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
                     <button
                       key={time}
                       onClick={() => setBookingData(prev => ({ ...prev, time }))}
-                      className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 ${
-                        bookingData.time === time
+                      className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 ${bookingData.time === time
                           ? 'bg-violet-600 text-white shadow-lg'
                           : 'bg-white text-gray-700 hover:bg-violet-100 border border-gray-200 hover:border-violet-300'
-                      }`}
+                        }`}
                     >
                       {time}
                     </button>
@@ -350,33 +351,33 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
 
       <div className="bg-gray-50/50 rounded-2xl p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InputField 
-            label="Imię" 
-            name="firstName" 
+          <InputField
+            label="Imię"
+            name="firstName"
             placeholder="Jan"
             value={bookingData.customer.firstName}
             onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, firstName: e.target.value } }))}
           />
-          <InputField 
-            label="Nazwisko" 
-            name="lastName" 
+          <InputField
+            label="Nazwisko"
+            name="lastName"
             placeholder="Kowalski"
             value={bookingData.customer.lastName}
             onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, lastName: e.target.value } }))}
           />
         </div>
-        <InputField 
-          label="Email" 
-          name="email" 
-          type="email" 
+        <InputField
+          label="Email"
+          name="email"
+          type="email"
           placeholder="jan.kowalski@example.com"
           value={bookingData.customer.email}
           onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, email: e.target.value } }))}
         />
-        <InputField 
-          label="Telefon" 
-          name="phone" 
-          type="tel" 
+        <InputField
+          label="Telefon"
+          name="phone"
+          type="tel"
           placeholder="+48 123 456 789"
           value={bookingData.customer.phone}
           onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, phone: e.target.value } }))}
@@ -410,7 +411,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
 
   const Step3_Confirmation = () => {
     const selectedService = employeeServices.find(s => s.id === bookingData.service?.id);
-    
+
     return (
       <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
         <div className="text-center">
@@ -450,7 +451,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
 
   const Step4_Success = () => {
     const selectedService = employeeServices.find(s => s.id === bookingData.service?.id);
-    
+
     return (
       <div className="text-center flex flex-col items-center justify-center py-12 animate-fade-in">
         <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
@@ -610,25 +611,22 @@ const ProgressIndicator = ({ currentStep }) => {
       {steps.map((step, index) => (
         <React.Fragment key={step.number}>
           <div className="flex items-center">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-              currentStep > step.number
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${currentStep > step.number
                 ? 'bg-white text-violet-600'
                 : currentStep === step.number
                   ? 'bg-white text-violet-600 ring-4 ring-white/30'
                   : 'bg-white/30 text-white'
-            }`}>
+              }`}>
               {currentStep > step.number ? <CheckCircle className="w-5 h-5" /> : step.number}
             </div>
-            <span className={`ml-2 text-sm font-medium hidden sm:block ${
-              currentStep >= step.number ? 'text-white' : 'text-white/70'
-            }`}>
+            <span className={`ml-2 text-sm font-medium hidden sm:block ${currentStep >= step.number ? 'text-white' : 'text-white/70'
+              }`}>
               {step.title}
             </span>
           </div>
           {index < steps.length - 1 && (
-            <div className={`w-8 sm:w-12 h-0.5 transition-all duration-300 ${
-              currentStep > step.number ? 'bg-white' : 'bg-white/30'
-            }`} />
+            <div className={`w-8 sm:w-12 h-0.5 transition-all duration-300 ${currentStep > step.number ? 'bg-white' : 'bg-white/30'
+              }`} />
           )}
         </React.Fragment>
       ))}

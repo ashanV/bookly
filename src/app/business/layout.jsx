@@ -10,8 +10,11 @@ export default function Layout({ children }) {
     // Pages that should NOT have the business dashboard layout
     const isLandingPage = pathname === '/business';
     const isAuthPage = pathname.startsWith('/business/auth');
+    // Exclude Service Add (/new) and Edit (/[id]) pages
+    // List page is /business/dashboard/services, forms are deeper
+    const isServiceFormPage = pathname.startsWith('/business/dashboard/services/') && pathname !== '/business/dashboard/services';
 
-    if (isLandingPage || isAuthPage) {
+    if (isLandingPage || isAuthPage || isServiceFormPage) {
         return <>{children}</>;
     }
 

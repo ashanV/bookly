@@ -47,10 +47,10 @@ export async function GET(req, { params }) {
     ];
 
     // Use real images from database or fallback to mock images
-    const businessImages = business.bannerImage 
+    const businessImages = business.bannerImage
       ? [business.bannerImage, ...(business.portfolioImages || []).slice(0, 2)]
       : images;
-    
+
     const businessPortfolioImages = business.portfolioImages && business.portfolioImages.length > 0
       ? business.portfolioImages
       : images.slice(0, 3);
@@ -83,7 +83,7 @@ export async function GET(req, { params }) {
       portfolioImages: businessPortfolioImages,
       lat,
       lng,
-      categories: business.category ? [business.category] : [],
+      categories: business.categories || [],
       services,
       reviewsList: business.reviews || [], // Return actual reviews
       workingHours: business.workingHours || {
@@ -135,6 +135,9 @@ export async function PUT(req, { params }) {
     const { id } = await params;
     const data = await req.json();
 
+    console.log('PUT received for id:', id);
+    console.log('PUT data received:', JSON.stringify(data, null, 2));
+
     if (!id) {
       return NextResponse.json({ error: "Brak ID biznesu" }, { status: 400 });
     }
@@ -145,6 +148,8 @@ export async function PUT(req, { params }) {
       { $set: data },
       { new: true, runValidators: true }
     ).select('-password -__v');
+
+    console.log('Updated business categories:', updatedBusiness?.categories);
 
     if (!updatedBusiness) {
       return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });

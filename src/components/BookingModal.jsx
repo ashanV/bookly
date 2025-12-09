@@ -46,17 +46,15 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
   // Filtrowanie pracowników, którzy mają przypisaną wybraną usługę
   const availableStaff = useMemo(() => {
     if (!service || !employees || employees.length === 0) return [];
-    
+
     return employees.filter(emp => {
-      // Jeśli pracownik nie ma przypisanych usług, pokaż go (dla kompatybilności)
-      if (!emp.assignedServices || emp.assignedServices.length === 0) return true;
-      
-      // Sprawdź czy pracownik ma przypisaną wybraną usługę
-      const assignedServiceIds = emp.assignedServices.map(as => 
-        typeof as === 'object' ? as.serviceId : as
-      );
-      
-      return assignedServiceIds.includes(service.id?.toString());
+      // If service doesn't specify employees, show all (backward compatibility)
+      if (!service.employees || service.employees.length === 0) {
+        return true;
+      }
+
+      // Check if employee ID is in service.employees array
+      return service.employees.includes(emp.id);
     }).map(emp => ({
       id: emp.id,
       name: emp.name,
@@ -79,7 +77,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
         const response = await fetch(
           `/api/employees/${bookingData.staff.id}/availability?businessId=${businessId}&date=${dateStr}`
         );
-        
+
         if (response.ok) {
           const data = await response.json();
           setAvailableSlots(data.availableSlots || []);
@@ -119,7 +117,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
   const handleConfirmBooking = async () => {
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch('/api/reservations/create', {
         method: 'POST',
@@ -161,11 +159,11 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
   // Funkcja pomocnicza do sprawdzania czy dzień jest otwarty
   const isDayOpen = (date) => {
     if (!workingHours || Object.keys(workingHours).length === 0) return true; // Domyślnie otwarte jeśli brak danych
-    
+
     const dayOfWeek = getDay(date);
     const dayKey = dayMapping[dayOfWeek];
     const dayHours = workingHours[dayKey];
-    
+
     if (!dayHours) return true; // Domyślnie otwarte
     return !dayHours.closed && dayHours.open && dayHours.close;
   };
@@ -335,14 +333,14 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
                     key={staff.id}
                     onClick={() => setBookingData(prev => ({ ...prev, staff, time: '' }))}
                     className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${bookingData.staff?.id === staff.id
-                        ? 'bg-violet-600 text-white shadow-lg ring-2 ring-violet-200'
-                        : 'bg-white hover:bg-violet-50 border border-gray-200 hover:border-violet-300'
+                      ? 'bg-violet-600 text-white shadow-lg ring-2 ring-violet-200'
+                      : 'bg-white hover:bg-violet-50 border border-gray-200 hover:border-violet-300'
                       }`}
                   >
                     <div className="flex items-center space-x-3">
                       {typeof staff.avatar === 'string' && staff.avatar.startsWith('http') ? (
-                        <img 
-                          src={staff.avatar} 
+                        <img
+                          src={staff.avatar}
                           alt={staff.name}
                           className="w-10 h-10 rounded-full object-cover"
                         />
@@ -392,8 +390,8 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
                       key={time}
                       onClick={() => setBookingData(prev => ({ ...prev, time }))}
                       className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 ${bookingData.time === time
-                          ? 'bg-violet-600 text-white shadow-lg'
-                          : 'bg-white text-gray-700 hover:bg-violet-100 border border-gray-200 hover:border-violet-300'
+                        ? 'bg-violet-600 text-white shadow-lg'
+                        : 'bg-white text-gray-700 hover:bg-violet-100 border border-gray-200 hover:border-violet-300'
                         }`}
                     >
                       {time}
@@ -424,33 +422,33 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
       <div className="bg-gray-50/50 rounded-2xl p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InputField 
-            label="Imię" 
-            name="firstName" 
+          <InputField
+            label="Imię"
+            name="firstName"
             placeholder="Jan"
             value={bookingData.customer.firstName}
             onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, firstName: e.target.value } }))}
           />
-          <InputField 
-            label="Nazwisko" 
-            name="lastName" 
+          <InputField
+            label="Nazwisko"
+            name="lastName"
             placeholder="Kowalski"
             value={bookingData.customer.lastName}
             onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, lastName: e.target.value } }))}
           />
         </div>
-        <InputField 
-          label="Email" 
-          name="email" 
-          type="email" 
+        <InputField
+          label="Email"
+          name="email"
+          type="email"
           placeholder="jan.kowalski@example.com"
           value={bookingData.customer.email}
           onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, email: e.target.value } }))}
         />
-        <InputField 
-          label="Telefon" 
-          name="phone" 
-          type="tel" 
+        <InputField
+          label="Telefon"
+          name="phone"
+          type="tel"
           placeholder="+48 123 456 789"
           value={bookingData.customer.phone}
           onChange={(e) => setBookingData(prev => ({ ...prev, customer: { ...prev.customer, phone: e.target.value } }))}
@@ -533,8 +531,8 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
   const PaymentOption = ({ value, title, subtitle, icon }) => (
     <label className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${bookingData.paymentMethod === value
-        ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
-        : 'border-gray-200 hover:border-violet-300 hover:bg-gray-50'
+      ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
+      : 'border-gray-200 hover:border-violet-300 hover:bg-gray-50'
       }`}>
       <div className="text-2xl mr-4">{icon}</div>
       <div className="flex-1">
@@ -720,10 +718,10 @@ const ProgressIndicator = ({ currentStep }) => {
         <React.Fragment key={step.number}>
           <div className="flex items-center">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${currentStep > step.number
-                ? 'bg-white text-violet-600'
-                : currentStep === step.number
-                  ? 'bg-white text-violet-600 ring-4 ring-white/30'
-                  : 'bg-white/30 text-white'
+              ? 'bg-white text-violet-600'
+              : currentStep === step.number
+                ? 'bg-white text-violet-600 ring-4 ring-white/30'
+                : 'bg-white/30 text-white'
               }`}>
               {currentStep > step.number ? <CheckCircle className="w-5 h-5" /> : step.number}
             </div>
