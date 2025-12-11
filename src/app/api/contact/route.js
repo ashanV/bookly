@@ -1,25 +1,32 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
+  // Rate limiting check
+  const rateLimit = checkRateLimit(request, 'contact');
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit.resetIn);
+  }
+
   try {
     const body = await request.json();
-    const { 
-      name, 
-      email, 
-      company, 
-      phone, 
-      businessType, 
-      subject, 
-      message 
+    const {
+      name,
+      email,
+      company,
+      phone,
+      businessType,
+      subject,
+      message
     } = body;
 
     // Walidacja wymaganych pól
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
-        { error: "Pola: imię i nazwisko, email, temat i wiadomość są wymagane." }, 
+        { error: "Pola: imię i nazwisko, email, temat i wiadomość są wymagane." },
         { status: 400 }
       );
     }
@@ -28,7 +35,7 @@ export async function POST(request) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: "Podaj prawidłowy adres email." }, 
+        { error: "Podaj prawidłowy adres email." },
         { status: 400 }
       );
     }
@@ -147,20 +154,20 @@ ${message}
     console.log("Emails sent successfully:", { adminEmailData, clientEmailData });
 
     return NextResponse.json(
-      { 
-        success: true, 
-        message: "Wiadomość została wysłana pomyślnie!" 
-      }, 
+      {
+        success: true,
+        message: "Wiadomość została wysłana pomyślnie!"
+      },
       { status: 200 }
     );
 
   } catch (error) {
     console.error("Błąd wysyłki emaila:", error);
-    
+
     return NextResponse.json(
-      { 
-        error: "Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie lub skontaktuj się bezpośrednio." 
-      }, 
+      {
+        error: "Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie lub skontaktuj się bezpośrednio."
+      },
       { status: 500 }
     );
   }

@@ -3,8 +3,15 @@ import Business from "../../../models/Business";
 import User from "../../../models/User";
 import { NextResponse } from "next/server";
 import { validatePassword } from "@/lib/passwordValidation";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(req) {
+  // Rate limiting check (stricter for registration)
+  const rateLimit = checkRateLimit(req, 'register');
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit.resetIn);
+  }
+
   try {
     // Pobranie danych z formularza rejestracji biznesu
     const {

@@ -5,8 +5,15 @@ import { connectDB } from "@/lib/mongodb";
 import User from "../../../models/User";
 import Business from "../../../models/Business";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function PUT(req) {
+    // Rate limiting check
+    const rateLimit = checkRateLimit(req, 'changePassword');
+    if (!rateLimit.success) {
+        return rateLimitResponse(rateLimit.resetIn);
+    }
+
     try {
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;

@@ -3,8 +3,15 @@ import User from "../../../models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(req) {
+  // Rate limiting check
+  const rateLimit = checkRateLimit(req, 'login');
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit.resetIn);
+  }
+
   try {
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
