@@ -6,6 +6,7 @@ import User from "../../../models/User";
 import Business from "../../../models/Business";
 import bcrypt from "bcryptjs";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export async function PUT(req) {
     // Rate limiting check
@@ -41,9 +42,11 @@ export async function PUT(req) {
             );
         }
 
-        if (newPassword.length < 6) {
+        // Use the same password validation as registration
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.valid) {
             return NextResponse.json(
-                { error: "Nowe hasło musi mieć co najmniej 6 znaków" },
+                { error: passwordValidation.message },
                 { status: 400 }
             );
         }
