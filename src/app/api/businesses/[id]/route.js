@@ -1,6 +1,8 @@
 import { connectDB } from "@/lib/mongodb";
 import Business from "../../../models/Business";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
 export async function GET(req, { params }) {
   try {
@@ -131,25 +133,64 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
+    // ✅ AUTHORIZATION CHECK - Verify JWT token
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Brak autoryzacji - zaloguj się" },
+        { status: 401 }
+      );
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined');
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Nieprawidłowy lub wygasły token" },
+        { status: 401 }
+      );
+    }
+
+    // ✅ Only business accounts can modify business data
+    if (decoded.role !== 'business') {
+      return NextResponse.json(
+        { error: "Brak uprawnień - tylko konto biznesowe może edytować dane" },
+        { status: 403 }
+      );
+    }
+
     await connectDB();
     const { id } = await params;
     const data = await req.json();
-
-    console.log('PUT received for id:', id);
-    console.log('PUT data received:', JSON.stringify(data, null, 2));
 
     if (!id) {
       return NextResponse.json({ error: "Brak ID biznesu" }, { status: 400 });
     }
 
+    // ✅ OWNERSHIP CHECK - User can only modify their OWN business
+    if (decoded.id !== id) {
+      return NextResponse.json(
+        { error: "Brak uprawnień - możesz edytować tylko własny biznes" },
+        { status: 403 }
+      );
+    }
+
+    // Prevent modification of sensitive fields
+    const { password, email, _id, ...safeData } = data;
+
     // Update business
     const updatedBusiness = await Business.findByIdAndUpdate(
       id,
-      { $set: data },
+      { $set: safeData },
       { new: true, runValidators: true }
     ).select('-password -__v');
-
-    console.log('Updated business categories:', updatedBusiness?.categories);
 
     if (!updatedBusiness) {
       return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });
@@ -163,7 +204,7 @@ export async function PUT(req, { params }) {
   } catch (error) {
     console.error("Błąd aktualizacji biznesu:", error);
     return NextResponse.json(
-      { error: error.message || "Wystąpił błąd serwera" },
+      { error: "Wystąpił błąd serwera" },
       { status: 500 }
     );
   }

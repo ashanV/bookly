@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const protectedRoutes = ['/business'];
+// Only protect the business dashboard and its sub-routes
+const protectedRoutes = ['/business/dashboard'];
+
+// Public business pages that don't require authentication
+const publicBusinessPages = ['/business', '/business/auth', '/business/contact', '/business/pricing', '/business/who', '/business/functions'];
 
 export async function middleware(request) {
   const pathname = request.nextUrl.pathname;
 
-  // Check if the route is protected
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  const isAuthPage = pathname.startsWith('/business/auth');
+  // Check if it's a public business page (exact match or auth pages)
+  const isPublicBusinessPage = publicBusinessPages.some(page =>
+    pathname === page || pathname.startsWith('/business/auth')
+  );
 
-  if (isProtectedRoute && !isAuthPage) {
+  // Check if the route is protected (dashboard and sub-routes)
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+
+  if (isProtectedRoute && !isPublicBusinessPage) {
     const token = request.cookies.get('token')?.value;
 
     if (!token) {
