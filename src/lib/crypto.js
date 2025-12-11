@@ -5,7 +5,10 @@ const IV_LENGTH = 16;
 
 // Helper to get a 32-byte key from the environment variable
 const getKey = () => {
-    const key = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET || 'default-secret-key-change-me';
+    const key = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
+    if (!key) {
+        throw new Error('ENCRYPTION_KEY or JWT_SECRET environment variable must be set for encryption');
+    }
     return crypto.createHash('sha256').update(String(key)).digest();
 };
 
