@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from "next/link";
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Star, Heart, MapPin, Clock, Phone, Globe,
@@ -10,9 +11,18 @@ import {
   ChevronRight, Sparkles, Scissors, BadgeCheck, X
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import BookingModal from '../../../../components/BookingModal';
-import EmployeeBookingModal from '../../../../components/EmployeeBookingModal';
 import { useAuth } from '../../../../hooks/useAuth';
+
+// Dynamic imports for heavy modal components
+const BookingModal = dynamic(() => import('../../../../components/BookingModal'), {
+  loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>,
+  ssr: false
+});
+
+const EmployeeBookingModal = dynamic(() => import('../../../../components/EmployeeBookingModal'), {
+  loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>,
+  ssr: false
+});
 
 // --- Mock Data & Helpers ---
 
@@ -540,17 +550,17 @@ export default function StudioDetailsPage() {
     : (studio.services || []).filter(s => s.category === serviceFilter);
 
   const currentDay = getCurrentDay();
-  
+
   // Helper to get reviews array and count
   // Priority: reviewsList (if exists) > reviews (if array) > reviews (if number) > []
-  const reviewsArray = Array.isArray(studio.reviewsList) 
-    ? studio.reviewsList 
+  const reviewsArray = Array.isArray(studio.reviewsList)
+    ? studio.reviewsList
     : (Array.isArray(studio.reviews) ? studio.reviews : []);
-  
-  const reviewsCount = Array.isArray(studio.reviewsList) 
-    ? studio.reviewsList.length 
-    : (Array.isArray(studio.reviews) 
-      ? studio.reviews.length 
+
+  const reviewsCount = Array.isArray(studio.reviewsList)
+    ? studio.reviewsList.length
+    : (Array.isArray(studio.reviews)
+      ? studio.reviews.length
       : (typeof studio.reviews === 'number' ? studio.reviews : 0));
 
   return (
@@ -724,7 +734,7 @@ export default function StudioDetailsPage() {
                     {studio.team?.map(member => {
                       // Znajdź pełne dane pracownika z employees array (zawiera availability)
                       const fullEmployee = studio.employees?.find(emp => emp.id === member.id) || member;
-                      
+
                       return (
                         <div key={member.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all text-center group">
                           <div className="relative w-24 h-24 mx-auto mb-4">

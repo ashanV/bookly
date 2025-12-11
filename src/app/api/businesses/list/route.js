@@ -1,16 +1,26 @@
 import { connectDB } from "@/lib/mongodb";
 import Business from "../../../models/Business";
 import { NextResponse } from "next/server";
+import { getCache, setCache, generateCacheKey, CACHE_TTL } from "@/lib/cache";
 
 export async function GET(req) {
   try {
-    await connectDB();
-
     // Pobranie parametrów z URL
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const location = searchParams.get('location') || '';
     const category = searchParams.get('category') || '';
+
+    // Generate cache key from params
+    const cacheKey = generateCacheKey('businesses:list', { search, location, category });
+
+    // Try to get from cache first
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return NextResponse.json({ businesses: cachedData }, { status: 200 });
+    }
+
+    await connectDB();
 
     // Budowanie zapytania - tylko aktywne biznesy
     const query = { isActive: true };
@@ -101,6 +111,9 @@ export async function GET(req) {
         city: business.city
       };
     });
+
+    // Store in cache for future requests
+    await setCache(cacheKey, transformedBusinesses, CACHE_TTL.BUSINESS_LIST);
 
     return NextResponse.json({ businesses: transformedBusinesses }, { status: 200 });
   } catch (error) {

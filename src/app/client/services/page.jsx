@@ -9,10 +9,23 @@ import { useAuth } from '../../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Dynamically import components that might use browser APIs
-const MapModal = dynamic(() => import('../../../components/Map'), { ssr: false });
-const BookingModal = dynamic(() => import('../../../components/BookingModal'), { ssr: false });
-const StudioCard = dynamic(() => import('../../../components/StudioCard'), { ssr: false });
-const FilterSidebar = dynamic(() => import('../../../components/FilterSidebar'), { ssr: false });
+// Dynamically import components that might use browser APIs
+const MapModal = dynamic(() => import('../../../components/Map'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>
+});
+const BookingModal = dynamic(() => import('../../../components/BookingModal'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>
+});
+const StudioCard = dynamic(() => import('../../../components/StudioCard'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] bg-gray-100 rounded-2xl animate-pulse"></div>
+});
+const FilterSidebar = dynamic(() => import('../../../components/FilterSidebar'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[600px] bg-gray-100 rounded-2xl animate-pulse"></div>
+});
 
 // Mock data for services
 const mockStudios = [

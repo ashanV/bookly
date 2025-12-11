@@ -3,16 +3,24 @@ import Business from "../../../models/Business";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { getCache, setCache, invalidateBusinessCache, CACHE_TTL } from "@/lib/cache";
 
 export async function GET(req, { params }) {
   try {
-    await connectDB();
-
     const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: "Brak ID biznesu" }, { status: 400 });
     }
+
+    // Try cache first
+    const cacheKey = `business:${id}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return NextResponse.json({ business: cachedData }, { status: 200 });
+    }
+
+    await connectDB();
 
     // Find active business
     const business = await Business.findOne({ _id: id, isActive: true })
@@ -121,6 +129,9 @@ export async function GET(req, { params }) {
       postalCode: business.postalCode || ''
     };
 
+    // Store in cache
+    await setCache(cacheKey, transformedBusiness, CACHE_TTL.BUSINESS_DETAIL);
+
     return NextResponse.json({ business: transformedBusiness }, { status: 200 });
   } catch (error) {
     console.error("Błąd pobierania szczegółów biznesu:", error);
@@ -195,6 +206,9 @@ export async function PUT(req, { params }) {
     if (!updatedBusiness) {
       return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });
     }
+
+    // Invalidate cache after update
+    await invalidateBusinessCache(id);
 
     return NextResponse.json({
       message: "Dane zostały zaktualizowane",
