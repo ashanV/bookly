@@ -27,7 +27,7 @@ export default function ServiceItem({ service, color, onEdit, onDelete }) {
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl hover:shadow-md transition-all group relative flex">
+        <div className="bg-white cursor-grab border border-gray-200 rounded-xl hover:shadow-md transition-all group relative flex">
             {/* Colored strip on the left with rounded corners */}
             <div
                 className="w-1.5 absolute left-0 top-0 bottom-0 rounded-l-xl"

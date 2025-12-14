@@ -8,6 +8,11 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
     const [isSidebarOptionsOpen, setIsSidebarOptionsOpen] = useState(false);
     const sidebarOptionsRef = useRef(null);
 
+    // Search State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [sortBy, setSortBy] = useState('name');
+
     // Vacation Modal State
     const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
     const [vacationModalEmployeeId, setVacationModalEmployeeId] = useState(null);
@@ -15,6 +20,22 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
     // Employee Details Panel State
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [activeTab, setActiveTab] = useState('summary');
+
+    // Filter employees based on search term
+    const filteredEmployees = employees.filter(employee => {
+        if (!searchTerm) return true;
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            employee.name?.toLowerCase().includes(searchLower) ||
+            employee.email?.toLowerCase().includes(searchLower) ||
+            employee.phone?.includes(searchTerm) ||
+            employee.position?.toLowerCase().includes(searchLower)
+        );
+    }).sort((a, b) => {
+        const aValue = a[sortBy]?.toLowerCase() || '';
+        const bValue = b[sortBy]?.toLowerCase() || '';
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    });
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -66,7 +87,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                 <div className="flex items-center gap-3">
                     <h1 className="text-3xl font-bold text-gray-900">Pracownicy</h1>
                     <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm font-medium">
-                        {employees.length}
+                        {filteredEmployees.length} / {employees.length}
                     </span>
                 </div>
                 <div className="flex gap-3">
@@ -99,16 +120,29 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <input
                         type="text"
-                        placeholder="Szukaj pracowników"
+                        placeholder="Szukaj pracowników po imieniu, nazwisku, email lub telefonie..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-full text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-black/5"
                     />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            <X size={18} />
+                        </button>
+                    )}
                 </div>
                 <button className="px-6 py-3 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                     Filtry
                     <SlidersHorizontal size={18} />
                 </button>
-                <button className="px-6 py-3 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 ml-auto">
-                    Zmień kolejność
+                <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="px-6 py-3 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 ml-auto"
+                >
+                    {sortOrder === 'asc' ? 'A-Z' : 'Z-A'}
                     <ArrowUpDown size={18} />
                 </button>
             </div>
@@ -118,12 +152,18 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                 <div className="w-6">
                     <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
                 </div>
-                <div className="flex items-center gap-2 cursor-pointer hover:text-gray-600">
+                <div
+                    className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
+                    onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                >
                     Nazwa
                     <ArrowUpDown size={14} />
                 </div>
                 <div>Kontakt</div>
-                <div className="flex items-center gap-2 cursor-pointer hover:text-gray-600">
+                <div
+                    className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
+                    onClick={() => { setSortBy('rating'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                >
                     Ocena
                     <ArrowUpDown size={14} />
                 </div>
@@ -132,117 +172,132 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
 
             {/* List */}
             <div className="divide-y divide-gray-100">
-                {employees.map((employee) => (
-                    <div
-                        key={employee.id}
-                        onClick={() => setSelectedEmployee(employee)}
-                        className="grid grid-cols-[auto_2fr_2fr_1fr_auto] gap-4 px-4 py-6 items-center hover:bg-gray-50 transition-colors group cursor-pointer"
-                    >
-                        <div className="w-6">
-                            <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
-                        </div>
-
-                        {/* Name & Avatar */}
-                        <div className="flex items-center gap-4">
-                            {employee.avatarImage ? (
-                                <img
-                                    src={employee.avatarImage}
-                                    alt={employee.name}
-                                    className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                                />
-                            ) : (
-                                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-lg border border-blue-100">
-                                    {employee.avatar || employee.name.charAt(0)}
-                                </div>
-                            )}
-                            <div>
-                                <h3 className="font-bold text-gray-900">{employee.name}</h3>
-                                <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
-                                    <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-[10px] font-serif">S</span>
-                                </div>
+                {filteredEmployees.length === 0 ? (
+                    <div className="text-center py-12">
+                        <Search className="mx-auto text-gray-300 mb-3" size={48} />
+                        <p className="text-gray-500 font-medium">Brak pracowników spełniających kryteria</p>
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="mt-2 text-sm text-purple-600 hover:underline"
+                            >
+                                Wyczyść wyszukiwanie
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    filteredEmployees.map((employee) => (
+                        <div
+                            key={employee.id}
+                            onClick={() => setSelectedEmployee(employee)}
+                            className="grid grid-cols-[auto_2fr_2fr_1fr_auto] gap-4 px-4 py-6 items-center hover:bg-gray-50 transition-colors group cursor-pointer"
+                        >
+                            <div className="w-6">
+                                <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
                             </div>
-                        </div>
 
-                        {/* Contact */}
-                        <div className="flex flex-col gap-1">
-                            {employee.email && (
-                                <a href={`mailto:${employee.email}`} className="text-blue-600 hover:underline text-sm font-medium">
-                                    {employee.email}
-                                </a>
-                            )}
-                            {employee.phone && (
-                                <span className="text-blue-600 text-sm">
-                                    {employee.phone}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Rating */}
-                        <div className="text-gray-500 text-sm">
-                            Brak opinii
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex justify-end">
-                            <div className="relative">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveDropdownId(activeDropdownId === employee.id ? null : employee.id);
-                                    }}
-                                    className={`px-4 py-2 border border-gray-200 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${activeDropdownId === employee.id ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-white hover:shadow-sm bg-white'}`}
-                                >
-                                    Opcje
-                                    <MoreHorizontal size={16} />
-                                </button>
-
-                                {activeDropdownId === employee.id && (
-                                    <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                        <div className="py-1">
-                                            <button
-                                                onClick={() => {
-                                                    if (onEditClick) onEditClick(employee.id);
-                                                    setActiveDropdownId(null);
-                                                }}
-                                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                            >
-                                                <UserCog size={16} className="text-gray-400" />
-                                                Zmień
-                                            </button>
-                                            <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
-                                                <Calendar size={16} className="text-gray-400" />
-                                                Wyświetl kalendarz
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (onViewScheduleClick) onViewScheduleClick();
-                                                    setActiveDropdownId(null);
-                                                }}
-                                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                            >
-                                                <Briefcase size={16} className="text-gray-400" />
-                                                Wyświetl grafik pracy
-                                            </button>
-                                            <div className="h-px bg-gray-100 my-1"></div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveDropdownId(null);
-                                                    setVacationModalEmployeeId(employee.id);
-                                                    setIsVacationModalOpen(true);
-                                                }}
-                                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                            >
-                                                <Briefcase size={16} className="text-gray-400" />
-                                                Dodaj urlop
-                                            </button>
-                                        </div>
+                            {/* Name & Avatar */}
+                            <div className="flex items-center gap-4">
+                                {employee.avatarImage ? (
+                                    <img
+                                        src={employee.avatarImage}
+                                        alt={employee.name}
+                                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                                    />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-lg border border-blue-100">
+                                        {employee.avatar || employee.name.charAt(0)}
                                     </div>
                                 )}
+                                <div>
+                                    <h3 className="font-bold text-gray-900">{employee.name}</h3>
+                                    <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
+                                        <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-[10px] font-serif">S</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Contact */}
+                            <div className="flex flex-col gap-1">
+                                {employee.email && (
+                                    <a href={`mailto:${employee.email}`} className="text-blue-600 hover:underline text-sm font-medium">
+                                        {employee.email}
+                                    </a>
+                                )}
+                                {employee.phone && (
+                                    <span className="text-blue-600 text-sm">
+                                        {employee.phone}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Rating */}
+                            <div className="text-gray-500 text-sm">
+                                Brak opinii
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end">
+                                <div className="relative">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveDropdownId(activeDropdownId === employee.id ? null : employee.id);
+                                        }}
+                                        className={`px-4 py-2 border border-gray-200 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${activeDropdownId === employee.id ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-white hover:shadow-sm bg-white'}`}
+                                    >
+                                        Opcje
+                                        <MoreHorizontal size={16} />
+                                    </button>
+
+                                    {activeDropdownId === employee.id && (
+                                        <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="py-1">
+                                                <button
+                                                    onClick={() => {
+                                                        if (onEditClick) onEditClick(employee.id);
+                                                        setActiveDropdownId(null);
+                                                    }}
+                                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                >
+                                                    <UserCog size={16} className="text-gray-400" />
+                                                    Zmień
+                                                </button>
+                                                <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
+                                                    <Calendar size={16} className="text-gray-400" />
+                                                    Wyświetl kalendarz
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (onViewScheduleClick) onViewScheduleClick();
+                                                        setActiveDropdownId(null);
+                                                    }}
+                                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                >
+                                                    <Briefcase size={16} className="text-gray-400" />
+                                                    Wyświetl grafik pracy
+                                                </button>
+                                                <div className="h-px bg-gray-100 my-1"></div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveDropdownId(null);
+                                                        setVacationModalEmployeeId(employee.id);
+                                                        setIsVacationModalOpen(true);
+                                                    }}
+                                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                >
+                                                    <Briefcase size={16} className="text-gray-400" />
+                                                    Dodaj urlop
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
             <VacationModal
                 isOpen={isVacationModalOpen}

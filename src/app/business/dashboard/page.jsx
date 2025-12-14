@@ -20,7 +20,11 @@ import {
   Eye,
   Edit,
   ArrowUpRight,
-  Download
+  Download,
+  Search,
+  Filter,
+  X,
+  ArrowUpDown
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -130,6 +134,17 @@ export default function DashboardPage() {
     { name: 'Stylizacja ślubna', bookings: 12, revenue: 4800, trend: 15 }
   ]);
 
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [serviceFilter, setServiceFilter] = useState('');
+  const [employeeFilter, setEmployeeFilter] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [isLoadingReservations, setIsLoadingReservations] = useState(false);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/business/auth');
@@ -143,6 +158,17 @@ export default function DashboardPage() {
       fetchReservationsStats();
     }
   }, [user]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (user && user.role === 'business') {
+        fetchRecentReservations();
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, statusFilter, serviceFilter, employeeFilter, sortBy, sortOrder]);
 
   const fetchBusinessData = async () => {
     try {
@@ -158,12 +184,33 @@ export default function DashboardPage() {
 
   const fetchRecentReservations = async () => {
     try {
-      const response = await fetch('/api/reservations/list?status=confirmed,pending', {
+      setIsLoadingReservations(true);
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+      if (serviceFilter) params.append('service', serviceFilter);
+      if (employeeFilter) params.append('employeeId', employeeFilter);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
+
+      const response = await fetch(`/api/reservations/list?${params.toString()}`, {
         credentials: 'include'
       });
 
       if (response.ok) {
         const data = await response.json();
+
+        // Extract unique services and employees for filter dropdowns
+        const services = [...new Set(data.reservations.map(r => r.service).filter(Boolean))];
+        const employees = data.reservations
+          .map(r => r.employee)
+          .filter((e, i, arr) => e && arr.findIndex(emp => emp?.id === e?.id) === i);
+
+        setAvailableServices(services);
+        setAvailableEmployees(employees);
+
         const upcoming = data.reservations
           .filter(res => {
             const resDate = new Date(res.date);
@@ -171,12 +218,7 @@ export default function DashboardPage() {
             today.setHours(0, 0, 0, 0);
             return resDate >= today && res.status !== 'cancelled';
           })
-          .sort((a, b) => {
-            const dateA = new Date(`${a.date}T${a.time}`);
-            const dateB = new Date(`${b.date}T${b.time}`);
-            return dateA - dateB;
-          })
-          .slice(0, 4)
+          .slice(0, 8)
           .map(res => {
             const resDate = new Date(res.date);
             const today = new Date();
@@ -212,6 +254,8 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Błąd pobierania rezerwacji:', error);
+    } finally {
+      setIsLoadingReservations(false);
     }
   };
 
@@ -259,6 +303,24 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await logout();
     router.push('/business/auth');
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setServiceFilter('');
+    setEmployeeFilter('');
+    setSortBy('date');
+    setSortOrder('asc');
+  };
+
+  const activeFiltersCount = () => {
+    let count = 0;
+    if (searchQuery) count++;
+    if (statusFilter && statusFilter !== 'all') count++;
+    if (serviceFilter) count++;
+    if (employeeFilter) count++;
+    return count;
   };
 
   const getStatusColor = (status) => {
@@ -549,37 +611,165 @@ export default function DashboardPage() {
               <ArrowUpRight size={16} />
             </button>
           </div>
-          <div className="space-y-3">
-            {recentReservations.map((reservation) => (
-              <div
-                key={reservation.id}
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all group cursor-pointer"
+
+          {/* Filter Controls */}
+          <div className="mb-6 space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Szukaj po kliencie, email lub telefonie..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+            </div>
+
+            {/* Filter Row */}
+            <div className="flex flex-wrap gap-3">
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-110 transition-transform">
-                    {reservation.avatar}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{reservation.client}</p>
-                    <p className="text-sm text-gray-500">{reservation.service}</p>
-                    {reservation.employee && (
-                      <p className="text-xs text-violet-600 mt-1">👤 {reservation.employee.name}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Clock size={14} className="text-gray-400" />
-                      <span className="text-xs text-gray-600">{reservation.date}, {reservation.time}</span>
+                <option value="all">Wszystkie statusy</option>
+                <option value="confirmed">Potwierdzone</option>
+                <option value="pending">Oczekujące</option>
+                <option value="cancelled">Anulowane</option>
+              </select>
+
+              {/* Service Filter */}
+              <select
+                value={serviceFilter}
+                onChange={(e) => setServiceFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              >
+                <option value="">Wszystkie usługi</option>
+                {availableServices.map((service, idx) => (
+                  <option key={idx} value={service}>{service}</option>
+                ))}
+              </select>
+
+              {/* Employee Filter */}
+              <select
+                value={employeeFilter}
+                onChange={(e) => setEmployeeFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              >
+                <option value="">Wszyscy pracownicy</option>
+                {availableEmployees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>{employee.name}</option>
+                ))}
+              </select>
+
+              {/* Sort Options */}
+              <div className="flex gap-2">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                >
+                  <option value="date">Sortuj: Data</option>
+                  <option value="price">Sortuj: Cena</option>
+                  <option value="clientName">Sortuj: Klient</option>
+                </select>
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all"
+                  title={sortOrder === 'asc' ? 'Rosnąco' : 'Malejąco'}
+                >
+                  <ArrowUpDown size={18} className={sortOrder === 'desc' ? 'rotate-180' : ''} />
+                </button>
+              </div>
+
+              {/* Clear Filters */}
+              {activeFiltersCount() > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all text-sm font-medium"
+                >
+                  <X size={16} />
+                  Wyczyść ({activeFiltersCount()})
+                </button>
+              )}
+            </div>
+
+            {/* Active Filter Badges */}
+            {activeFiltersCount() > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {searchQuery && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    Wyszukiwanie: {searchQuery}
+                    <X size={14} className="cursor-pointer" onClick={() => setSearchQuery('')} />
+                  </span>
+                )}
+                {statusFilter && statusFilter !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    Status: {statusFilter}
+                    <X size={14} className="cursor-pointer" onClick={() => setStatusFilter('all')} />
+                  </span>
+                )}
+                {serviceFilter && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                    Usługa: {serviceFilter}
+                    <X size={14} className="cursor-pointer" onClick={() => setServiceFilter('')} />
+                  </span>
+                )}
+                {employeeFilter && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                    Pracownik: {availableEmployees.find(e => e.id === employeeFilter)?.name}
+                    <X size={14} className="cursor-pointer" onClick={() => setEmployeeFilter('')} />
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          {/* Loading State */}
+          {isLoadingReservations ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : recentReservations.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="mx-auto text-gray-300 mb-3" size={48} />
+              <p className="text-gray-500 font-medium">Brak rezerwacji spełniających kryteria</p>
+              <p className="text-sm text-gray-400 mt-1">Spróbuj zmienić filtry</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentReservations.map((reservation) => (
+                <div
+                  key={reservation.id}
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-110 transition-transform">
+                      {reservation.avatar}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{reservation.client}</p>
+                      <p className="text-sm text-gray-500">{reservation.service}</p>
+                      {reservation.employee && (
+                        <p className="text-xs text-violet-600 mt-1">👤 {reservation.employee.name}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock size={14} className="text-gray-400" />
+                        <span className="text-xs text-gray-600">{reservation.date}, {reservation.time}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900 text-lg">{reservation.price} zł</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${getStatusColor(reservation.status)}`}>
+                      {getStatusText(reservation.status)}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-gray-900 text-lg">{reservation.price} zł</p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${getStatusColor(reservation.status)}`}>
-                    {getStatusText(reservation.status)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Top usługi i Quick Actions */}

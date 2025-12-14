@@ -30,6 +30,11 @@ export async function GET(req) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const status = searchParams.get('status');
+    const search = searchParams.get('search');
+    const service = searchParams.get('service');
+    const employeeId = searchParams.get('employeeId');
+    const sortBy = searchParams.get('sortBy') || 'date';
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
 
     // Budowanie zapytania
     const query = { businessId: decoded.id };
@@ -50,9 +55,44 @@ export async function GET(req) {
       }
     }
 
+    // Wyszukiwanie tekstowe - przeszukuje nazwę klienta, email i telefon
+    if (search) {
+      query.$or = [
+        { clientName: { $regex: search, $options: 'i' } },
+        { clientEmail: { $regex: search, $options: 'i' } },
+        { clientPhone: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Filtrowanie po usłudze
+    if (service) {
+      query.service = { $regex: service, $options: 'i' };
+    }
+
+    // Filtrowanie po pracowniku
+    if (employeeId) {
+      query.employeeId = employeeId;
+    }
+
+    // Budowanie sortowania
+    let sortOptions = {};
+    switch (sortBy) {
+      case 'price':
+        sortOptions.price = sortOrder === 'asc' ? 1 : -1;
+        break;
+      case 'clientName':
+        sortOptions.clientName = sortOrder === 'asc' ? 1 : -1;
+        break;
+      case 'date':
+      default:
+        sortOptions.date = sortOrder === 'asc' ? 1 : -1;
+        sortOptions.time = sortOrder === 'asc' ? 1 : -1;
+        break;
+    }
+
     // Pobranie rezerwacji
     const reservations = await Reservation.find(query)
-      .sort({ date: 1, time: 1 })
+      .sort(sortOptions)
       .lean();
 
     // Pobranie danych biznesu, aby uzyskać informacje o pracownikach
@@ -61,7 +101,7 @@ export async function GET(req) {
 
     // Dodanie informacji o pracowniku do każdej rezerwacji
     const reservationsWithEmployee = reservations.map(reservation => {
-      const employeeInfo = reservation.employeeId 
+      const employeeInfo = reservation.employeeId
         ? employees.find(emp => emp.id?.toString() === reservation.employeeId?.toString() || emp.id === parseInt(reservation.employeeId))
         : null;
 

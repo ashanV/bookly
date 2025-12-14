@@ -47,6 +47,10 @@ export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [employeeFilter, setEmployeeFilter] = useState('');
+  const [serviceFilter, setServiceFilter] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [editingReservation, setEditingReservation] = useState(null);
@@ -54,6 +58,8 @@ export default function ReservationsPage() {
   const [editForm, setEditForm] = useState({});
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'business') {
@@ -61,15 +67,64 @@ export default function ReservationsPage() {
     }
   }, [isAuthenticated, user]);
 
+  // Debounced search - refetch when filters change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isAuthenticated && user?.role === 'business') {
+        fetchReservations();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, dateFilter, employeeFilter, serviceFilter, sortBy, sortOrder]);
+
   const fetchReservations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/reservations/list', {
+
+      // Build query parameters for server-side filtering
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+      if (serviceFilter) params.append('service', serviceFilter);
+      if (employeeFilter) params.append('employeeId', employeeFilter);
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
+
+      // Date range filter
+      if (dateFilter === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        params.append('startDate', today);
+        params.append('endDate', today);
+      } else if (dateFilter === 'tomorrow') {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        params.append('startDate', tomorrowStr);
+        params.append('endDate', tomorrowStr);
+      } else if (dateFilter === 'week') {
+        const today = new Date().toISOString().split('T')[0];
+        const weekFromNow = new Date();
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+        params.append('startDate', today);
+        params.append('endDate', weekFromNow.toISOString().split('T')[0]);
+      }
+
+      const response = await fetch(`/api/reservations/list?${params.toString()}`, {
         credentials: 'include'
       });
 
       if (response.ok) {
         const data = await response.json();
+
+        // Extract unique services and employees for filter dropdowns
+        const services = [...new Set(data.reservations.map(r => r.service).filter(Boolean))];
+        const employees = data.reservations
+          .map(r => r.employee)
+          .filter((e, i, arr) => e && arr.findIndex(emp => emp?.id === e?.id) === i);
+
+        setAvailableServices(services);
+        setAvailableEmployees(employees);
+
         // Transformacja danych z API do formatu używanego w komponencie
         const transformedReservations = data.reservations.map(res => ({
           id: res._id || res.id,
@@ -286,32 +341,8 @@ export default function ReservationsPage() {
     }
   };
 
-  const filteredReservations = reservations.filter(reservation => {
-    const matchesSearch =
-      reservation.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || reservation.status === statusFilter;
-
-    let matchesDate = true;
-    if (dateFilter === 'today') {
-      const today = new Date().toISOString().split('T')[0];
-      matchesDate = reservation.date === today;
-    } else if (dateFilter === 'tomorrow') {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      matchesDate = reservation.date === tomorrow.toISOString().split('T')[0];
-    } else if (dateFilter === 'week') {
-      const reservationDate = new Date(reservation.date);
-      const today = new Date();
-      const weekFromNow = new Date(today);
-      weekFromNow.setDate(weekFromNow.getDate() + 7);
-      matchesDate = reservationDate >= today && reservationDate <= weekFromNow;
-    }
-
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  // Server-side filtering is used - no client-side filtering needed
+  // Just use the reservations directly as they come filtered from the API
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -561,7 +592,7 @@ export default function ReservationsPage() {
                   <ChevronDown size={16} />
                 </button>
                 {showFilters && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-10">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-10">
                     <div className="mb-4">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
                       <select
@@ -575,7 +606,7 @@ export default function ReservationsPage() {
                         <option value="cancelled">Anulowane</option>
                       </select>
                     </div>
-                    <div>
+                    <div className="mb-4">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Data</label>
                       <select
                         value={dateFilter}
@@ -588,6 +619,66 @@ export default function ReservationsPage() {
                         <option value="week">Ten tydzień</option>
                       </select>
                     </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Usługa</label>
+                      <select
+                        value={serviceFilter}
+                        onChange={(e) => setServiceFilter(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="">Wszystkie usługi</option>
+                        {availableServices.map((service, idx) => (
+                          <option key={idx} value={service}>{service}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pracownik</label>
+                      <select
+                        value={employeeFilter}
+                        onChange={(e) => setEmployeeFilter(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="">Wszyscy pracownicy</option>
+                        {availableEmployees.map((employee) => (
+                          <option key={employee.id} value={employee.id}>{employee.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Sortowanie</label>
+                      <div className="flex gap-2">
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                          <option value="date">Data</option>
+                          <option value="price">Cena</option>
+                          <option value="clientName">Klient</option>
+                        </select>
+                        <button
+                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                          className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-all"
+                          title={sortOrder === 'asc' ? 'Rosnąco' : 'Malejąco'}
+                        >
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setStatusFilter('all');
+                        setDateFilter('all');
+                        setServiceFilter('');
+                        setEmployeeFilter('');
+                        setSortBy('date');
+                        setSortOrder('asc');
+                      }}
+                      className="w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                      Wyczyść filtry
+                    </button>
                   </div>
                 )}
               </div>
@@ -606,7 +697,7 @@ export default function ReservationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  Wszystkie rezerwacje ({filteredReservations.length})
+                  Wszystkie rezerwacje ({reservations.length})
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
                   Zarządzaj rezerwacjami klientów
@@ -651,7 +742,7 @@ export default function ReservationsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredReservations.map((reservation) => {
+                  {reservations.map((reservation) => {
                     const StatusIcon = getStatusIcon(reservation.status);
                     return (
                       <tr
