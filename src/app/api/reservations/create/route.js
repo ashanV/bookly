@@ -4,6 +4,7 @@ import Business from "@/app/models/Business";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { csrfMiddleware } from "@/lib/csrf";
+import { createReservationSchema, validateInput } from "@/lib/validations";
 
 export async function POST(req) {
   try {
@@ -37,6 +38,16 @@ export async function POST(req) {
     }
 
     const body = await req.json();
+
+    // Input validation with Zod
+    const validation = validateInput(createReservationSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
     const {
       businessId,
       employeeId,
@@ -50,9 +61,7 @@ export async function POST(req) {
       clientEmail,
       clientPhone,
       notes = ''
-    } = body;
-
-    // Walidacja wymaganych pól
+    } = validation.data;
     if (!businessId || !service || !date || !time || !duration || !price || !clientName || !clientEmail || !clientPhone) {
       return NextResponse.json(
         { error: "Brak wymaganych pól" },

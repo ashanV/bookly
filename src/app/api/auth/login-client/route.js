@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { csrfMiddleware } from "@/lib/csrf";
+import { loginSchema, validateInput } from "@/lib/validations";
 
 export async function POST(req) {
   // Rate limiting check
@@ -23,7 +24,16 @@ export async function POST(req) {
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
     }
-    const { email, password } = await req.json();
+
+    const body = await req.json();
+
+    // Input validation
+    const validation = validateInput(loginSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { email, password } = validation.data;
     await connectDB();
 
     // Tylko sprawdź w kolekcji User (klienci)

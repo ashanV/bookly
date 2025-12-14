@@ -2,9 +2,9 @@ import { connectDB } from "@/lib/mongodb";
 import User from "../../../models/User";
 import Business from "../../../models/Business";
 import { NextResponse } from "next/server";
-import { validatePassword } from "@/lib/passwordValidation";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { csrfMiddleware } from "@/lib/csrf";
+import { registerSchema, validateInput } from "@/lib/validations";
 
 export async function POST(req) {
   // Rate limiting check (stricter for registration)
@@ -23,8 +23,18 @@ export async function POST(req) {
   }
 
   try {
-    // Pobranie danych z formularza rejestracji
-    const { firstName, lastName, email, password, phone, birthDate } = await req.json();
+    const body = await req.json();
+
+    // Input validation with Zod
+    const validation = validateInput(registerSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { firstName, lastName, email, password, phone, birthDate } = validation.data;
 
     // Podłączenie do bazy danych
     await connectDB();
@@ -36,15 +46,6 @@ export async function POST(req) {
     if (existingUser || existingBusiness) {
       return NextResponse.json(
         { error: "Użytkownik o tym adresie email już istnieje" },
-        { status: 400 }
-      );
-    }
-
-    // Walidacja hasła
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { error: passwordValidation.message },
         { status: 400 }
       );
     }

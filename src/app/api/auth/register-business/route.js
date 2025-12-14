@@ -2,9 +2,9 @@ import { connectDB } from "@/lib/mongodb";
 import Business from "../../../models/Business";
 import User from "../../../models/User";
 import { NextResponse } from "next/server";
-import { validatePassword } from "@/lib/passwordValidation";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { csrfMiddleware } from "@/lib/csrf";
+import { registerBusinessSchema, validateInput } from "@/lib/validations";
 
 export async function POST(req) {
   // Rate limiting check (stricter for registration)
@@ -20,7 +20,15 @@ export async function POST(req) {
   }
 
   try {
-    // Pobranie danych z formularza rejestracji biznesu
+    const body = await req.json();
+
+    // Input validation with Zod
+    const validation = validateInput(registerBusinessSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    // Pobranie danych z walidacji
     const {
       companyName,
       companyType,
@@ -42,7 +50,7 @@ export async function POST(req) {
       instagram,
       facebook,
       newsletter
-    } = await req.json();
+    } = validation.data;
 
     // Podłączenie do bazy danych
     await connectDB();
@@ -54,30 +62,6 @@ export async function POST(req) {
     if (existingUser || existingBusiness) {
       return NextResponse.json(
         { error: "Użytkownik o tym adresie email już istnieje" },
-        { status: 400 }
-      );
-    }
-
-    // Walidacja wymaganych pól
-    if (!companyName || !companyType || !category || !firstName || !lastName || !email || !password || !phone || !city || !address || !postalCode) {
-      return NextResponse.json(
-        { error: "Wszystkie wymagane pola muszą być wypełnione" },
-        { status: 400 }
-      );
-    }
-
-    if (!services || services.length === 0) {
-      return NextResponse.json(
-        { error: "Musisz wybrać co najmniej jedną usługę" },
-        { status: 400 }
-      );
-    }
-
-    // Walidacja hasła
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return NextResponse.json(
-        { error: passwordValidation.message },
         { status: 400 }
       );
     }

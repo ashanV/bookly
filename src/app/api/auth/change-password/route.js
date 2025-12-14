@@ -6,8 +6,8 @@ import User from "../../../models/User";
 import Business from "../../../models/Business";
 import bcrypt from "bcryptjs";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
-import { validatePassword } from "@/lib/passwordValidation";
 import { csrfMiddleware } from "@/lib/csrf";
+import { changePasswordSchema, validateInput } from "@/lib/validations";
 
 export async function PUT(req) {
     // Rate limiting check
@@ -40,23 +40,15 @@ export async function PUT(req) {
             return NextResponse.json({ error: "Nieprawidłowy token" }, { status: 401 });
         }
 
-        const { currentPassword, newPassword } = await req.json();
+        const body = await req.json();
 
-        if (!currentPassword || !newPassword) {
-            return NextResponse.json(
-                { error: "Wymagane jest podanie aktualnego i nowego hasła" },
-                { status: 400 }
-            );
+        // Input validation
+        const validation = validateInput(changePasswordSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        // Use the same password validation as registration
-        const passwordValidation = validatePassword(newPassword);
-        if (!passwordValidation.valid) {
-            return NextResponse.json(
-                { error: passwordValidation.message },
-                { status: 400 }
-            );
-        }
+        const { currentPassword, newPassword } = validation.data;
 
         await connectDB();
 
