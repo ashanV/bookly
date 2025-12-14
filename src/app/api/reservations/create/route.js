@@ -3,9 +3,19 @@ import Reservation from "@/app/models/Reservation";
 import Business from "@/app/models/Business";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function POST(req) {
   try {
+    // CSRF validation for state-changing request
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+      return NextResponse.json(
+        { error: csrfError.error },
+        { status: csrfError.status }
+      );
+    }
+
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
     }

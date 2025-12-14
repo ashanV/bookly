@@ -2,9 +2,16 @@ import { connectDB } from "@/lib/mongodb";
 import Reservation from "../../../models/Reservation";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function PUT(req) {
   try {
+    // CSRF validation
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+      return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
+    }
+
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
     }

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getCache, setCache, invalidateBusinessCache, CACHE_TTL } from "@/lib/cache";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function GET(req, { params }) {
   try {
@@ -144,6 +145,12 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
+    // CSRF validation
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+      return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
+    }
+
     // ✅ AUTHORIZATION CHECK - Verify JWT token
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;

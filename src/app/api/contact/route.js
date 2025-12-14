@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { csrfMiddleware } from "@/lib/csrf";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -9,6 +10,12 @@ export async function POST(request) {
   const rateLimit = checkRateLimit(request, 'contact');
   if (!rateLimit.success) {
     return rateLimitResponse(rateLimit.resetIn);
+  }
+
+  // CSRF validation
+  const csrfError = await csrfMiddleware(request);
+  if (csrfError) {
+    return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
   }
 
   try {

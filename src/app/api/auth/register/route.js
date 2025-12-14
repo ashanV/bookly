@@ -4,12 +4,22 @@ import Business from "../../../models/Business";
 import { NextResponse } from "next/server";
 import { validatePassword } from "@/lib/passwordValidation";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function POST(req) {
   // Rate limiting check (stricter for registration)
   const rateLimit = checkRateLimit(req, 'register');
   if (!rateLimit.success) {
     return rateLimitResponse(rateLimit.resetIn);
+  }
+
+  // CSRF validation
+  const csrfError = await csrfMiddleware(req);
+  if (csrfError) {
+    return NextResponse.json(
+      { error: csrfError.error },
+      { status: csrfError.status }
+    );
   }
 
   try {

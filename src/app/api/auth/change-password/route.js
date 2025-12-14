@@ -7,12 +7,19 @@ import Business from "../../../models/Business";
 import bcrypt from "bcryptjs";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { validatePassword } from "@/lib/passwordValidation";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function PUT(req) {
     // Rate limiting check
     const rateLimit = checkRateLimit(req, 'changePassword');
     if (!rateLimit.success) {
         return rateLimitResponse(rateLimit.resetIn);
+    }
+
+    // CSRF validation
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+        return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
     }
 
     try {

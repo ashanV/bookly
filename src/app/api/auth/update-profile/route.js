@@ -4,8 +4,15 @@ import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/mongodb";
 import User from "../../../models/User";
 import Business from "../../../models/Business";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function PUT(req) {
+  // CSRF validation
+  const csrfError = await csrfMiddleware(req);
+  if (csrfError) {
+    return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;

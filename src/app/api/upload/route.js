@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function POST(req) {
   try {
+    // CSRF validation
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+      return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file");
     const folder = formData.get("folder") || "bookly";
@@ -78,6 +85,12 @@ export async function POST(req) {
 // Endpoint do usuwania zdjęć
 export async function DELETE(req) {
   try {
+    // CSRF validation
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+      return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
+    }
+
     const { searchParams } = new URL(req.url);
     const public_id = searchParams.get("public_id");
 

@@ -2,9 +2,16 @@ import { connectDB } from "@/lib/mongodb";
 import Reservation from "../../../models/Reservation";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { csrfMiddleware } from "@/lib/csrf";
 
 export async function DELETE(req) {
   try {
+    // CSRF validation
+    const csrfError = await csrfMiddleware(req);
+    if (csrfError) {
+      return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
+    }
+
     await connectDB();
 
     // Pobranie tokenu z cookies
