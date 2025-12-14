@@ -1,22 +1,24 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCsrf } from '@/hooks/useCsrf';
 
 export const useAuth = (redirectTo = '/client/auth') => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
+  const { secureFetch } = useCsrf();
 
   // Funkcja wylogowania
   const logout = useCallback(async (shouldRedirect = true) => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    } catch (_) {}
+      await secureFetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (_) { }
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
     console.log('👋 Wylogowano');
-    
+
     if (shouldRedirect) {
       router.push(redirectTo);
     }
@@ -54,7 +56,7 @@ export const useAuth = (redirectTo = '/client/auth') => {
     const initAuth = async () => {
       const cachedUser = localStorage.getItem('user');
       if (cachedUser) {
-        try { setUser(JSON.parse(cachedUser)); } catch {}
+        try { setUser(JSON.parse(cachedUser)); } catch { }
       }
       await refreshUser();
       setLoading(false);
@@ -67,7 +69,7 @@ export const useAuth = (redirectTo = '/client/auth') => {
   // Funkcja rejestracji
   const register = useCallback(async (userData) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await secureFetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,7 +92,7 @@ export const useAuth = (redirectTo = '/client/auth') => {
   // Funkcja aktualizacji profilu
   const updateProfile = useCallback(async (newUserData) => {
     try {
-      const response = await fetch('/api/auth/update-profile', {
+      const response = await secureFetch('/api/auth/update-profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

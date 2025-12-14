@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCsrf } from '@/hooks/useCsrf';
 
 // Animation variants
 const fadeInUp = {
@@ -30,6 +31,7 @@ const slideIn = {
 const BooklyAuth = () => {
   const router = useRouter();
   const { isAuthenticated, user, loading: authLoading } = useAuth('/business/auth');
+  const { secureFetch } = useCsrf();
   const [isLogin, setIsLogin] = useState(true);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -140,7 +142,7 @@ const BooklyAuth = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login-business', {
+      const response = await secureFetch('/api/auth/login-business', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -215,7 +217,7 @@ const BooklyAuth = () => {
 
       toast.info('Wysyłanie danych...');
 
-      const response = await fetch('/api/auth/register-business', {
+      const response = await secureFetch('/api/auth/register-business', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registrationData),
@@ -660,8 +662,8 @@ const BooklyAuth = () => {
                                 type="button"
                                 onClick={() => toggleService(service.id)}
                                 className={`p-4 rounded-xl border text-left relative group transition-all duration-200 ${formData.services.includes(service.id)
-                                    ? 'border-violet-500 bg-violet-600/10'
-                                    : 'border-white/10 bg-slate-900/30 hover:bg-slate-900/60 hover:border-white/20'
+                                  ? 'border-violet-500 bg-violet-600/10'
+                                  : 'border-white/10 bg-slate-900/30 hover:bg-slate-900/60 hover:border-white/20'
                                   }`}
                               >
                                 <div className="flex flex-col gap-2">

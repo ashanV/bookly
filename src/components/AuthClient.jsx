@@ -18,10 +18,13 @@ import {
   Facebook,
 } from "lucide-react";
 
+import { useCsrf } from '@/hooks/useCsrf';
+
 const BooklyAuth = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register, isAuthenticated, user, loading: authLoading } = useAuth(); // Używamy hooka
+  const { secureFetch } = useCsrf();
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +48,7 @@ const BooklyAuth = () => {
     }
   }, [authLoading, user, router]);
 
-  
+
 
   const handleInputChange = (e) => {
     setFormData({
@@ -64,7 +67,7 @@ const BooklyAuth = () => {
     try {
       if (isLogin) {
         // LOGOWANIE - tylko dla klientów
-        const response = await fetch('/api/auth/login-client', {
+        const response = await secureFetch('/api/auth/login-client', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -78,12 +81,12 @@ const BooklyAuth = () => {
         if (response.ok) {
           // Zapisz dane użytkownika
           localStorage.setItem('user', JSON.stringify(data.user));
-          
+
           // Przekieruj na dashboard klienta
-          const redirectUrl = searchParams?.get('redirect') || 
-                            localStorage.getItem('redirectAfterLogin') || 
-                            '/client';
-          
+          const redirectUrl = searchParams?.get('redirect') ||
+            localStorage.getItem('redirectAfterLogin') ||
+            '/client';
+
           localStorage.removeItem('redirectAfterLogin');
           router.push(redirectUrl);
           toast.success('Pomyślnie zalogowano!');
@@ -204,8 +207,8 @@ const BooklyAuth = () => {
               onClick={() => setIsLogin(true)}
               disabled={isLoading}
               className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${isLogin
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
-                  : "text-gray-600 hover:text-gray-800"
+                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
+                : "text-gray-600 hover:text-gray-800"
                 } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <LogIn size={18} />
@@ -215,8 +218,8 @@ const BooklyAuth = () => {
               onClick={() => setIsLogin(false)}
               disabled={isLoading}
               className={`flex-1 py-3 px-4 rounded-lg cursor-pointer font-medium transition-all duration-500 ease-in-out flex items-center justify-center space-x-2 ${!isLogin
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
-                  : "text-gray-600 hover:text-gray-800"
+                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md transform scale-105"
+                : "text-gray-600 hover:text-gray-800"
                 } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <UserPlus size={18} />
@@ -235,8 +238,8 @@ const BooklyAuth = () => {
             {/* Pola dla rejestracji */}
             <div
               className={`transition-all duration-700 ease-in-out transform ${!isLogin
-                  ? "max-h-screen opacity-100 translate-y-0"
-                  : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
+                ? "max-h-screen opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
                 }`}
             >
               {!isLogin && (
@@ -358,8 +361,8 @@ const BooklyAuth = () => {
             {/* Potwierdzenie hasła - tylko przy rejestracji */}
             <div
               className={`relative transition-all duration-700 ease-in-out transform ${!isLogin
-                  ? "max-h-screen opacity-100 translate-y-0"
-                  : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
+                ? "max-h-screen opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
                 }`}
             >
               {!isLogin && (
@@ -397,8 +400,8 @@ const BooklyAuth = () => {
             {/* Checkbox dla rejestracji */}
             <div
               className={`transition-all duration-700 ease-in-out transform ${!isLogin
-                  ? "max-h-screen opacity-100 translate-y-0"
-                  : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
+                ? "max-h-screen opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
                 }`}
             >
               {!isLogin && (
@@ -456,8 +459,8 @@ const BooklyAuth = () => {
             {/* Link "Zapomniałeś hasła?" - tylko przy logowaniu */}
             <div
               className={`text-center transition-all duration-700 ease-in-out transform ${isLogin
-                  ? "max-h-screen opacity-100 translate-y-0"
-                  : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
+                ? "max-h-screen opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-4 overflow-hidden"
                 }`}
             >
               {isLogin && (
