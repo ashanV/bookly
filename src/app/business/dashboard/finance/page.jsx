@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Financials from '@/components/CRM/Financials';
+import Financials from '@/components/clients/Financials';
 
 export default function FinancePage() {
     return (

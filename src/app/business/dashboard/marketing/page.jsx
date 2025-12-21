@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Marketing from '@/components/CRM/Marketing';
+import Marketing from '@/components/clients/Marketing';
 
 export default function MarketingPage() {
     return (

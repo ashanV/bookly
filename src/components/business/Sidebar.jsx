@@ -27,7 +27,7 @@ const Sidebar = () => {
         { name: 'Dashboard', icon: LayoutDashboard, path: '/business/dashboard' },
         { name: 'Kalendarz', icon: Calendar, path: '/business/dashboard/calendar' },
         { name: 'Rezerwacje', icon: BookCheck, path: '/business/dashboard/reservations' },
-        { name: 'Klienci', icon: Users, path: '/business/dashboard/crm' },
+        { name: 'Klienci', icon: Users, path: '/business/dashboard/clients' },
         { name: 'Zespół', icon: Users, path: '/business/dashboard/team' },
         { name: 'Usługi', icon: Scissors, path: '/business/dashboard/services' },
         { name: 'Marketing', icon: Megaphone, path: '/business/dashboard/marketing' },

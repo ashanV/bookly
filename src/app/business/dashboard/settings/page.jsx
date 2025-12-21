@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import { Building2, Settings, ArrowLeft, Lock, User, Image as ImageIcon, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
+import { Building2, Settings, ArrowLeft, Lock, User, Image as ImageIcon, MessageSquare, Clock, AlertTriangle, CheckSquare } from 'lucide-react';
 import ProfileSection from '@/components/settings/ProfileSection';
 import ContactDataSection from '@/components/settings/ContactDataSection';
 import OpeningHoursSection from '@/components/settings/OpeningHoursSection';
 import PortfolioSection from '@/components/settings/PortfolioSection';
 import ReviewsSection from '@/components/settings/ReviewsSection';
+import Tasks from '@/components/clients/Tasks';
 
 export default function BusinessSettings() {
     const { user, updateProfile } = useAuth();
@@ -318,7 +319,8 @@ export default function BusinessSettings() {
         { id: 'data', label: 'Dane Kontaktowe', icon: User },
         { id: 'hours', label: 'Godziny Otwarcia', icon: Clock },
         { id: 'portfolio', label: 'Portfolio', icon: ImageIcon },
-        { id: 'reviews', label: 'Opinie', icon: MessageSquare }
+        { id: 'reviews', label: 'Opinie', icon: MessageSquare },
+        { id: 'tasks', label: 'Zadania', icon: CheckSquare }
     ];
 
     const reviewsArray = Array.isArray(reviews) ? reviews : [];
@@ -485,6 +487,9 @@ export default function BusinessSettings() {
                                 avgRating={avgRating}
                                 onRefresh={fetchBusinessData}
                             />
+                        )}
+                        {activeTab === 'tasks' && (
+                            <Tasks />
                         )}
                     </main>
                 </div>

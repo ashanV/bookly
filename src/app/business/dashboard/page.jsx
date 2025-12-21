@@ -815,7 +815,7 @@ export default function DashboardPage() {
                 <ArrowUpRight className="text-green-600" size={18} />
               </button>
               <button
-                onClick={() => router.push('/business/crm')}
+                onClick={() => router.push('/business/dashboard/clients')}
                 className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 rounded-xl transition-all group"
               >
                 <div className="flex items-center gap-3">
