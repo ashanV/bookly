@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ChevronDown, Download, FileSpreadsheet, FileText, Import, RefreshCw, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
-import ClientTable from '@/components/clients/ClientTable';
+import ClientList from '@/components/clients/ClientList';
 import ClientDrawer from '@/components/clients/ClientDrawer';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -130,7 +130,7 @@ export default function CRMPage() {
                         I'll stick to full width content focused on the table for now as the user asked to "zmien strone crm całkowicie".
                     */}
                     <div className="w-full">
-                        <ClientTable onClientClick={handleClientClick} />
+                        <ClientList onSelectClient={handleClientClick} selectedClientId={selectedClient?.id} />
                     </div>
                 </div>
             </main>
