@@ -1,327 +1,512 @@
-import React, { useState } from 'react';
-import { Search, Filter, Plus, MoreVertical, Star, Phone, Mail, Tag, X, ArrowUpDown, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, SlidersHorizontal, ChevronDown, Loader2, ArrowDownUp, Minus, X, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
-export default function ClientList({ onSelectClient, selectedClientId }) {
+// Delete Confirmation Modal
+function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-black/50"
+                onClick={onClose}
+            />
+
+            {/* Modal */}
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+                {/* Close button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                    <X size={20} />
+                </button>
+
+                {/* Icon */}
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <AlertTriangle size={24} className="text-red-600" />
+                </div>
+
+                {/* Content */}
+                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                    Usuń {count > 1 ? `${count} klientów` : 'klienta'}
+                </h3>
+                <p className="text-slate-500 text-sm mb-6">
+                    Czy na pewno chcesz usunąć {count > 1 ? `wybranych ${count} klientów` : 'wybranego klienta'}?
+                    Ta operacja jest nieodwracalna i wszystkie powiązane dane zostaną trwale usunięte.
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        disabled={isDeleting}
+                        className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    >
+                        Anuluj
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {isDeleting && <Loader2 size={16} className="animate-spin" />}
+                        Usuń
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function ClientList({ onSelectClient, selectedClientId, businessId, onClientCountChange }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [tagFilter, setTagFilter] = useState('');
-    const [sortBy, setSortBy] = useState('name');
-    const [sortOrder, setSortOrder] = useState('asc');
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortOrder, setSortOrder] = useState('desc');
     const [showFilters, setShowFilters] = useState(false);
+    const [showSortDropdown, setShowSortDropdown] = useState(false);
+    const [selectedClients, setSelectedClients] = useState([]);
+    const [showBulkEditDropdown, setShowBulkEditDropdown] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // Mock data for clients
-    const clients = [
-        {
-            id: 1,
-            firstName: 'Anna',
-            lastName: 'Kowalska',
-            email: 'anna.kowalska@example.com',
-            phone: '+48 123 456 789',
-            avatar: 'AK',
-            tags: ['VIP', 'Stały klient'],
-            lastVisit: '2023-11-15',
-            totalSpent: 1250,
-            visits: 12,
-            rating: 5,
-            notes: 'Preferuje kawę z mlekiem owsianym. Uczulenie na orzechy.',
-            status: 'active'
-        },
-        {
-            id: 2,
-            firstName: 'Jan',
-            lastName: 'Nowak',
-            email: 'jan.nowak@example.com',
-            phone: '+48 987 654 321',
-            avatar: 'JN',
-            tags: ['Nowy'],
-            lastVisit: '2023-11-10',
-            totalSpent: 150,
-            visits: 1,
-            rating: 4,
-            notes: '',
-            status: 'active'
-        },
-        {
-            id: 3,
-            firstName: 'Maria',
-            lastName: 'Wiśniewska',
-            email: 'maria.wisniewska@example.com',
-            phone: '+48 555 666 777',
-            avatar: 'MW',
-            tags: ['Problematic'],
-            lastVisit: '2023-10-05',
-            totalSpent: 450,
-            visits: 3,
-            rating: 3,
-            notes: 'Często spóźnia się na wizyty.',
-            status: 'active'
-        },
-        {
-            id: 4,
-            firstName: 'Piotr',
-            lastName: 'Zieliński',
-            email: 'piotr.zielinski@example.com',
-            phone: '+48 111 222 333',
-            avatar: 'PZ',
-            tags: ['VIP'],
-            lastVisit: '2023-11-18',
-            totalSpent: 3200,
-            visits: 24,
-            rating: 5,
-            notes: 'Zawsze rezerwuje na 2 godziny.',
-            status: 'active'
-        },
-        {
-            id: 5,
-            firstName: 'Katarzyna',
-            lastName: 'Lewandowska',
-            email: 'katarzyna.lewandowska@example.com',
-            phone: '+48 444 555 666',
-            avatar: 'KL',
-            tags: [],
-            lastVisit: '2023-09-20',
-            totalSpent: 80,
-            visits: 1,
-            rating: 0,
-            notes: '',
-            status: 'inactive'
+    // API state
+    const [clients, setClients] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    // Fetch clients from API
+    const fetchClients = async () => {
+        if (!businessId) {
+            setIsLoading(false);
+            return;
         }
-    ];
 
-    // Get all unique tags from clients
-    const allTags = [...new Set(clients.flatMap(c => c.tags))];
+        setIsLoading(true);
+        setError('');
 
-    // Filter and sort clients
-    const filteredClients = clients
-        .filter(client => {
-            // Search filter
-            const matchesSearch = !searchTerm ||
-                client.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                client.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                client.phone.includes(searchTerm);
+        try {
+            const params = new URLSearchParams({
+                businessId,
+                ...(statusFilter !== 'all' && { status: statusFilter }),
+                ...(tagFilter && { tag: tagFilter }),
+                ...(searchTerm && { search: searchTerm })
+            });
 
-            // Status filter
-            const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+            const response = await fetch(`/api/clients?${params.toString()}`, {
+                credentials: 'include'
+            });
 
-            // Tag filter
-            const matchesTag = !tagFilter || client.tags.includes(tagFilter);
-
-            return matchesSearch && matchesStatus && matchesTag;
-        })
-        .sort((a, b) => {
-            let aValue = '';
-            let bValue = '';
-
-            switch (sortBy) {
-                case 'name':
-                    aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
-                    bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
-                    break;
-                case 'spent':
-                    return sortOrder === 'asc' ? a.totalSpent - b.totalSpent : b.totalSpent - a.totalSpent;
-                case 'visits':
-                    return sortOrder === 'asc' ? a.visits - b.visits : b.visits - a.visits;
-                case 'rating':
-                    return sortOrder === 'asc' ? a.rating - b.rating : b.rating - a.rating;
-                default:
-                    aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
-                    bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
+            if (response.ok) {
+                const data = await response.json();
+                setClients(data.clients || []);
+            } else {
+                const data = await response.json();
+                setError(data.error || 'Błąd pobierania klientów');
             }
-
-            return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-        });
-
-    const clearFilters = () => {
-        setSearchTerm('');
-        setStatusFilter('all');
-        setTagFilter('');
-        setSortBy('name');
-        setSortOrder('asc');
+        } catch (err) {
+            setError('Błąd połączenia z serwerem');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const activeFiltersCount = [
-        searchTerm,
-        statusFilter !== 'all' ? statusFilter : null,
-        tagFilter
-    ].filter(Boolean).length;
+    useEffect(() => {
+        const timer = setTimeout(fetchClients, 300);
+        return () => clearTimeout(timer);
+    }, [businessId, searchTerm, statusFilter, tagFilter]);
+
+    // Update client count when clients change
+    useEffect(() => {
+        if (onClientCountChange) {
+            onClientCountChange(clients.length);
+        }
+    }, [clients.length, onClientCountChange]);
+
+    // Get all unique tags from clients
+    const allTags = [...new Set(clients.flatMap(c => c.tags || []))];
+
+    // Sort clients
+    const sortedClients = [...clients].sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+                const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+                return sortOrder === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
+            case 'totalSpent':
+                return sortOrder === 'asc' ? a.totalSpent - b.totalSpent : b.totalSpent - a.totalSpent;
+            case 'createdAt':
+                const aDate = new Date(a.createdAt);
+                const bDate = new Date(b.createdAt);
+                return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
+            default:
+                return 0;
+        }
+    });
+
+    const toggleSelectAll = () => {
+        if (selectedClients.length === sortedClients.length) {
+            setSelectedClients([]);
+        } else {
+            setSelectedClients(sortedClients.map(c => c.id));
+        }
+    };
+
+    const toggleSelectClient = (id) => {
+        setSelectedClients(prev =>
+            prev.includes(id)
+                ? prev.filter(cid => cid !== id)
+                : [...prev, id]
+        );
+    };
+
+    const clearSelection = () => {
+        setSelectedClients([]);
+    };
+
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        setIsDeleting(true);
+        try {
+            // Delete each selected client
+            for (const clientId of selectedClients) {
+                await fetch(`/api/clients/${clientId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+            }
+            setSelectedClients([]);
+            setShowDeleteModal(false);
+            fetchClients(); // Refresh list
+        } catch (err) {
+            setError('Błąd podczas usuwania klientów');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    };
+
+    const sortOptions = [
+        { value: 'createdAt', label: 'Data utworzenia (od najnowszej)', order: 'desc' },
+        { value: 'createdAt', label: 'Data utworzenia (od najstarszej)', order: 'asc' },
+        { value: 'name', label: 'Nazwa (A-Z)', order: 'asc' },
+        { value: 'name', label: 'Nazwa (Z-A)', order: 'desc' },
+        { value: 'totalSpent', label: 'Sprzedaż (od najwyższej)', order: 'desc' },
+        { value: 'totalSpent', label: 'Sprzedaż (od najniższej)', order: 'asc' },
+    ];
+
+    const currentSortLabel = sortOptions.find(
+        opt => opt.value === sortBy && opt.order === sortOrder
+    )?.label || 'Data utworzenia (od najnowszej)';
+
+    const isAllSelected = selectedClients.length === sortedClients.length && sortedClients.length > 0;
+    const isSomeSelected = selectedClients.length > 0 && selectedClients.length < sortedClients.length;
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Search and Filter Header */}
-            <div className="p-4 border-b border-slate-100 bg-white sticky top-0 z-10">
-                <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Szukaj klienta..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
-                    />
+        <div className="flex flex-col">
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleConfirmDelete}
+                count={selectedClients.length}
+                isDeleting={isDeleting}
+            />
+
+            {/* Selection Action Bar - appears when items are selected */}
+            {selectedClients.length > 0 && (
+                <div className="flex items-center justify-between mb-4 py-3 px-4 bg-white border border-slate-200 rounded-xl">
+                    <div className="flex items-center gap-3">
+                        {/* Checkbox indicator */}
+                        <button
+                            onClick={toggleSelectAll}
+                            className="w-5 h-5 rounded bg-violet-600 flex items-center justify-center hover:bg-violet-700 transition-colors"
+                        >
+                            <Minus size={14} className="text-white" />
+                        </button>
+
+                        {/* Selection count */}
+                        <span className="text-sm text-slate-700">
+                            wybrano {selectedClients.length}
+                        </span>
+
+                        {/* Deselect link */}
+                        <button
+                            onClick={clearSelection}
+                            className="text-sm text-violet-600 hover:text-violet-700 font-medium"
+                        >
+                            Odznacz
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {/* Bulk Edit Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowBulkEditDropdown(!showBulkEditDropdown)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                                Edycja zbiorcza
+                                <ChevronDown size={14} />
+                            </button>
+
+                            {showBulkEditDropdown && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setShowBulkEditDropdown(false)} />
+                                    <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-20 w-48">
+                                        <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                                            Dodaj tag
+                                        </button>
+                                        <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                                            Usuń tag
+                                        </button>
+                                        <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                                            Zmień status
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Delete Button */}
+                        <button
+                            onClick={handleDeleteClick}
+                            className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
+                        >
+                            Usuń
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <div className="relative flex-1">
+            )}
+
+            {/* Search and Filter Row - hide when selection is active */}
+            {selectedClients.length === 0 && (
+                <div className="flex items-center gap-3 mb-6">
+                    {/* Search Input */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Imię i nazwisko, adres e-mail li..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300 transition-all text-sm"
+                        />
+                    </div>
+
+                    {/* Filters Button */}
+                    <div className="relative">
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`flex items-center justify-center gap-2 py-2 px-3 ${activeFiltersCount > 0 ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-slate-50 text-slate-600 border-slate-200'} hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors border w-full`}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                         >
-                            <Filter size={16} />
-                            Filtry {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-                            <ChevronDown size={14} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                            <SlidersHorizontal size={16} />
+                            Filtry
                         </button>
 
                         {showFilters && (
-                            <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-20">
-                                <div className="mb-3">
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
-                                    <select
-                                        value={statusFilter}
-                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                    >
-                                        <option value="all">Wszyscy</option>
-                                        <option value="active">Aktywni</option>
-                                        <option value="inactive">Nieaktywni</option>
-                                    </select>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Tag</label>
-                                    <select
-                                        value={tagFilter}
-                                        onChange={(e) => setTagFilter(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                    >
-                                        <option value="">Wszystkie tagi</option>
-                                        {allTags.map((tag, idx) => (
-                                            <option key={idx} value={tag}>{tag}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="block text-xs font-semibold text-slate-600 mb-1">Sortuj wg</label>
-                                    <div className="flex gap-2">
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)} />
+                                <div className="absolute left-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-20 w-64">
+                                    <div className="mb-3">
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
                                         <select
-                                            value={sortBy}
-                                            onChange={(e) => setSortBy(e.target.value)}
-                                            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                                         >
-                                            <option value="name">Nazwa</option>
-                                            <option value="spent">Wydatki</option>
-                                            <option value="visits">Wizyty</option>
-                                            <option value="rating">Ocena</option>
+                                            <option value="all">Wszyscy</option>
+                                            <option value="active">Aktywni</option>
+                                            <option value="inactive">Nieaktywni</option>
                                         </select>
-                                        <button
-                                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                                            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100"
-                                        >
-                                            {sortOrder === 'asc' ? '↑' : '↓'}
-                                        </button>
                                     </div>
+                                    {allTags.length > 0 && (
+                                        <div className="mb-3">
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Tag</label>
+                                            <select
+                                                value={tagFilter}
+                                                onChange={(e) => setTagFilter(e.target.value)}
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                            >
+                                                <option value="">Wszystkie tagi</option>
+                                                {allTags.map((tag, idx) => (
+                                                    <option key={idx} value={tag}>{tag}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
-                                {activeFiltersCount > 0 && (
-                                    <button
-                                        onClick={clearFilters}
-                                        className="w-full py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors"
-                                    >
-                                        Wyczyść wszystkie filtry
-                                    </button>
-                                )}
-                            </div>
+                            </>
                         )}
                     </div>
-                    <button className="flex items-center justify-center gap-2 py-2 px-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm shadow-violet-200">
-                        <Plus size={16} />
-                        Dodaj
-                    </button>
+
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* Sort Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSortDropdown(!showSortDropdown)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                            {currentSortLabel}
+                            <ArrowDownUp size={14} />
+                        </button>
+
+                        {showSortDropdown && (
+                            <>
+                                <div className="fixed inset-0 z-10" onClick={() => setShowSortDropdown(false)} />
+                                <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-20 w-72">
+                                    {sortOptions.map((option, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                setSortBy(option.value);
+                                                setSortOrder(option.order);
+                                                setShowSortDropdown(false);
+                                            }}
+                                            className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 transition-colors ${sortBy === option.value && sortOrder === option.order
+                                                    ? 'text-violet-600 font-medium'
+                                                    : 'text-slate-700'
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Error message */}
+            {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {error}
+                </div>
+            )}
+
+            {/* Table */}
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                {/* Table Header */}
+                <div className="grid grid-cols-[40px_1fr_180px_100px_100px_140px] gap-4 px-4 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            checked={isAllSelected}
+                            ref={(el) => {
+                                if (el) el.indeterminate = isSomeSelected;
+                            }}
+                            onChange={toggleSelectAll}
+                            className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                        />
+                    </div>
+                    <div>Imię i nazwisko klienta</div>
+                    <div>Numer telefonu komórkowego</div>
+                    <div className="text-center">Opinie</div>
+                    <div className="text-center">Sprzedaż</div>
+                    <div className="flex items-center gap-1">
+                        Utworzono
+                        <ChevronDown size={12} className={sortBy === 'createdAt' ? 'text-slate-900' : 'text-slate-400'} />
+                    </div>
                 </div>
 
-                {/* Active Filter Badges */}
-                {activeFiltersCount > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                        {searchTerm && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full text-xs font-medium">
-                                "{searchTerm}"
-                                <X size={12} className="cursor-pointer" onClick={() => setSearchTerm('')} />
-                            </span>
-                        )}
-                        {statusFilter !== 'all' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                                {statusFilter === 'active' ? 'Aktywni' : 'Nieaktywni'}
-                                <X size={12} className="cursor-pointer" onClick={() => setStatusFilter('all')} />
-                            </span>
-                        )}
-                        {tagFilter && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
-                                {tagFilter}
-                                <X size={12} className="cursor-pointer" onClick={() => setTagFilter('')} />
-                            </span>
-                        )}
+                {/* Table Body */}
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                        <Loader2 size={32} className="animate-spin text-violet-600 mb-2" />
+                        <p className="text-sm text-slate-500">Ładowanie klientów...</p>
+                    </div>
+                ) : sortedClients.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                        {sortedClients.map((client) => (
+                            <div
+                                key={client.id}
+                                onClick={() => onSelectClient(client)}
+                                className={`grid grid-cols-[40px_1fr_180px_100px_100px_140px] gap-4 px-4 py-4 hover:bg-slate-50 cursor-pointer transition-colors ${selectedClientId === client.id ? 'bg-violet-50' : ''
+                                    } ${selectedClients.includes(client.id) ? 'bg-violet-50/50' : ''}`}
+                            >
+                                {/* Checkbox */}
+                                <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedClients.includes(client.id)}
+                                        onChange={() => toggleSelectClient(client.id)}
+                                        className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                                    />
+                                </div>
+
+                                {/* Name and Email */}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-semibold text-sm flex-shrink-0">
+                                        {client.avatar || `${client.firstName?.charAt(0) || ''}${client.lastName?.charAt(0) || ''}`.toUpperCase()}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="font-medium text-slate-900 truncate">
+                                            {client.firstName} {client.lastName}
+                                        </p>
+                                        <p className="text-sm text-slate-500 truncate">
+                                            {client.email || '-'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Phone */}
+                                <div className="flex items-center text-sm text-slate-600">
+                                    {client.phone || '-'}
+                                </div>
+
+                                {/* Reviews */}
+                                <div className="flex items-center justify-center text-sm text-slate-600">
+                                    {client.rating > 0 ? client.rating : '-'}
+                                </div>
+
+                                {/* Sales */}
+                                <div className="flex items-center justify-center text-sm text-slate-600">
+                                    {client.totalSpent > 0 ? `${client.totalSpent} zł` : '0 zł'}
+                                </div>
+
+                                {/* Created Date */}
+                                <div className="flex items-center text-sm text-slate-600">
+                                    {formatDate(client.createdAt)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400 text-center">
+                        <Search size={32} className="mb-2 opacity-50" />
+                        <p className="text-sm mb-4">Nie znaleziono klientów</p>
+                        <Link
+                            href="/business/dashboard/clients/add"
+                            className="px-4 py-2 bg-slate-900 text-white rounded-full text-sm font-medium hover:bg-slate-800 transition-colors"
+                        >
+                            Dodaj pierwszego klienta
+                        </Link>
                     </div>
                 )}
-                <div className="flex-1 overflow-y-auto">
-                    {filteredClients.length > 0 ? (
-                        <div className="divide-y divide-slate-50">
-                            {filteredClients.map((client) => (
-                                <div
-                                    key={client.id}
-                                    onClick={() => onSelectClient(client)}
-                                    className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors group ${selectedClientId === client.id ? 'bg-violet-50 hover:bg-violet-50' : ''
-                                        }`}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${selectedClientId === client.id
-                                            ? 'bg-violet-600 text-white'
-                                            : 'bg-slate-100 text-slate-600 group-hover:bg-white group-hover:shadow-md transition-all'
-                                            }`}>
-                                            {client.avatar}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <h3 className={`font-semibold truncate ${selectedClientId === client.id ? 'text-violet-900' : 'text-slate-900'
-                                                    }`}>
-                                                    {client.firstName} {client.lastName}
-                                                </h3>
-                                                {client.rating > 0 && (
-                                                    <div className="flex items-center gap-1 text-xs font-medium text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                                                        <Star size={10} fill="currentColor" />
-                                                        {client.rating}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                                                <span className="truncate">{client.email}</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                {client.tags.map((tag, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${tag === 'VIP' ? 'bg-amber-100 text-amber-700' :
-                                                            tag === 'Problematic' ? 'bg-red-100 text-red-700' :
-                                                                'bg-slate-100 text-slate-600'
-                                                            }`}
-                                                    >
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-64 text-slate-400 text-center p-4">
-                            <Search size={32} className="mb-2 opacity-50" />
-                            <p className="text-sm">Nie znaleziono klientów</p>
-                        </div>
-                    )}
-                </div>
+            </div>
 
-                {/* Footer Stats */}
-                <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 text-center font-medium">
-                    {filteredClients.length} / {clients.length} klientów • {clients.filter(c => c.tags.includes('VIP')).length} VIP
-                </div>
+            {/* Footer */}
+            <div className="py-4 text-center text-sm text-slate-500">
+                Wyświetlasz {sortedClients.length > 0 ? '1' : '0'}–{sortedClients.length} z {clients.length} wyników
             </div>
         </div>
     );

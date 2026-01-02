@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
-import { ArrowLeft, ChevronDown, Download, FileSpreadsheet, FileText, Import, RefreshCw, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, ChevronDown, FileSpreadsheet, FileText, Import, RefreshCw, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import ClientList from '@/components/clients/ClientList';
 import ClientDrawer from '@/components/clients/ClientDrawer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CRMPage() {
+    const { user } = useAuth('/business/auth');
     const [selectedClient, setSelectedClient] = useState(null);
     const [isdrawerOpen, setIsDrawerOpen] = useState(false);
     const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
+    const [clientCount, setClientCount] = useState(0);
 
     const handleClientClick = (client) => {
         setSelectedClient(client);
@@ -19,8 +22,12 @@ export default function CRMPage() {
 
     const handleCloseDrawer = () => {
         setIsDrawerOpen(false);
-        setTimeout(() => setSelectedClient(null), 300); // Wait for animation
+        setTimeout(() => setSelectedClient(null), 300);
     };
+
+    const handleClientCountChange = useCallback((count) => {
+        setClientCount(count);
+    }, []);
 
     return (
         <div className="min-h-screen bg-white">
@@ -54,7 +61,9 @@ export default function CRMPage() {
                     <div>
                         <div className="flex items-center gap-3 mb-1">
                             <h2 className="text-2xl font-bold text-slate-900">Lista klientów</h2>
-                            <span className="bg-slate-100 text-slate-600 text-sm font-medium px-2.5 py-0.5 rounded-full">3</span>
+                            <span className="bg-slate-100 text-slate-600 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                                {clientCount}
+                            </span>
                         </div>
                         <p className="text-slate-500">Przeglądaj, dodawaj, edytuj i usuwaj dane klienta. <span className="text-violet-600 cursor-pointer hover:underline">Dowiedz się więcej</span></p>
                     </div>
@@ -123,18 +132,16 @@ export default function CRMPage() {
                 </div>
 
                 <div className="flex gap-6">
-                    {/* Sidebar could go here if needed, but per design it looks like just a list in main view or sidebar is 'Klienci' active state */}
-                    {/* For now imitating the screenshot which shows "Klienci" sidebar on left and main content right. 
-                        However, the current layout is full width. 
-                        The screenshot sidebar looks like a navigation sidebar. 
-                        I'll stick to full width content focused on the table for now as the user asked to "zmien strone crm całkowicie".
-                    */}
                     <div className="w-full">
-                        <ClientList onSelectClient={handleClientClick} selectedClientId={selectedClient?.id} />
+                        <ClientList
+                            onSelectClient={handleClientClick}
+                            selectedClientId={selectedClient?.id}
+                            businessId={user?.id}
+                            onClientCountChange={handleClientCountChange}
+                        />
                     </div>
                 </div>
             </main>
         </div>
     );
 }
-

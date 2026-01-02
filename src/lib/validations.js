@@ -142,6 +142,17 @@ export const updateBusinessSchema = z.object({
     portfolioImages: z.array(z.string()).optional(),
 });
 
+export const addressDetailsSchema = z.object({
+    street: z.string().min(1, 'Adres jest wymagany'),
+    apartmentNumber: z.string().optional(),
+    district: z.string().optional(),
+    city: z.string().min(1, 'Miasto jest wymagane'),
+    region: z.string().optional(),
+    province: z.string().optional(),
+    postCode: postalCodeSchema,
+    country: z.string().min(1, 'Kraj jest wymagany'),
+});
+
 // ============================================
 // Validation Helper
 // ============================================
