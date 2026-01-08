@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { csrfMiddleware } from "@/lib/csrf";
 import { createReservationSchema, validateInput } from "@/lib/validations";
+import { generateReferenceNumber } from "@/lib/generateReferenceNumber";
 
 export async function POST(req) {
   try {
@@ -89,6 +90,9 @@ export async function POST(req) {
       }
     }
 
+    // Generowanie unikalnego numeru referencyjnego
+    const referenceNumber = await generateReferenceNumber(Reservation);
+
     // Utworzenie rezerwacji
     const reservation = new Reservation({
       businessId,
@@ -104,7 +108,8 @@ export async function POST(req) {
       clientEmail,
       clientPhone,
       notes,
-      status: 'pending'
+      status: 'pending',
+      referenceNumber
     });
 
     await reservation.save();
@@ -121,7 +126,8 @@ export async function POST(req) {
           time: reservation.time,
           duration: reservation.duration,
           price: reservation.price,
-          status: reservation.status
+          status: reservation.status,
+          referenceNumber: reservation.referenceNumber
         }
       },
       { status: 201 }

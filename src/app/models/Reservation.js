@@ -31,6 +31,14 @@ const ReservationSchema = new mongoose.Schema({
   // Notatki
   notes: { type: String, default: '' },
   
+  // Numer referencyjny rezerwacji
+  referenceNumber: { 
+    type: String, 
+    unique: true, 
+    sparse: true, // Pozwala na null dla starych rezerwacji
+    index: true // Indeks dla szybkiego wyszukiwania
+  },
+  
   // Integracja z Google Calendar
   googleCalendarEventId: { type: String, default: null },
   googleCalendarSynced: { type: Boolean, default: false },

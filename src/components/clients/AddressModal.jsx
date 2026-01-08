@@ -11,7 +11,7 @@ const ADDRESS_TYPES = [
     { id: 'Inny', icon: MoreHorizontal, label: 'Inny' }
 ];
 
-export default function AddressModal({ isOpen, onClose, onSave }) {
+export default function AddressModal({ isOpen, onClose, onSave, initialData = null }) {
     const [selectedType, setSelectedType] = useState('Dom');
     const [name, setName] = useState('Dom');
     const [address, setAddress] = useState('');
@@ -19,16 +19,23 @@ export default function AddressModal({ isOpen, onClose, onSave }) {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [addressDetails, setAddressDetails] = useState(null);
 
-    // Reset form when modal opens
+    // Populate form when modal opens or initialData changes
     useEffect(() => {
         if (isOpen) {
-            setSelectedType('Dom');
-            setName('Dom');
-            setAddress('');
-            setShowAddressInput(false);
-            setAddressDetails(null);
+            if (initialData) {
+                setSelectedType(initialData.type || 'Dom');
+                setName(initialData.name || '');
+                setAddress(initialData.street || '');
+                setAddressDetails(initialData);
+            } else {
+                setSelectedType('Dom');
+                setName('Dom');
+                setAddress('');
+                setShowAddressInput(false);
+                setAddressDetails(null);
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     const handleTypeSelect = (typeId) => {
         setSelectedType(typeId);

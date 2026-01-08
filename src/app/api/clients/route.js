@@ -62,6 +62,9 @@ export async function GET(req) {
             rating: client.rating || 0,
             notes: client.notes || '',
             status: client.status || 'active',
+            pronouns: client.pronouns || '',
+            birthDate: client.birthDate || '',
+            birthYear: client.birthYear || '',
             createdAt: client.createdAt
         }));
 

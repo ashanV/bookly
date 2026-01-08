@@ -4,10 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { User, ChevronDown, ChevronLeft, ChevronRight, Edit2, Loader2, Calendar, X, Plus, MapPin, Check } from 'lucide-react';
+import { User, ChevronDown, ChevronLeft, ChevronRight, Edit2, Loader2, Calendar, X, Plus, MapPin, Check, Home, Briefcase, MoreHorizontal, MoreVertical } from 'lucide-react';
 import ReferralClientModal from '@/components/clients/ReferralClientModal';
 import LanguageSelectionModal from '@/components/clients/LanguageSelectionModal';
 import AddressModal from '@/components/clients/AddressModal';
+import ConfirmDeleteModal from '@/components/clients/ConfirmDeleteModal';
 
 // Polish month names
 const MONTHS_PL = [
@@ -185,6 +186,10 @@ export default function AddClientPage() {
     const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [selectedReferralClient, setSelectedReferralClient] = useState(null);
+    const [activeDropdown, setActiveDropdown] = useState(null);
+    const [editingAddressIndex, setEditingAddressIndex] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [addressToDeleteIndex, setAddressToDeleteIndex] = useState(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -279,11 +284,44 @@ export default function AddClientPage() {
         }));
     };
 
-    const handleAddressSave = (newAddress) => {
-        setFormData(prev => ({
-            ...prev,
-            addresses: [...prev.addresses, newAddress]
-        }));
+    const handleAddressSave = (address) => {
+        if (editingAddressIndex !== null) {
+            setFormData(prev => {
+                const newAddresses = [...prev.addresses];
+                newAddresses[editingAddressIndex] = address;
+                return { ...prev, addresses: newAddresses };
+            });
+            setEditingAddressIndex(null);
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                addresses: [...prev.addresses, address]
+            }));
+        }
+        setIsAddressModalOpen(false);
+    };
+
+    const handleDeleteAddress = (index) => {
+        setAddressToDeleteIndex(index);
+        setIsDeleteModalOpen(true);
+        setActiveDropdown(null);
+    };
+
+    const handleConfirmDeleteAddress = () => {
+        if (addressToDeleteIndex !== null) {
+            setFormData(prev => ({
+                ...prev,
+                addresses: prev.addresses.filter((_, i) => i !== addressToDeleteIndex)
+            }));
+        }
+        setIsDeleteModalOpen(false);
+        setAddressToDeleteIndex(null);
+    };
+
+    const handleEditAddress = (index) => {
+        setEditingAddressIndex(index);
+        setIsAddressModalOpen(true);
+        setActiveDropdown(null);
     };
 
     const handleNavigation = (id) => {
@@ -841,19 +879,58 @@ export default function AddClientPage() {
                                 {formData.addresses.length > 0 ? (
                                     <div className="space-y-4 mb-6">
                                         {formData.addresses.map((addr, index) => (
-                                            <div key={index} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500">
-                                                        <MapPin size={20} />
+                                            <div key={index} className="flex items-start justify-between p-4 bg-slate-50 rounded-xl relative">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-10 h-10 rounded-full bg-white flex flex-shrink-0 items-center justify-center text-slate-900 shadow-sm mt-1">
+                                                        {addr.type === 'Dom' && <Home size={18} strokeWidth={2} />}
+                                                        {addr.type === 'Praca' && <Briefcase size={18} strokeWidth={2} />}
+                                                        {addr.type === 'Inny' && <MoreHorizontal size={18} strokeWidth={2} />}
+                                                        {!['Dom', 'Praca', 'Inny'].includes(addr.type) && <MapPin size={18} strokeWidth={2} />}
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-bold text-slate-900">{addr.name}</h4>
-                                                        <p className="text-sm text-slate-500">{addr.street}</p>
+                                                        <h4 className="font-bold text-slate-900 mb-1">{addr.name}</h4>
+                                                        <div className="text-sm text-slate-500 space-y-0.5">
+                                                            <p>{addr.street} {addr.apartmentNumber}</p>
+                                                            <p>{addr.postCode} {addr.city}</p>
+                                                            {addr.province && <p>{addr.province}</p>}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <button type="button" className="text-sm font-medium text-violet-600 hover:text-violet-700">
-                                                    Zmień
-                                                </button>
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveDropdown(activeDropdown === index ? null : index);
+                                                        }}
+                                                        className={`p-2 rounded-lg transition-colors ${activeDropdown === index ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
+                                                    >
+                                                        <MoreVertical size={20} />
+                                                    </button>
+
+                                                    {activeDropdown === index && (
+                                                        <>
+                                                            <div
+                                                                className="fixed inset-0 z-10"
+                                                                onClick={() => setActiveDropdown(null)}
+                                                            />
+                                                            <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden">
+                                                                <button
+                                                                    onClick={() => handleEditAddress(index)}
+                                                                    className="w-full px-4 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                                                >
+                                                                    Edytuj adres
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteAddress(index)}
+                                                                    className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                                >
+                                                                    Usuń adres
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -1110,8 +1187,25 @@ export default function AddClientPage() {
             {/* Address Modal */}
             <AddressModal
                 isOpen={isAddressModalOpen}
-                onClose={() => setIsAddressModalOpen(false)}
+                onClose={() => {
+                    setIsAddressModalOpen(false);
+                    setEditingAddressIndex(null);
+                }}
                 onSave={handleAddressSave}
+                initialData={editingAddressIndex !== null ? formData.addresses[editingAddressIndex] : null}
+            />
+
+            {/* Confirm Delete Modal */}
+            <ConfirmDeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setAddressToDeleteIndex(null);
+                }}
+                onConfirm={handleConfirmDeleteAddress}
+                title="Usuń adres"
+                message="Czy na pewno chcesz usunąć ten adres? Ta operacja jest nieodwracalna."
+                confirmText="Usuń adres"
             />
         </div>
     );

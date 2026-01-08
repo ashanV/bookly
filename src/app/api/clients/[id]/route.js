@@ -75,6 +75,9 @@ export async function GET(req, { params }) {
                 totalSpent: client.totalSpent || 0,
                 visits: client.visits || 0,
                 rating: client.rating || 0,
+                pronouns: client.pronouns || '',
+                birthDate: client.birthDate || '',
+                birthYear: client.birthYear || '',
                 createdAt: client.createdAt
             }
         }, { status: 200 });

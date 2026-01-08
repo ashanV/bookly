@@ -55,12 +55,13 @@ export async function GET(req) {
       }
     }
 
-    // Wyszukiwanie tekstowe - przeszukuje nazwę klienta, email i telefon
+    // Wyszukiwanie tekstowe - przeszukuje nazwę klienta, email, telefon i numer referencyjny
     if (search) {
       query.$or = [
         { clientName: { $regex: search, $options: 'i' } },
         { clientEmail: { $regex: search, $options: 'i' } },
-        { clientPhone: { $regex: search, $options: 'i' } }
+        { clientPhone: { $regex: search, $options: 'i' } },
+        { referenceNumber: { $regex: search.replace('#', ''), $options: 'i' } } // Usuń # jeśli jest w wyszukiwarce
       ];
     }
 
