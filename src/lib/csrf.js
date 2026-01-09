@@ -20,6 +20,10 @@ export function validateCsrfToken(request) {
     const headerToken = request.headers.get(CSRF_HEADER_NAME);
 
     if (!cookieToken || !headerToken) {
+        console.warn('CSRF Validation Failed: Missing token.', {
+            hasCookie: !!cookieToken,
+            hasHeader: !!headerToken
+        });
         return {
             valid: false,
             error: 'Missing CSRF token'
@@ -28,6 +32,10 @@ export function validateCsrfToken(request) {
 
     // Timing-safe comparison to prevent timing attacks
     if (cookieToken.length !== headerToken.length) {
+        console.warn('CSRF Validation Failed: Length mismatch.', {
+            cookieLen: cookieToken.length,
+            headerLen: headerToken.length
+        });
         return {
             valid: false,
             error: 'Invalid CSRF token'
@@ -43,6 +51,7 @@ export function validateCsrfToken(request) {
     }
 
     if (!isValid) {
+        console.warn('CSRF Validation Failed: Token mismatch.');
         return {
             valid: false,
             error: 'Invalid CSRF token'
@@ -59,7 +68,7 @@ export function getCsrfCookieOptions(isProduction = process.env.NODE_ENV === 'pr
     return {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'strict',
+        sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 // 24 hours
     };

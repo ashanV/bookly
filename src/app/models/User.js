@@ -18,6 +18,17 @@ const UserSchema = new mongoose.Schema({
   birthDate: { type: String },
   password: { type: String, required: true },
 
+  // Admin fields
+  adminRole: {
+    type: String,
+    enum: ['admin', 'moderator', 'developer', null],
+    default: null
+  },
+  adminPin: { type: String }, // zahashowany PIN do panelu admin
+  adminPermissions: [{ type: String }], // dodatkowe uprawnienia specyficzne
+  lastAdminLogin: { type: Date },
+  isAdminActive: { type: Boolean, default: false },
+
   // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

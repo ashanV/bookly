@@ -44,7 +44,7 @@ export function useCsrf() {
      * Wrapper around fetch that automatically includes CSRF token
      * Use this for POST, PUT, DELETE requests
      */
-    const secureFetch = useCallback(async (url, options = {}) => {
+    const secureFetch = useCallback(async (url, options = {}, tryCount = 0) => {
         // Ensure we have a token before making the request
         let tokenToUse = csrfToken;
 
@@ -60,15 +60,42 @@ export function useCsrf() {
 
         const headers = new Headers(options.headers || {});
 
+        // Zawsze używamy małych liter dla spójności, choć fetch i tak je normalizuje
+        const HEADER_NAME = 'x-csrf-token';
+
         if (tokenToUse) {
-            headers.set(CSRF_HEADER_NAME, tokenToUse);
+            headers.set(HEADER_NAME, tokenToUse);
         }
 
-        return fetch(url, {
+        const response = await fetch(url, {
             ...options,
             headers,
             credentials: options.credentials || 'include'
         });
+
+        // If we get a 403 Forbidden, it might be an invalid CSRF token
+        // Try refreshing the token and retrying the request once
+        if (response.status === 403 && tryCount < 1) {
+            console.log('CSRF error (403) detected, refreshing token and retrying...');
+            const tokenResponse = await fetch('/api/csrf', { credentials: 'include' });
+            if (tokenResponse.ok) {
+                const data = await tokenResponse.json();
+                const newToken = data.csrfToken;
+                setCsrfToken(newToken);
+
+                // Retry with the NEW token immediately, don't rely on state update
+                const retryHeaders = new Headers(options.headers || {});
+                retryHeaders.set('x-csrf-token', newToken);
+
+                return fetch(url, {
+                    ...options,
+                    headers: retryHeaders,
+                    credentials: options.credentials || 'include'
+                });
+            }
+        }
+
+        return response;
     }, [csrfToken]);
 
     return {
@@ -108,11 +135,11 @@ export async function getCsrfToken() {
  */
 export async function secureFetch(url, options = {}) {
     const csrfToken = await getCsrfToken();
-
     const headers = new Headers(options.headers || {});
+    const HEADER_NAME = 'x-csrf-token';
 
     if (csrfToken) {
-        headers.set(CSRF_HEADER_NAME, csrfToken);
+        headers.set(HEADER_NAME, csrfToken);
     }
 
     return fetch(url, {

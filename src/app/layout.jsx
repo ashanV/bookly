@@ -1,6 +1,8 @@
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
 import ToastWrapper from "@/components/ToastWrapper";
+import AdminShortcutListener from "@/components/admin/AdminShortcutListener";
+import ChatWidgetProvider from "@/components/chat/ChatWidgetProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,7 +21,10 @@ export default function RootLayout({ children }) {
       <body className={`${inter.variable} font-sans antialiased bg-gray-50`}>
         {children}
         <ToastWrapper />
+        <AdminShortcutListener />
+        <ChatWidgetProvider />
       </body>
     </html>
   );
 }
+

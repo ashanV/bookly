@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "create-admin": "node scripts/createAdmin.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -18,6 +19,7 @@
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.8.0",
     "date-fns": "^4.1.0",
+    "emoji-picker-react": "^4.16.1",
     "framer-motion": "^12.23.12",
     "googleapis": "^164.1.0",
     "gsap": "^3.13.0",
@@ -28,7 +30,10 @@
     "mongodb": "^6.18.0",
     "mongoose": "^8.17.1",
     "next": "15.4.8",
+    "nodemailer": "^7.0.12",
     "ogl": "^1.0.11",
+    "pusher": "^5.2.0",
+    "pusher-js": "^8.4.0",
     "react": "19.1.0",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.1.0",
@@ -46,6 +51,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "canvas": "^3.2.0",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "jsdom": "^24.0.0",
