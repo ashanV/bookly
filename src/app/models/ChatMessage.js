@@ -44,7 +44,7 @@ const ChatMessageSchema = new mongoose.Schema({
   // Typ wiadomości
   type: {
     type: String,
-    enum: ['message', 'system', 'file', 'image', 'gif'],
+    enum: ['message', 'system', 'file', 'image', 'gif', 'note'],
     default: 'message'
   },
 

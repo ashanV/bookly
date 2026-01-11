@@ -1,32 +1,44 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Pusher from 'pusher-js';
 
+// Singleton instance outside the hook to prevent multiple connections
+let pusherInstance = null;
+
 export function useSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const pusherRef = useRef(null);
 
   useEffect(() => {
-    // Inicjalizacja Pusher
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    });
+    // Use singleton instance
+    if (!pusherInstance) {
+      pusherInstance = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+      });
+    }
 
-    pusher.connection.bind('connected', () => {
+    pusherRef.current = pusherInstance;
+
+    // Update initial state
+    if (pusherInstance.connection.state === 'connected') {
       setIsConnected(true);
-    });
+    }
 
-    pusher.connection.bind('disconnected', () => {
-      setIsConnected(false);
-    });
+    const handleConnected = () => setIsConnected(true);
+    const handleDisconnected = () => setIsConnected(false);
 
-    pusherRef.current = pusher;
+    pusherInstance.connection.bind('connected', handleConnected);
+    pusherInstance.connection.bind('disconnected', handleDisconnected);
+
+    // No strict disconnect on unmount to keep connection alive across navigations
+    // or implement a ref counting mechanism if needed. 
+    // For now, keeping it alive is better for SPA.
 
     return () => {
-      pusher.disconnect();
+      pusherInstance.connection.unbind('connected', handleConnected);
+      pusherInstance.connection.unbind('disconnected', handleDisconnected);
     };
   }, []);
 
-  // Emisja zdarzenia (przez API, bo client SDK Pushera nie służy do bezpośredniego wysyłania)
   const emit = useCallback(async (event, data) => {
     try {
       const response = await fetch('/api/chat/events', {
@@ -42,7 +54,6 @@ export function useSocket() {
     }
   }, []);
 
-  // Subskrypcja kanału
   const subscribe = useCallback((channelName) => {
     if (!pusherRef.current) return null;
     return pusherRef.current.subscribe(channelName);
@@ -58,7 +69,10 @@ export function useSocket() {
     emit,
     subscribe,
     unsubscribe,
-    disconnect: () => pusherRef.current?.disconnect()
+    disconnect: () => {
+      // Optional: explicit disconnect if really needed
+      // pusherRef.current?.disconnect(); 
+    }
   };
 
   return { socket, isConnected };

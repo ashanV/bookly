@@ -48,6 +48,14 @@ export async function PATCH(req, { params }) {
             await Conversation.findByIdAndUpdate(id, updateData);
         }
 
+        // Obsługa przypisywania supportu
+        if (body.supportId !== undefined) {
+            await Conversation.findByIdAndUpdate(id, {
+                supportId: body.supportId,
+                supportName: body.supportName
+            });
+        }
+
         // Trigger Pusher events
         try {
             const { pusherServer } = await import("@/lib/pusher");
@@ -59,7 +67,9 @@ export async function PATCH(req, { params }) {
             // Powiadom listę admina
             await pusherServer.trigger("admin-support", "conversation-updated", {
                 id,
-                status: status
+                status: status,
+                supportId: body.supportId,
+                supportName: body.supportName
             });
         } catch (error) {
             console.error("Błąd triggera Pusher:", error);

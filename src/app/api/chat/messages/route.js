@@ -49,11 +49,51 @@ export async function GET(req) {
       }
     }
 
-    const messages = await ChatMessage.find({ conversationId })
+    const query = { conversationId };
+
+    // Ukryj notatki wewnętrzne dla użytkowników
+    if (role !== 'admin') {
+      query.type = { $ne: 'note' };
+    }
+
+    const messages = await ChatMessage.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip(skip)
       .lean();
+
+    // Auto-przypisanie jeśli admin otwiera nieprzypisaną konwersację
+    if (role === 'admin' && !conversation.supportId && token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const adminUser = await User.findById(decoded.id);
+        if (adminUser) {
+          const name = adminUser.name || `${adminUser.firstName} ${adminUser.lastName}`;
+          await Conversation.findByIdAndUpdate(conversationId, {
+            supportId: adminUser._id,
+            supportName: name,
+            status: conversation.status === 'open' ? 'in_progress' : conversation.status
+          });
+
+          // Trigger Pusher
+          try {
+            const { pusherServer } = await import("@/lib/pusher");
+            await pusherServer.trigger("admin-support", "conversation-updated", {
+              id: conversationId,
+              supportId: adminUser._id,
+              supportName: name,
+              status: conversation.status === 'open' ? 'in_progress' : conversation.status
+            });
+            await pusherServer.trigger(`chat-${conversationId}`, "conversation-updated", {
+              id: conversationId,
+              supportId: adminUser._id,
+              supportName: name,
+              status: conversation.status === 'open' ? 'in_progress' : conversation.status
+            });
+          } catch (pErr) { }
+        }
+      } catch (err) { }
+    }
 
     return NextResponse.json({
       messages: messages.reverse() // Odwróć, aby najstarsze były pierwsze
@@ -184,10 +224,19 @@ export async function POST(req) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           conversation.supportId = decoded.id;
-          conversation.supportName = decoded.name || 'Support';
-        } catch (error) {
-          // Ignoruj błąd
-        }
+          conversation.supportName = finalSenderName;
+
+          // Trigger Pusher immediately for assignment
+          try {
+            const { pusherServer } = await import("@/lib/pusher");
+            await pusherServer.trigger("admin-support", "conversation-updated", {
+              id: conversationId,
+              supportId: conversation.supportId,
+              supportName: conversation.supportName,
+              status: conversation.status
+            });
+          } catch (pErr) { }
+        } catch (error) { }
       }
     } else {
       conversation.unreadCount += 1;
@@ -195,17 +244,24 @@ export async function POST(req) {
 
     await conversation.save();
 
-    // Trigger Pusher events
     try {
       const { pusherServer } = await import("@/lib/pusher");
 
-      // Powiadom konkretny chat
-      await pusherServer.trigger(`chat-${conversationId}`, "new-message", {
-        id: chatMessage._id.toString(),
-        ...chatMessage.toObject()
-      });
+      // Jeśli to notatka, wyślij tylko na kanał admina
+      if (type === 'note') {
+        await pusherServer.trigger(`admin-chat-${conversationId}`, "new-message", {
+          id: chatMessage._id.toString(),
+          ...chatMessage.toObject()
+        });
+      } else {
+        // Normalna wiadomość - wyślij na publiczny kanał czatu
+        await pusherServer.trigger(`chat-${conversationId}`, "new-message", {
+          id: chatMessage._id.toString(),
+          ...chatMessage.toObject()
+        });
+      }
 
-      // Powiadom listę admina
+      // Powiadom listę admina (update licznika/statusu)
       await pusherServer.trigger("admin-support", "message-received", {
         conversationId,
         lastMessageAt: conversation.lastMessageAt,
