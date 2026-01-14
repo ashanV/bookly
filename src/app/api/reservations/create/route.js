@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import Reservation from "@/app/models/Reservation";
 import Business from "@/app/models/Business";
+import SystemConfig from "@/app/models/SystemConfig";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { csrfMiddleware } from "@/lib/csrf";
@@ -22,6 +23,26 @@ export async function POST(req) {
       throw new Error('JWT_SECRET is not defined');
     }
     await connectDB();
+
+    // Sprawdzenie globalnych limitów rezerwacji
+    const config = await SystemConfig.getConfig();
+    if (config.maxBookingsEnabled) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const count = await Reservation.countDocuments({
+        createdAt: { $gte: today, $lt: tomorrow }
+      });
+
+      if (count >= config.maxBookingsPerDay) {
+        return NextResponse.json(
+          { error: "Dzienny limit rezerwacji został wyczerpany." },
+          { status: 403 }
+        );
+      }
+    }
 
     // Pobranie tokenu z cookies (opcjonalne dla klientów)
     const token = req.cookies.get('token')?.value;

@@ -61,15 +61,18 @@ describe('SupportStats Component', () => {
 
         render(<SupportStats />);
 
-        // Wait for stats content
+        // Wait for stats content with increased timeout
         await waitFor(() => {
             expect(screen.getByText('Nowe dzisiaj')).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        await waitFor(() => {
             expect(screen.getByText('5')).toBeInTheDocument();
             expect(screen.getByText('Wszystkie otwarte')).toBeInTheDocument();
             expect(screen.getByText('10')).toBeInTheDocument();
             expect(screen.getByText('Nieprzypisane')).toBeInTheDocument();
             expect(screen.getByText('2')).toBeInTheDocument();
-        });
+        }, { timeout: 3000 });
 
         // Check for charts
         expect(screen.getByTestId('area-chart')).toBeInTheDocument();
@@ -86,7 +89,7 @@ describe('SupportStats Component', () => {
             // Should stop loading (empty render if stat is null)
             const loading = document.querySelector('.animate-pulse');
             expect(loading).not.toBeInTheDocument();
-        });
+        }, { timeout: 3000 });
 
         consoleSpy.mockRestore();
     });

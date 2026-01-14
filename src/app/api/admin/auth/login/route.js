@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import User from "@/app/models/User";
 import AdminLog from "@/app/models/AdminLog";
+import SystemConfig from "@/app/models/SystemConfig";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
@@ -34,6 +35,10 @@ export async function POST(req) {
         }
 
         await connectDB();
+
+        // Pobranie konfiguracji systemu
+        const config = await SystemConfig.getConfig();
+        const timeoutMinutes = config.sessionTimeoutMinutes || 1440;
 
         // Znajdź użytkownika z rolą admin
         const user = await User.findOne({
@@ -73,7 +78,7 @@ export async function POST(req) {
         // Log successful login
         await logAdminAction(user._id, email, 'admin_login', 'auth', user._id, { role: user.adminRole }, req);
 
-        // Create admin JWT token (30 min expiry for security)
+        // Create admin JWT token
         if (!process.env.JWT_SECRET) {
             throw new Error('JWT_SECRET is not defined');
         }
@@ -85,7 +90,7 @@ export async function POST(req) {
                 adminRole: user.adminRole
             },
             process.env.JWT_SECRET,
-            { expiresIn: "30m" }
+            { expiresIn: `${timeoutMinutes}m` }
         );
 
         const response = NextResponse.json({
@@ -106,7 +111,7 @@ export async function POST(req) {
         response.cookies.set('adminToken', adminToken, {
             httpOnly: true,
             path: '/',
-            maxAge: 30 * 60, // 30 min
+            maxAge: timeoutMinutes * 60, // konwersja na sekundy
             sameSite: 'strict', // Stricter for admin
             secure: process.env.NODE_ENV === 'production'
         });

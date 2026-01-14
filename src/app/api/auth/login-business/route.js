@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import Business from "../../../models/Business";
+import SystemConfig from "../../../models/SystemConfig";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
@@ -32,6 +33,10 @@ export async function POST(req) {
     const { email, password } = validation.data;
     await connectDB();
 
+    // Pobranie konfiguracji systemu
+    const config = await SystemConfig.getConfig();
+    const timeoutMinutes = config.sessionTimeoutMinutes || 1440;
+
     // Tylko sprawdź w kolekcji Business
     const business = await Business.findOne({ email });
     if (!business) {
@@ -46,7 +51,11 @@ export async function POST(req) {
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
     }
-    const token = jwt.sign({ id: business._id, role: 'business' }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(
+      { id: business._id, role: 'business' },
+      process.env.JWT_SECRET,
+      { expiresIn: `${timeoutMinutes}m` }
+    );
 
     const response = NextResponse.json({
       message: "Zalogowano",
@@ -65,7 +74,7 @@ export async function POST(req) {
     response.cookies.set('token', token, {
       httpOnly: true,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60, // 7 dni w sekundach
+      maxAge: timeoutMinutes * 60, // konwersja na sekundy
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production'
     });

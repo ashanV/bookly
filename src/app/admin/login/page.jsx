@@ -86,8 +86,9 @@ export default function AdminLoginPage() {
 
                         {/* Email */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Email</label>
+                            <label htmlFor="admin-email" className="text-sm font-medium text-gray-300">Email</label>
                             <input
+                                id="admin-email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -100,9 +101,10 @@ export default function AdminLoginPage() {
 
                         {/* Password */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Hasło</label>
+                            <label htmlFor="admin-password" className="text-sm font-medium text-gray-300">Hasło</label>
                             <div className="relative">
                                 <input
+                                    id="admin-password"
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -122,8 +124,9 @@ export default function AdminLoginPage() {
 
                         {/* PIN */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">PIN (6 cyfr)</label>
+                            <label htmlFor="admin-pin" className="text-sm font-medium text-gray-300">PIN (6 cyfr)</label>
                             <input
+                                id="admin-pin"
                                 type="text"
                                 inputMode="numeric"
                                 value={pin}
