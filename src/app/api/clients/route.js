@@ -18,6 +18,21 @@ export async function GET(req) {
             );
         }
 
+        const { getCache, setCache, CACHE_TTL, generateCacheKey } = await import('@/lib/cache');
+
+        // Only cache if no search filters are applied (basic list)
+        // or we could cache specific queries, but filters are dynamic.
+        // Let's cache the full list for a business if no filters, or specific filters.
+        // To be safe and effective: Cache based on full query params.
+        const cacheKey = generateCacheKey('clients:list', {
+            businessId, search, status, tag
+        });
+
+        const cachedClients = await getCache(cacheKey);
+        if (cachedClients) {
+            return NextResponse.json({ clients: cachedClients }, { status: 200 });
+        }
+
         await connectDB();
 
         // Build query
@@ -67,6 +82,9 @@ export async function GET(req) {
             birthYear: client.birthYear || '',
             createdAt: client.createdAt
         }));
+
+        // Cache for 5 minutes
+        await setCache(cacheKey, transformedClients, CACHE_TTL.BUSINESS_LIST);
 
         return NextResponse.json({ clients: transformedClients }, { status: 200 });
     } catch (error) {
@@ -158,6 +176,11 @@ export async function POST(req) {
         });
 
         await client.save();
+
+        // Invalidate cache for this business list
+        const { invalidateCache } = await import('@/lib/cache');
+        // Invalidate any list query related to this business
+        await invalidateCache(`clients:list:businessId:${businessId}*`);
 
         return NextResponse.json({
             message: "Klient został dodany",

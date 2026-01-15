@@ -1,14 +1,23 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import SystemConfig from '@/app/models/SystemConfig';
+import { getCache, setCache, invalidateCache, CACHE_TTL } from '@/lib/cache';
 
 // GET - Fetch current feature flags
 export async function GET() {
     try {
+        const cacheKey = 'system:config:admin';
+
+        // Try to get from cache first
+        const cachedConfig = await getCache(cacheKey);
+        if (cachedConfig) {
+            return NextResponse.json(cachedConfig);
+        }
+
         await connectDB();
         const config = await SystemConfig.getConfig();
 
-        return NextResponse.json({
+        const responseData = {
             flags: {
                 // Boolean flags
                 maintenanceMode: config.maintenanceMode,
@@ -26,7 +35,12 @@ export async function GET() {
                 sessionTimeoutMinutes: config.sessionTimeoutMinutes
             },
             updatedAt: config.updatedAt
-        });
+        };
+
+        // Cache for 30 minutes
+        await setCache(cacheKey, responseData, CACHE_TTL.LONG);
+
+        return NextResponse.json(responseData);
     } catch (error) {
         console.error('Feature Flags GET Error:', error);
         return NextResponse.json(
@@ -65,6 +79,24 @@ export async function PUT(request) {
         }
 
         const config = await SystemConfig.updateConfig(updates);
+
+        // 1. Invalidate Cache (both public and admin)
+        await invalidateCache('system:config:*');
+
+        // 2. Trigger Pusher event
+        try {
+            const { pusherServer } = await import('@/lib/pusher');
+            await pusherServer.trigger('system-updates', 'config-updated', {
+                announcement: {
+                    enabled: config.announcementEnabled,
+                    text: config.announcementText,
+                    type: config.announcementType
+                },
+                maintenance: config.maintenanceMode
+            });
+        } catch (error) {
+            console.error('Pusher Trigger Error:', error);
+        }
 
         return NextResponse.json({
             message: 'Flagi zaktualizowane',

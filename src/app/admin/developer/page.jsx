@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { Activity, Database, Cpu, HardDrive, Wifi, CheckCircle, XCircle, RefreshCw, ToggleRight, AlertCircle, Loader2, Save, Type, Hash, Megaphone } from 'lucide-react';
+import { Activity, Database, Cpu, HardDrive, Wifi, CheckCircle, XCircle, RefreshCw, ToggleRight, AlertCircle, Loader2, Save, Type, Hash, Megaphone, Trash2, FileText, Folder, Eye, Search, Key, Clock } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 
 export default function AdminDeveloperPage() {
@@ -93,6 +93,88 @@ export default function AdminDeveloperPage() {
             setFeatureFlags(prev => ({ ...prev, [key]: !value }));
         }
     };
+
+    // --- Cache Explorer Logic ---
+    const [cacheKeys, setCacheKeys] = useState([]);
+    const [cacheLoading, setCacheLoading] = useState(false);
+    const [selectedKey, setSelectedKey] = useState(null);
+    const [keyDetails, setKeyDetails] = useState(null);
+    const [keyDetailsLoading, setKeyDetailsLoading] = useState(false);
+    const [cacheSearch, setCacheSearch] = useState('');
+
+    const fetchCacheKeys = useCallback(async () => {
+        setCacheLoading(true);
+        try {
+            const res = await fetch('/api/admin/system/cache');
+            const data = await res.json();
+            setCacheKeys(data.keys || []);
+        } catch (err) {
+            console.error('Fetch cache keys error:', err);
+        } finally {
+            setCacheLoading(false);
+        }
+    }, []);
+
+    const fetchKeyDetails = async (key) => {
+        setSelectedKey(key);
+        setKeyDetailsLoading(true);
+        try {
+            const res = await fetch(`/api/admin/system/cache/detail?key=${encodeURIComponent(key)}`);
+            const data = await res.json();
+            setKeyDetails(data);
+        } catch (err) {
+            console.error('Fetch key details error:', err);
+            setKeyDetails(null);
+        } finally {
+            setKeyDetailsLoading(false);
+        }
+    };
+
+    const deleteKey = async (key) => {
+        if (!confirm(`Czy na pewno usunąć klucz ${key}?`)) return;
+        try {
+            await fetch(`/api/admin/system/cache/detail?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+            setCacheKeys(prev => prev.filter(k => k !== key));
+            if (selectedKey === key) {
+                setSelectedKey(null);
+                setKeyDetails(null);
+            }
+        } catch (err) {
+            console.error('Delete key error:', err);
+        }
+    };
+
+    const clearCachePattern = async (pattern, label) => {
+        if (!confirm(`Czy na pewno wyczyścić cache dla: ${label}?`)) return;
+        try {
+            await fetch('/api/admin/system/cache', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pattern })
+            });
+            fetchCacheKeys(); // Refresh list
+        } catch (err) {
+            console.error('Clear cache error:', err);
+        }
+    };
+
+    // Group keys by prefix (simple splitting by ':')
+    const groupedKeys = React.useMemo(() => {
+        const groups = {};
+        const filtered = cacheKeys.filter(k => k.toLowerCase().includes(cacheSearch.toLowerCase()));
+
+        filtered.forEach(key => {
+            const parts = key.split(':');
+            const prefix = parts.length > 1 ? parts[0] : 'other';
+            if (!groups[prefix]) groups[prefix] = [];
+            groups[prefix].push(key);
+        });
+        return groups;
+    }, [cacheKeys, cacheSearch]);
+
+    useEffect(() => {
+        fetchCacheKeys();
+    }, [fetchCacheKeys]);
 
     useEffect(() => {
         fetchHealthStatus();
@@ -410,30 +492,150 @@ export default function AdminDeveloperPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Cache Explorer Section */}
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col h-[600px]">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+                                        <Database className="w-5 h-5 text-emerald-500" />
+                                        Zaawansowany Cache Explorer
+                                    </h2>
+                                    <p className="text-xs text-gray-500 mt-1">Przeglądaj i zarządzaj kluczami Redis</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => fetchCacheKeys()}
+                                        className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <RefreshCw className={`w-4 h-4 ${cacheLoading ? 'animate-spin' : ''}`} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-1 gap-6 overflow-hidden">
+                                {/* Sidebar - Keys List */}
+                                <div className="w-1/3 flex flex-col gap-4 border-r border-gray-800 pr-6">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+                                        <input
+                                            type="text"
+                                            placeholder="Szukaj klucza..."
+                                            value={cacheSearch}
+                                            onChange={(e) => setCacheSearch(e.target.value)}
+                                            className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-emerald-500/50"
+                                        />
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                                        {cacheLoading ? (
+                                            <div className="text-center py-4 text-gray-500 text-xs">Ładowanie kluczy...</div>
+                                        ) : Object.keys(groupedKeys).length === 0 ? (
+                                            <div className="text-center py-4 text-gray-500 text-xs">Brak kluczy</div>
+                                        ) : (
+                                            Object.entries(groupedKeys).map(([prefix, keys]) => (
+                                                <div key={prefix}>
+                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 sticky top-0 bg-gray-900 py-1">
+                                                        <Folder className="w-3 h-3" />
+                                                        {prefix} ({keys.length})
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {keys.map(key => (
+                                                            <button
+                                                                key={key}
+                                                                onClick={() => fetchKeyDetails(key)}
+                                                                className={`w-full text-left px-3 py-2 rounded-lg text-xs truncate transition-all font-mono ${selectedKey === key
+                                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+                                                                    }`}
+                                                                title={key}
+                                                            >
+                                                                {key}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Main - Key Details */}
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    {selectedKey ? (
+                                        <div className="flex-1 flex flex-col gap-4 h-full">
+                                            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-gray-800 rounded-lg">
+                                                        <Key className="w-4 h-4 text-emerald-500" />
+                                                    </div>
+                                                    <div className="overflow-hidden">
+                                                        <h3 className="text-sm font-bold text-white truncate max-w-[300px]" title={selectedKey}>{selectedKey}</h3>
+                                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                            <Clock className="w-3 h-3" />
+                                                            TTL: {keyDetails?.ttl === -1 ? 'Brak (Permanent)' : `${keyDetails?.ttl}s`}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteKey(selectedKey)}
+                                                    className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                                                    title="Usuń klucz"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex-1 bg-gray-950 rounded-xl p-4 overflow-auto border border-gray-800 relative group">
+                                                {keyDetailsLoading ? (
+                                                    <div className="flex justify-center items-center h-full">
+                                                        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                                                    </div>
+                                                ) : (
+                                                    <pre className="text-xs font-mono text-gray-300 whitespace-pre-wrap break-all">
+                                                        {typeof keyDetails?.value === 'object'
+                                                            ? JSON.stringify(keyDetails.value, null, 2)
+                                                            : String(keyDetails?.value)
+                                                        }
+                                                    </pre>
+                                                )}
+                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="bg-gray-800 text-[10px] px-2 py-1 rounded text-gray-400">JSON</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex flex-col items-center justify-center text-gray-600 gap-4">
+                                            <Database className="w-12 h-12 opacity-20" />
+                                            <div className="text-center">
+                                                <p className="text-sm font-medium">Wybierz klucz z listy</p>
+                                                <p className="text-xs opacity-60">Szczegóły pojawią się tutaj</p>
+                                            </div>
+
+                                            <div className="flex gap-2 mt-4">
+                                                <button
+                                                    onClick={() => clearCachePattern('api:*', 'API Cache')}
+                                                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-xs font-bold text-gray-400 transition-all border border-gray-700"
+                                                >
+                                                    Wyczyść Cache API
+                                                </button>
+                                                <button
+                                                    onClick={() => clearCachePattern('session:*', 'Sesje')}
+                                                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-xs font-bold text-gray-400 transition-all border border-gray-700"
+                                                >
+                                                    Wyczyść Sesje
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Sidebar / Tools */}
                     <div className="space-y-6">
-                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-                            <h2 className="flex items-center gap-2 text-lg font-bold text-white mb-4">
-                                <Database className="w-5 h-5 text-emerald-500" />
-                                Zarządzanie Cache
-                            </h2>
-                            <div className="space-y-3">
-                                <button className="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 text-gray-300 hover:text-white rounded-xl transition-all border border-gray-700/50 hover:border-gray-600">
-                                    <span className="flex items-center gap-3">
-                                        <RefreshCw className="w-4 h-4" />
-                                        Wyczyść Redis Cache
-                                    </span>
-                                </button>
-                                <button className="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 text-gray-300 hover:text-white rounded-xl transition-all border border-gray-700/50 hover:border-gray-600">
-                                    <span className="flex items-center gap-3">
-                                        <Database className="w-4 h-4" />
-                                        Przeglądaj klucze
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
+
 
                         <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/20 rounded-2xl p-6">
                             <h3 className="text-lg font-bold text-white mb-2">Tryb Developerski</h3>

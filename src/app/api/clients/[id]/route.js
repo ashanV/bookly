@@ -25,6 +25,12 @@ export async function DELETE(req, { params }) {
             );
         }
 
+        // Invalidate cache for this business list
+        if (deletedClient.businessId) {
+            const { invalidateCache } = await import('@/lib/cache');
+            await invalidateCache(`clients:list:businessId:${deletedClient.businessId}*`);
+        }
+
         return NextResponse.json({
             message: "Klient został usunięty",
             id: id

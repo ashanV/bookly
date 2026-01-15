@@ -11,31 +11,43 @@ export default function GlobalAnnouncement() {
         const fetchAnnouncement = async () => {
             try {
                 const res = await fetch('/api/admin/system/config');
-                if (!res.ok) {
-                    console.log('GlobalAnnouncement: Failed to fetch config');
-                    return;
-                }
+                if (!res.ok) return;
+
                 const data = await res.json();
-                console.log('GlobalAnnouncement: Fetched data', data);
 
                 if (data.announcement?.enabled && data.announcement.text) {
-                    console.log('GlobalAnnouncement: Setting announcement', data.announcement);
                     setAnnouncement(data.announcement);
-                    setIsVisible(true); // Always show when enabled
+                    setIsVisible(true);
                 } else {
-                    console.log('GlobalAnnouncement: Clearing announcement');
                     setAnnouncement(null);
                 }
             } catch (error) {
-                console.error('GlobalAnnouncement: Error fetching', error);
+                // Silent error
             }
         };
 
+        // Initial fetch
         fetchAnnouncement();
-        // Refresh every 10 seconds during testing for faster feedback
-        const interval = setInterval(fetchAnnouncement, 10 * 1000);
-        return () => clearInterval(interval);
-    }, []); // No dependencies - fetch independently
+
+        // Real-time updates with Pusher
+        const { pusherClient } = require('@/lib/pusher-client');
+
+        const channel = pusherClient.subscribe('system-updates');
+        channel.bind('config-updated', (data) => {
+            console.log('GlobalAnnouncement: Real-time update received', data);
+
+            if (data.announcement?.enabled && data.announcement.text) {
+                setAnnouncement(data.announcement);
+                setIsVisible(true);
+            } else {
+                setAnnouncement(null);
+            }
+        });
+
+        return () => {
+            pusherClient.unsubscribe('system-updates');
+        };
+    }, []); // No dependencies - runs once
 
     if (!announcement || !isVisible) return null;
 
