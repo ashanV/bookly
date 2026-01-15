@@ -75,6 +75,20 @@ export default function AdminLogsPage() {
 
     const getActionConfig = (action, type) => {
         // Logika kategorii i ikon
+        if (action === 'admin_login')
+            return { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: <Shield className="w-4 h-4" />, label: 'LOGOWANIE UDANE' };
+        if (action === 'admin_login_failed')
+            return { color: 'text-red-400', bg: 'bg-red-500/10', icon: <Shield className="w-4 h-4" />, label: 'LOGOWANIE NIEUDANE' };
+
+        if (action === 'user_registered')
+            return { color: 'text-blue-400', bg: 'bg-blue-500/10', icon: <User className="w-4 h-4" />, label: 'REJESTRACJA' };
+        if (action === 'business_created')
+            return { color: 'text-violet-400', bg: 'bg-violet-500/10', icon: <CheckCircle className="w-4 h-4" />, label: 'NOWY BIZNES' };
+        if (action === 'client_created')
+            return { color: 'text-indigo-400', bg: 'bg-indigo-500/10', icon: <User className="w-4 h-4" />, label: 'NOWY KLIENT' };
+        if (action === 'employee_created')
+            return { color: 'text-cyan-400', bg: 'bg-cyan-500/10', icon: <User className="w-4 h-4" />, label: 'NOWY PRACOWNIK' };
+
         if (action.includes('create') || action.includes('grant'))
             return { color: 'text-green-400', bg: 'bg-green-500/10', icon: <CheckCircle className="w-4 h-4" />, label: 'UTWORZONO' };
         if (action.includes('update') || action.includes('edit') || action.includes('change'))

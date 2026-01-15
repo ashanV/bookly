@@ -203,12 +203,47 @@ export async function PUT(req, { params }) {
     // Prevent modification of sensitive fields
     const { password, email, _id, ...safeData } = data;
 
+    // Fetch current state for logging
+    const currentBusiness = await Business.findById(id).select('employees');
+
     // Update business
     const updatedBusiness = await Business.findByIdAndUpdate(
       id,
       { $set: safeData },
       { new: true, runValidators: true }
     ).select('-password -__v');
+
+    // Detect and log new employees
+    if (currentBusiness && updatedBusiness && updatedBusiness.employees) {
+      try {
+        const existingIds = new Set((currentBusiness.employees || []).map(e => e.id));
+        const newEmployees = updatedBusiness.employees.filter(e => !existingIds.has(e.id));
+
+        if (newEmployees.length > 0) {
+          const AdminLog = require("@/app/models/AdminLog").default;
+
+          for (const emp of newEmployees) {
+            await AdminLog.create({
+              userId: id, // Business is the 'user'
+              userEmail: decoded.email || 'unknown', // From JWT
+              userRole: 'business',
+              action: 'employee_created',
+              targetType: 'employee',
+              targetId: null, // Employees are subdocs, no separate ObjectId usually, or use emp.id
+              details: {
+                employeeName: emp.name,
+                position: emp.position,
+                businessName: updatedBusiness.companyName
+              },
+              ip: req.headers.get('x-forwarded-for') || 'unknown',
+              userAgent: req.headers.get('user-agent') || 'unknown'
+            });
+          }
+        }
+      } catch (logError) {
+        console.error("Failed to check/log new employees:", logError);
+      }
+    }
 
     if (!updatedBusiness) {
       return NextResponse.json({ error: "Biznes nie został znaleziony" }, { status: 404 });

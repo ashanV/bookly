@@ -65,6 +65,29 @@ export async function POST(req) {
 
     console.log(`✅ Użytkownik ${email} został pomyślnie zarejestrowany.`);
 
+    // Log to AdminLog
+    try {
+      // Dynamic import to avoid circular dependency if any
+      const AdminLog = require("@/app/models/AdminLog").default;
+      await AdminLog.create({
+        userId: newUser._id,
+        userEmail: email,
+        userRole: 'user',
+        action: 'user_registered',
+        targetType: 'user',
+        targetId: newUser._id,
+        details: {
+          firstName,
+          lastName,
+          phone
+        },
+        ip: req.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: req.headers.get('user-agent') || 'unknown'
+      });
+    } catch (logError) {
+      console.error("Failed to create admin log for user registration:", logError);
+    }
+
     // Wysłanie odpowiedzi o sukcesie
     return NextResponse.json(
       { message: "Rejestracja przebiegła pomyślnie!" },

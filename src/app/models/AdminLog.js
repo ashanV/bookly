@@ -16,9 +16,13 @@ const AdminLogSchema = new mongoose.Schema({
         required: true,
         enum: [
             // Użytkownicy
-            'user_viewed', 'user_edited', 'user_deleted', 'user_banned', 'user_unbanned',
+            'user_viewed', 'user_edited', 'user_deleted', 'user_banned', 'user_unbanned', 'user_registered',
             // Biznesy
             'business_created', 'business_viewed', 'business_edited', 'business_deleted', 'business_verified', 'business_rejected',
+            // Klienci
+            'client_created',
+            // Pracownicy
+            'employee_created',
             // Rezerwacje
             'reservation_viewed', 'reservation_cancelled', 'dispute_resolved',
             // Support
@@ -42,7 +46,7 @@ const AdminLogSchema = new mongoose.Schema({
     // Cel akcji
     targetType: {
         type: String,
-        enum: ['user', 'business', 'reservation', 'ticket', 'review', 'settings', 'feature_flag', 'cache', 'auth']
+        enum: ['user', 'business', 'client', 'employee', 'reservation', 'ticket', 'review', 'settings', 'feature_flag', 'cache', 'auth']
     },
     targetId: { type: mongoose.Schema.Types.ObjectId },
 

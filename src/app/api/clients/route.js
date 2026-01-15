@@ -177,6 +177,33 @@ export async function POST(req) {
 
         await client.save();
 
+        // Log to AdminLog
+        try {
+            // Dynamic import
+            const AdminLog = require("@/app/models/AdminLog").default;
+            const Business = require("@/app/models/Business").default;
+
+            // Fetch business to get email for log
+            const business = await Business.findById(businessId).select('email companyName');
+
+            await AdminLog.create({
+                userId: businessId, // Business is the 'user' here
+                userEmail: business ? business.email : 'unknown',
+                userRole: 'business',
+                action: 'client_created',
+                targetType: 'client',
+                targetId: client._id,
+                details: {
+                    clientName: `${client.firstName} ${client.lastName}`,
+                    businessName: business ? business.companyName : 'Unknown'
+                },
+                ip: req.headers.get('x-forwarded-for') || 'unknown',
+                userAgent: req.headers.get('user-agent') || 'unknown'
+            });
+        } catch (logError) {
+            console.error("Failed to create admin log for client creation:", logError);
+        }
+
         // Invalidate cache for this business list
         const { invalidateCache } = await import('@/lib/cache');
         // Invalidate any list query related to this business
