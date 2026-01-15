@@ -133,6 +133,29 @@ export async function POST(req) {
 
     console.log(`✅ Użytkownik biznesowy ${email} (${companyName}) został pomyślnie zarejestrowany.`);
 
+    // Log to AdminLog
+    try {
+      const AdminLog = require("@/app/models/AdminLog").default;
+      await AdminLog.create({
+        userId: newBusiness._id, // Using business ID as userId for the log context
+        userEmail: email,
+        userRole: 'business',
+        action: 'business_created',
+        targetType: 'business',
+        targetId: newBusiness._id,
+        details: {
+          companyName,
+          city,
+          category
+        },
+        ip: req.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: req.headers.get('user-agent') || 'unknown'
+      });
+    } catch (logError) {
+      console.error("Failed to create admin log for business registration:", logError);
+      // Don't fail the registration if logging fails
+    }
+
     // Wysłanie odpowiedzi o sukcesie
     return NextResponse.json(
       { message: "Rejestracja biznesu przebiegła pomyślnie!" },

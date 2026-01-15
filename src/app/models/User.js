@@ -29,6 +29,11 @@ const UserSchema = new mongoose.Schema({
   lastAdminLogin: { type: Date },
   isAdminActive: { type: Boolean, default: false },
 
+  // Session Management
+  tokenVersion: { type: Number, default: 0 },
+  lastIp: { type: String },
+  lastUserAgent: { type: String },
+
   // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

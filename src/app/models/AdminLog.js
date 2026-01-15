@@ -18,7 +18,7 @@ const AdminLogSchema = new mongoose.Schema({
             // Użytkownicy
             'user_viewed', 'user_edited', 'user_deleted', 'user_banned', 'user_unbanned',
             // Biznesy
-            'business_viewed', 'business_edited', 'business_deleted', 'business_verified', 'business_rejected',
+            'business_created', 'business_viewed', 'business_edited', 'business_deleted', 'business_verified', 'business_rejected',
             // Rezerwacje
             'reservation_viewed', 'reservation_cancelled', 'dispute_resolved',
             // Support
@@ -26,7 +26,7 @@ const AdminLogSchema = new mongoose.Schema({
             // Recenzje
             'review_deleted',
             // Finanse
-            'finance_viewed', 'payout_processed',
+            'finance_viewed', 'payout_processed', 'payment_success', 'payment_failed', 'subscription_cancelled',
             // Ustawienia
             'settings_changed',
             // Role
@@ -34,7 +34,8 @@ const AdminLogSchema = new mongoose.Schema({
             // Developer
             'feature_flag_toggled', 'cache_cleared',
             // Auth
-            'admin_login', 'admin_logout', 'admin_login_failed'
+            'admin_login', 'admin_logout', 'admin_login_failed',
+            'pin_sent'
         ]
     },
 

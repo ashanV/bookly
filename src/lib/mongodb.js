@@ -2,9 +2,8 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error("❌ Brak zmiennej MONGODB_URI w .env.local");
-}
+// Removed top-level throw to prevent build failures if env is missing temporarily
+
 
 // Global cache to prevent creating many connections in dev/hot-reload
 let globalWithMongoose = global;
@@ -27,6 +26,9 @@ const mongooseOptions = {
 };
 
 export async function connectDB() {
+  if (!MONGODB_URI) {
+    throw new Error("❌ Brak zmiennej MONGODB_URI w .env.local");
+  }
   const cached = globalWithMongoose._mongoose;
   if (cached.conn) {
     // Check if connection is still alive
@@ -44,7 +46,7 @@ export async function connectDB() {
       .connect(MONGODB_URI, mongooseOptions)
       .then((mongooseInstance) => {
         console.log("✅ Połączono z MongoDB");
-        
+
         // Handle connection events
         mongooseInstance.connection.on('error', (err) => {
           console.error("❌ Błąd połączenia MongoDB:", err);
@@ -72,7 +74,7 @@ export async function connectDB() {
   try {
     cached.conn = await Promise.race([
       cached.promise,
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Timeout połączenia z MongoDB")), 10000)
       )
     ]);

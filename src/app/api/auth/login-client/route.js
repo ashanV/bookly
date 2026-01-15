@@ -52,8 +52,20 @@ export async function POST(req) {
       return NextResponse.json({ error: "Nieprawidłowe hasło" }, { status: 400 });
     }
 
+    // Update Session Info
+    user.lastIp = req.headers.get('x-forwarded-for') || 'unknown';
+    user.lastUserAgent = req.headers.get('user-agent') || 'unknown';
+    if (user.adminRole) {
+      user.lastAdminLogin = new Date();
+    }
+    await user.save();
+
     const token = jwt.sign(
-      { id: user._id, role: 'client' },
+      {
+        id: user._id,
+        role: 'client',
+        tokenVersion: user.tokenVersion || 0 // Include token version
+      },
       process.env.JWT_SECRET,
       { expiresIn: `${timeoutMinutes}m` }
     );

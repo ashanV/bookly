@@ -58,7 +58,13 @@ export async function GET() {
     } else {
       // Domyślnie sprawdź w User (klienci)
       user = await User.findById(decoded.id).select("-password");
+
+      // Check token version for Users (including Admins)
       if (user) {
+        if (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion) {
+          return NextResponse.json({ error: "Sesja wygasła (token invalid)" }, { status: 401 });
+        }
+
         return NextResponse.json({
           user: {
             id: user._id,
@@ -67,6 +73,9 @@ export async function GET() {
             lastName: user.lastName,
             fullName: `${user.firstName} ${user.lastName}`,
             role: 'client',
+            // Admin fields
+            adminRole: user.adminRole || null,
+            isAdminActive: user.isAdminActive || false,
             // Dodaj inne pola jeśli potrzebne
           },
         });

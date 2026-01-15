@@ -166,6 +166,20 @@ export async function POST(req) {
 </html>
         `
             });
+
+            // Log PIN sent action separately for Security Monitor
+            await AdminLog.create({
+                userId: decoded.id,
+                userEmail: adminUser?.email || 'unknown',
+                userRole: decoded.adminRole,
+                action: 'pin_sent',
+                targetType: 'user',
+                targetId: user._id,
+                details: { targetEmail: email, role },
+                ip: req.headers.get('x-forwarded-for') || 'unknown',
+                userAgent: req.headers.get('user-agent') || 'unknown'
+            });
+
         } catch (emailError) {
             console.error('Failed to send email:', emailError);
             // Continue even if email fails - role was already granted

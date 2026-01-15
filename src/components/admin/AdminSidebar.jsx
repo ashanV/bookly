@@ -83,6 +83,12 @@ const menuItems = [
         permission: PERMISSIONS.DEV_API_MONITOR
     },
     {
+        path: '/admin/security',
+        label: 'Bezpieczeństwo',
+        icon: Shield,
+        permission: PERMISSIONS.LOGS_VIEW
+    },
+    {
         path: '/admin/logs',
         label: 'Logi',
         icon: FileText,
@@ -155,8 +161,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                                 <Link
                                     href={item.path}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
-                                            ? 'bg-purple-600/20 text-purple-400'
-                                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                        ? 'bg-purple-600/20 text-purple-400'
+                                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                         }`}
                                     title={collapsed ? item.label : undefined}
                                 >

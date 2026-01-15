@@ -103,6 +103,7 @@ export const SECTION_PERMISSIONS = {
     '/admin/settings': [PERMISSIONS.SETTINGS_VIEW],
     '/admin/developer': [PERMISSIONS.DEV_API_MONITOR],
     '/admin/logs': [PERMISSIONS.LOGS_VIEW],
+    '/admin/security': [PERMISSIONS.LOGS_VIEW],
     '/admin/roles': [PERMISSIONS.ROLES_VIEW],
 };
 
