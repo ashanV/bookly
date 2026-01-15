@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { Activity, Database, Cpu, HardDrive, Wifi, CheckCircle, XCircle, RefreshCw, ToggleRight, AlertCircle, Loader2, Save, Type, Hash, Megaphone, Trash2, FileText, Folder, Eye, Search, Key, Clock } from 'lucide-react';
+import { Activity, Database, Cpu, HardDrive, Wifi, CheckCircle, XCircle, RefreshCw, ToggleRight, AlertCircle, Loader2, Save, Type, Hash, Megaphone, Trash2, FileText, Folder, Eye, Search, Key, Clock, Shield, Table2 } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
+import { pusherClient } from '@/lib/pusher-client';
 
 export default function AdminDeveloperPage() {
     const [isLoading, setIsLoading] = useState(true);
@@ -158,6 +159,59 @@ export default function AdminDeveloperPage() {
         }
     };
 
+    // --- Database Explorer Logic ---
+    const [dbStats, setDbStats] = useState([]);
+    const [dbLoading, setDbLoading] = useState(false);
+    const [integrityIssues, setIntegrityIssues] = useState(null);
+    const [integrityLoading, setIntegrityLoading] = useState(false);
+    const [queries, setQueries] = useState([]);
+    const [queriesLoading, setQueriesLoading] = useState(false);
+    const [activeDbTab, setActiveDbTab] = useState('stats'); // stats, integrity, queries
+
+    const fetchDbStats = useCallback(async () => {
+        setDbLoading(true);
+        try {
+            const res = await fetch('/api/admin/database/stats');
+            const data = await res.json();
+            setDbStats(data.stats || []);
+        } catch (err) {
+            console.error('DB Stats error:', err);
+        } finally {
+            setDbLoading(false);
+        }
+    }, []);
+
+    const runIntegrityCheck = async () => {
+        setIntegrityLoading(true);
+        try {
+            const res = await fetch('/api/admin/database/integrity', { method: 'POST' });
+            const data = await res.json();
+            setIntegrityIssues(data.issues || []);
+        } catch (err) {
+            console.error('Integrity check error:', err);
+        } finally {
+            setIntegrityLoading(false);
+        }
+    };
+
+    const fetchSlowQueries = useCallback(async () => {
+        setQueriesLoading(true);
+        try {
+            const res = await fetch('/api/admin/database/queries');
+            const data = await res.json();
+            setQueries(data.queries || []);
+        } catch (err) {
+            console.error('Queries error:', err);
+        } finally {
+            setQueriesLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (activeDbTab === 'stats') fetchDbStats();
+        if (activeDbTab === 'queries') fetchSlowQueries();
+    }, [activeDbTab, fetchDbStats, fetchSlowQueries]);
+
     // Group keys by prefix (simple splitting by ':')
     const groupedKeys = React.useMemo(() => {
         const groups = {};
@@ -176,13 +230,36 @@ export default function AdminDeveloperPage() {
         fetchCacheKeys();
     }, [fetchCacheKeys]);
 
+
+
     useEffect(() => {
         fetchHealthStatus();
         fetchFeatureFlags();
-        const interval = setInterval(() => {
-            fetchHealthStatus();
-        }, 30000);
-        return () => clearInterval(interval);
+
+        // Pusher subscription for real-time updates
+        const channel = pusherClient.subscribe('admin-stats');
+
+        channel.bind('system-health', (data) => {
+            // Update health data directly from Pusher event without polling
+            setHealthData(data);
+
+            // Update history logic reused
+            if (data.stats) {
+                const cpuStat = data.stats.find(s => s.icon === 'Cpu');
+                const memStat = data.stats.find(s => s.icon === 'HardDrive');
+
+                setStatsHistory(prev => {
+                    const newCpU = [...prev.cpu, { value: cpuStat?.rawValue || 0 }].slice(-15);
+                    const newMem = [...prev.memory, { value: memStat?.rawValue || 0 }].slice(-15);
+                    return { cpu: newCpU, memory: newMem };
+                });
+            }
+        });
+
+        return () => {
+            channel.unbind('system-health');
+            pusherClient.unsubscribe('admin-stats');
+        };
     }, [fetchHealthStatus, fetchFeatureFlags]);
 
     const getStatusIcon = (status) => {
@@ -545,8 +622,8 @@ export default function AdminDeveloperPage() {
                                                                 key={key}
                                                                 onClick={() => fetchKeyDetails(key)}
                                                                 className={`w-full text-left px-3 py-2 rounded-lg text-xs truncate transition-all font-mono ${selectedKey === key
-                                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+                                                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                                    : 'text-gray-400 hover:bg-gray-800 hover:text-gray-300'
                                                                     }`}
                                                                 title={key}
                                                             >
@@ -629,6 +706,176 @@ export default function AdminDeveloperPage() {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Database Explorer Section */}
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col min-h-[500px]">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+                                        <Database className="w-5 h-5 text-blue-500" />
+                                        Database Explorer (MongoDB)
+                                    </h2>
+                                    <p className="text-xs text-gray-500 mt-1">Status, spójność danych i wydajność</p>
+                                </div>
+                                <div className="flex gap-2 bg-gray-950 p-1 rounded-xl border border-gray-800">
+                                    {[
+                                        { id: 'stats', label: 'Statystyki', icon: Table2 },
+                                        { id: 'integrity', label: 'Spójność', icon: Shield },
+                                        { id: 'queries', label: 'Slow Queries', icon: Activity }
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveDbTab(tab.id)}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeDbTab === tab.id
+                                                ? 'bg-gray-800 text-white shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-300'
+                                                }`}
+                                        >
+                                            <tab.icon className="w-3.5 h-3.5" />
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-hidden">
+                                {activeDbTab === 'stats' && (
+                                    <div className="h-full flex flex-col">
+                                        <div className="flex justify-end mb-4">
+                                            <button onClick={fetchDbStats} className="text-gray-500 hover:text-white transition-colors">
+                                                <RefreshCw className={`w-4 h-4 ${dbLoading ? 'animate-spin' : ''}`} />
+                                            </button>
+                                        </div>
+                                        {dbLoading ? (
+                                            <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
+                                        ) : (
+                                            <div className="overflow-x-auto rounded-xl border border-gray-800">
+                                                <table className="w-full text-left text-xs bg-gray-950">
+                                                    <thead className="bg-gray-900 text-gray-400 font-bold uppercase tracking-wider">
+                                                        <tr>
+                                                            <th className="p-3">Kolekcja</th>
+                                                            <th className="p-3 text-right">Dokumenty</th>
+                                                            <th className="p-3 text-right">Rozmiar</th>
+                                                            <th className="p-3 text-right">Avg Obj</th>
+                                                            <th className="p-3 text-right">Indeksy</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-800 text-gray-300">
+                                                        {dbStats.map((stat) => (
+                                                            <tr key={stat.name} className="hover:bg-gray-900/50 transition-colors">
+                                                                <td className="p-3 font-mono text-blue-400">{stat.name}</td>
+                                                                <td className="p-3 text-right font-mono">{stat.count.toLocaleString()}</td>
+                                                                <td className="p-3 text-right font-mono">{(stat.size / 1024 / 1024).toFixed(2)} MB</td>
+                                                                <td className="p-3 text-right font-mono">{Math.round(stat.avgObjSize)} B</td>
+                                                                <td className="p-3 text-right font-mono">{stat.indexes}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeDbTab === 'integrity' && (
+                                    <div className="space-y-6">
+                                        <div className="bg-gray-950/50 border border-gray-800 rounded-xl p-6 text-center">
+                                            <Shield className="w-12 h-12 text-gray-700 mx-auto mb-3" />
+                                            <h3 className="text-white font-bold mb-1">Sprawdź integralność danych</h3>
+                                            <p className="text-xs text-gray-500 mb-6 max-w-md mx-auto">
+                                                Skanuje bazę danych w poszukiwaniu osieroconych rezerwacji, konwersacji bez użytkowników
+                                                i innych niespójności logicznych.
+                                            </p>
+                                            <button
+                                                onClick={runIntegrityCheck}
+                                                disabled={integrityLoading}
+                                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+                                            >
+                                                {integrityLoading ? (
+                                                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Sprawdzanie...</span>
+                                                ) : 'Uruchom Skanowanie'}
+                                            </button>
+                                        </div>
+
+                                        {integrityIssues && (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-2 border-l-2 border-blue-500">
+                                                    Wyniki skanowania ({integrityIssues.length})
+                                                </h3>
+                                                {integrityIssues.length === 0 ? (
+                                                    <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                                                        <CheckCircle className="w-5 h-5" />
+                                                        <span className="font-bold text-sm">Wszystko wygląda dobrze! Nie znaleziono problemów.</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {integrityIssues.map((issue, i) => (
+                                                            <div key={i} className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-4">
+                                                                <XCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+                                                                <div>
+                                                                    <h4 className="font-bold text-red-400 text-sm">{issue.type}</h4>
+                                                                    <p className="text-gray-300 text-sm mt-1">{issue.message}</p>
+                                                                    {issue.details && (
+                                                                        <pre className="mt-2 p-2 bg-black/30 rounded border border-red-500/20 text-[10px] font-mono text-gray-400 overflow-x-auto">
+                                                                            {JSON.stringify(issue.details, null, 2)}
+                                                                        </pre>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeDbTab === 'queries' && (
+                                    <div className="h-full flex flex-col">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="text-xs text-gray-500">
+                                                Wymaga włączonego profilowania MongoDB (level 1 lub 2)
+                                            </div>
+                                            <button onClick={fetchSlowQueries} className="text-gray-500 hover:text-white transition-colors">
+                                                <RefreshCw className={`w-4 h-4 ${queriesLoading ? 'animate-spin' : ''}`} />
+                                            </button>
+                                        </div>
+                                        {queriesLoading ? (
+                                            <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
+                                        ) : queries.length === 0 ? (
+                                            <div className="text-center py-10 text-gray-500 text-sm bg-gray-950 rounded-xl border border-gray-800">
+                                                Brak zarejestrowanych wolnych zapytań lub profilowanie wyłączone.
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-x-auto rounded-xl border border-gray-800">
+                                                <table className="w-full text-left text-xs bg-gray-950">
+                                                    <thead className="bg-gray-900 text-gray-400 font-bold uppercase tracking-wider">
+                                                        <tr>
+                                                            <th className="p-3">Data</th>
+                                                            <th className="p-3">Operacja</th>
+                                                            <th className="p-3">Kolekcja</th>
+                                                            <th className="p-3 text-right">Czas (ms)</th>
+                                                            <th className="p-3">Query</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-800 text-gray-300">
+                                                        {queries.map((q, i) => (
+                                                            <tr key={i} className="hover:bg-gray-900/50 transition-colors">
+                                                                <td className="p-3 text-gray-500 font-mono">{new Date(q.ts).toLocaleTimeString()}</td>
+                                                                <td className="p-3 font-bold text-white">{q.op}</td>
+                                                                <td className="p-3 text-blue-400">{q.ns}</td>
+                                                                <td className={`p-3 text-right font-mono font-bold ${q.millis > 100 ? 'text-red-500' : 'text-amber-500'}`}>{q.millis}ms</td>
+                                                                <td className="p-3 font-mono text-gray-500 max-w-xs truncate" title={JSON.stringify(q.query)}>{JSON.stringify(q.query)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

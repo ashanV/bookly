@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { connectDB } from '@/lib/mongodb';
 import { Redis } from '@upstash/redis';
 import os from 'os';
+import { pusherServer } from '@/lib/pusher';
 
 export async function GET() {
     try {
@@ -63,7 +64,7 @@ export async function GET() {
             },
         ];
 
-        return NextResponse.json({
+        const healthData = {
             services: [
                 mongoStatus,
                 redisStatus,
@@ -77,7 +78,12 @@ export async function GET() {
             },
             stats: systemStats,
             timestamp: new Date().toISOString()
-        });
+        };
+
+        // Broadcast update via Pusher
+        await pusherServer.trigger('admin-stats', 'system-health', healthData);
+
+        return NextResponse.json(healthData);
 
     } catch (error) {
         console.error('Health Check API Error:', error);
