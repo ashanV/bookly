@@ -40,6 +40,7 @@ const UserSchema = new mongoose.Schema({
 
   // Status użytkownika
   isActive: { type: Boolean, default: true },
+  forcePasswordReset: { type: Boolean, default: false },
 }, {
   strict: true,
   validateBeforeSave: true
