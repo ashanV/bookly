@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { Activity, Database, Cpu, HardDrive, Wifi, CheckCircle, XCircle, RefreshCw, ToggleRight, AlertCircle, Loader2, Save, Type, Hash, Megaphone, Trash2, FileText, Folder, Eye, Search, Key, Clock, Shield, Table2 } from 'lucide-react';
+import { Activity, Database, Cpu, HardDrive, Wifi, CheckCircle, XCircle, RefreshCw, ToggleRight, AlertCircle, Loader2, Save, Type, Hash, Megaphone, Trash2, FileText, Folder, Eye, Search, Key, Clock, Shield, Table2, Terminal, Pause, Play } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { pusherClient } from '@/lib/pusher-client';
 
@@ -27,6 +27,21 @@ export default function AdminDeveloperPage() {
     const [flagsLoading, setFlagsLoading] = useState(true);
     const [flagsSaving, setFlagsSaving] = useState(false);
     const [flagsError, setFlagsError] = useState(null);
+
+    // --- Logs State ---
+    const [logs, setLogs] = useState([]);
+    const [isPaused, setIsPaused] = useState(false);
+    const logsEndRef = React.useRef(null);
+
+    const clearLogs = () => setLogs([]);
+    const togglePause = () => setIsPaused(!isPaused);
+
+    // Auto-scroll to bottom of logs
+    useEffect(() => {
+        if (!isPaused && logsEndRef.current) {
+            logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [logs, isPaused]);
 
     const fetchHealthStatus = useCallback(async (isManual = false) => {
         if (isManual) setIsLoading(true);
@@ -261,6 +276,21 @@ export default function AdminDeveloperPage() {
             pusherClient.unsubscribe('admin-stats');
         };
     }, [fetchHealthStatus, fetchFeatureFlags]);
+
+    // --- Logs Subscription ---
+    useEffect(() => {
+        const logChannel = pusherClient.subscribe('admin-logs');
+        logChannel.bind('log-error', (data) => {
+            if (!isPaused) {
+                setLogs(prev => [...prev.slice(-99), data]);
+            }
+        });
+
+        return () => {
+            logChannel.unbind('log-error');
+            pusherClient.unsubscribe('admin-logs');
+        };
+    }, [isPaused]);
 
     const getStatusIcon = (status) => {
         switch (status) {
@@ -723,7 +753,8 @@ export default function AdminDeveloperPage() {
                                     {[
                                         { id: 'stats', label: 'Statystyki', icon: Table2 },
                                         { id: 'integrity', label: 'Spójność', icon: Shield },
-                                        { id: 'queries', label: 'Slow Queries', icon: Activity }
+                                        { id: 'queries', label: 'Slow Queries', icon: Activity },
+                                        { id: 'logs', label: 'Debugger', icon: Terminal }
                                     ].map(tab => (
                                         <button
                                             key={tab.id}
@@ -878,9 +909,101 @@ export default function AdminDeveloperPage() {
                                 )}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Sidebar / Tools */}
+
+                        {/* Technical Log Stream Section */}
+                        {activeDbTab === 'logs' && (
+                            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col min-h-[500px]">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+                                            <Terminal className="w-5 h-5 text-purple-500" />
+                                            Debugger (Stream Logów)
+                                        </h2>
+                                        <p className="text-xs text-gray-500 mt-1">Podgląd błędów serwera w czasie rzeczywistym</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={togglePause}
+                                            className={`p-2 rounded-lg border transition-colors ${isPaused ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500' : 'bg-gray-800 border-gray-700 text-gray-400 hover:text-white'}`}
+                                            title={isPaused ? "Wznów stream" : "Zatrzymaj stream"}
+                                        >
+                                            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                                        </button>
+                                        <button
+                                            onClick={clearLogs}
+                                            className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-white transition-colors"
+                                            title="Wyczyść konsolę"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 bg-black rounded-xl border border-gray-800 p-4 font-mono text-xs overflow-y-auto max-h-[600px] shadow-inner font-ligatures-none">
+                                    {logs.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center text-gray-600">
+                                            <Terminal className="w-8 h-8 mb-2 opacity-50" />
+                                            <p>Oczekiwanie na logi serwera...</p>
+                                            <span className="text-[10px] opacity-50 mt-1">Wywołaj błąd backendu, aby zobaczyć output.</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {logs.map((log, index) => (
+                                                <div key={index} className="group relative pl-3 border-l-2 border-red-500/50 hover:border-red-500 transition-colors">
+                                                    <div className="flex items-baseline gap-2 text-[10px] text-gray-500 mb-0.5">
+                                                        <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                                                        <span className="text-red-500 font-bold uppercase">[{log.level}]</span>
+                                                    </div>
+                                                    <div className="text-gray-300 whitespace-pre-wrap break-words">
+                                                        {log.messages.map((msg, i) => {
+                                                            // Handle object/error rendering safely
+                                                            if (typeof msg === 'object' && msg !== null) {
+                                                                if (msg.stack) {
+                                                                    return (
+                                                                        <details key={i} className="mt-1">
+                                                                            <summary className="cursor-pointer text-red-400 hover:text-red-300 font-bold hover:underline decoration-dotted truncate">
+                                                                                {msg.message || 'Error Details'}
+                                                                            </summary>
+                                                                            <pre className="mt-2 p-2 bg-gray-900/50 rounded text-[10px] text-gray-400 overflow-x-auto border border-gray-800">
+                                                                                {msg.stack}
+                                                                            </pre>
+                                                                        </details>
+                                                                    );
+                                                                }
+                                                                return <pre key={i} className="inline-block text-amber-500">{JSON.stringify(msg, null, 2)}</pre>;
+                                                            }
+                                                            // Fallback for stringified JSON from backend proxy
+                                                            try {
+                                                                const parsed = JSON.parse(msg);
+                                                                if (parsed && parsed.stack) {
+                                                                    return (
+                                                                        <details key={i} className="mt-1">
+                                                                            <summary className="cursor-pointer text-red-400 hover:text-red-300 font-bold hover:underline decoration-dotted truncate">
+                                                                                {parsed.message || 'Error Details'}
+                                                                            </summary>
+                                                                            <pre className="mt-2 p-2 bg-gray-900/50 rounded text-[10px] text-gray-400 overflow-x-auto border border-gray-800">
+                                                                                {parsed.stack}
+                                                                            </pre>
+                                                                        </details>
+                                                                    );
+                                                                }
+                                                                return <span key={i}>{msg} </span>;
+                                                            } catch (e) {
+                                                                return <span key={i}>{msg} </span>;
+                                                            }
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div ref={logsEndRef} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
                     <div className="space-y-6">
 
 
