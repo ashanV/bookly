@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { Loader2 } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 
 export default function AdminLayout({ children }) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -53,6 +54,7 @@ export default function AdminLayout({ children }) {
             <main className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
                 {children}
             </main>
+            <Toaster position="bottom-right" theme="dark" />
         </div>
     );
 }

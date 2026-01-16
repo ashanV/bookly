@@ -24,7 +24,8 @@ import {
   Search,
   Filter,
   X,
-  ArrowUpDown
+  ArrowUpDown,
+  ShieldAlert
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -360,6 +361,19 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {(businessData?.isBlocked || user?.isBlocked) && (
+        <div className="bg-red-600 text-white px-6 py-4 rounded-2xl shadow-lg flex items-center justify-center gap-4 animate-pulse">
+          <ShieldAlert className="w-8 h-8 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold text-lg">KONTO ZABLOKOWANE</h3>
+            <p className="text-red-100">Twój profil został zablokowany przez administratora i jest obecnie niewidoczny dla klientów.</p>
+            {(businessData?.blockReason || user?.blockReason) && (
+              <p className="text-white font-medium mt-1">Powód: {businessData?.blockReason || user?.blockReason}</p>
+            )}
+            <p className="text-red-100 text-sm mt-1">Skontaktuj się z obsługą w celu wyjaśnienia.</p>
+          </div>
+        </div>
+      )}
       {/* Informacje o firmie */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100/50 p-6">
         <div className="flex items-start justify-between mb-6">

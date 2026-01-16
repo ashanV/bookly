@@ -52,6 +52,8 @@ export async function GET() {
             facebook: user.facebook,
             isActive: user.isActive,
             isVerified: user.isVerified,
+            isBlocked: user.isBlocked,
+            blockReason: user.blockReason || '',
           },
         });
       }

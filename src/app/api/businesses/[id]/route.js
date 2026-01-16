@@ -18,6 +18,15 @@ export async function GET(req, { params }) {
     const cacheKey = `business:${id}`;
     const cachedData = await getCache(cacheKey);
     if (cachedData) {
+      // Filter out hidden content from cachedData
+      if (cachedData.portfolioImages && cachedData.hiddenPortfolioImages) {
+        cachedData.portfolioImages = cachedData.portfolioImages.filter(
+          img => !cachedData.hiddenPortfolioImages.includes(img)
+        );
+      }
+      if (cachedData.reviewsList) { // Assuming reviews are stored in reviewsList in cachedData
+        cachedData.reviewsList = cachedData.reviewsList.filter(r => !r.hidden);
+      }
       return NextResponse.json({ business: cachedData }, { status: 200 });
     }
 

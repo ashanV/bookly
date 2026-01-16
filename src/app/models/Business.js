@@ -31,6 +31,7 @@ const BusinessSchema = new mongoose.Schema({
   profileImage: { type: String, default: '' }, // Avatar/logo firmy
   bannerImage: { type: String, default: '' }, // Baner główny
   portfolioImages: [{ type: String }], // Tablica URL-i do portfolio
+  hiddenPortfolioImages: [{ type: String }], // Zdjecia ukryte przez admina
 
   // Lokalizacja
   city: { type: String, required: true, index: true }, // Added index
@@ -116,7 +117,8 @@ const BusinessSchema = new mongoose.Schema({
     text: { type: String, required: true },
     date: { type: Date, default: Date.now },
     service: { type: String },
-    verified: { type: Boolean, default: false }
+    verified: { type: Boolean, default: false },
+    hidden: { type: Boolean, default: false } // Ukryte przez admina
   }],
 
   // Social Media i marketing
@@ -132,6 +134,8 @@ const BusinessSchema = new mongoose.Schema({
   // Status biznesu
   isActive: { type: Boolean, default: true },
   isVerified: { type: Boolean, default: false },
+  isBlocked: { type: Boolean, default: false },
+  blockReason: { type: String, default: '' },
 
   // Integracja z Google Calendar
   googleCalendarTokens: {

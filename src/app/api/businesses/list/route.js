@@ -22,15 +22,19 @@ export async function GET(req) {
 
     await connectDB();
 
-    // Budowanie zapytania - tylko aktywne biznesy
-    const query = { isActive: true };
+    // Budowanie zapytania -        // Base query
+    const query = {
+      isActive: true,
+      isBlocked: { $ne: true }
+    };
 
-    // Wyszukiwanie po nazwie, opisie, usługach
+    // Text search
     if (search) {
       query.$or = [
         { companyName: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { services: { $regex: search, $options: 'i' } }
+        { category: { $regex: search, $options: 'i' } },
+        { city: { $regex: search, $options: 'i' } },
+        { 'services.name': { $regex: search, $options: 'i' } }
       ];
     }
 
