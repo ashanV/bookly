@@ -14,6 +14,7 @@ export default function AdminSupportPage() {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [activeTab, setActiveTab] = useState('messages'); // 'messages' or 'appeals'
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeMenuId, setActiveMenuId] = useState(null);
@@ -332,11 +333,15 @@ export default function AdminSupportPage() {
         }
     };
 
-    const displayConversations = filter === 'all'
+    const displayConversations = (filter === 'all'
         ? conversations.filter(c => c.status !== 'closed' && c.status !== 'deleted')
         : filter === 'mine'
             ? conversations.filter(c => c.supportId === user?._id && c.status !== 'closed' && c.status !== 'deleted')
-            : conversations.filter(c => c.status === filter);
+            : conversations.filter(c => c.status === filter)
+    ).filter(c => {
+        const isAppeal = c.category === 'blocked';
+        return activeTab === 'appeals' ? isAppeal : !isAppeal;
+    });
 
     const openCount = conversations.filter(c => c.status === 'open').length;
 
@@ -346,6 +351,30 @@ export default function AdminSupportPage() {
 
             <div className="p-6 space-y-6">
                 <SupportStats />
+
+
+
+                {/* Tab Switcher */}
+                <div className="flex p-1 bg-gray-900 rounded-xl mb-4 self-start max-w-md border border-gray-800">
+                    <button
+                        onClick={() => setActiveTab('messages')}
+                        className={`flex-1 px-6 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'messages'
+                            ? 'bg-gray-800 text-white shadow-sm border border-gray-700'
+                            : 'text-gray-400 hover:text-gray-300'
+                            }`}
+                    >
+                        Wiadomości
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('appeals')}
+                        className={`flex-1 px-6 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'appeals'
+                            ? 'bg-gray-800 text-white shadow-sm border border-gray-700'
+                            : 'text-gray-400 hover:text-gray-300'
+                            }`}
+                    >
+                        Odwołania
+                    </button>
+                </div>
 
                 <div className="flex items-center justify-between">
                     <div className="flex gap-2 items-center">
@@ -428,7 +457,24 @@ export default function AdminSupportPage() {
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-4 text-sm text-gray-400">
-                                                <span className="flex items-center gap-1"><User className="w-4 h-4" />{conversation.userName}</span>
+                                                <span className="flex items-center gap-1 font-medium text-gray-300">
+                                                    {conversation.userAvatar ? (
+                                                        <img src={conversation.userAvatar} alt="avatar" className="w-5 h-5 rounded-full object-cover" />
+                                                    ) : (
+                                                        <User className="w-4 h-4" />
+                                                    )}
+                                                    <span
+                                                        onClick={(e) => {
+                                                            if (conversation.userType === 'business') {
+                                                                e.stopPropagation();
+                                                                window.open(`/admin/businesses/${conversation.userId}`, '_blank');
+                                                            }
+                                                        }}
+                                                        className={conversation.userType === 'business' ? 'cursor-pointer hover:underline hover:text-white transition-colors' : ''}
+                                                    >
+                                                        {conversation.userName}
+                                                    </span>
+                                                </span>
                                                 {conversation.userEmail && (
                                                     <span>{conversation.userEmail}</span>
                                                 )}

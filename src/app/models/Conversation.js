@@ -20,6 +20,10 @@ const ConversationSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  userAvatar: {
+    type: String,
+    default: null
+  }, // URL do awatara lub loga
 
   // Support
   supportId: {
@@ -39,7 +43,7 @@ const ConversationSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['bug', 'question', 'complaint', 'suggestion', 'other'],
+    enum: ['bug', 'question', 'complaint', 'suggestion', 'other', 'blocked', 'billing'],
     default: 'other'
   },
 

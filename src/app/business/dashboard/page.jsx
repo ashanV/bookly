@@ -25,9 +25,11 @@ import {
   Filter,
   X,
   ArrowUpDown,
-  ShieldAlert
+  ShieldAlert,
+  MessageSquare
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+
 
 // Lazy load heavy chart components
 const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
@@ -48,6 +50,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading, isAuthenticated, logout } = useAuth('/business/auth');
   const [businessData, setBusinessData] = useState(null);
+
   const [timeFilter, setTimeFilter] = useState('week');
   const [stats, setStats] = useState({
     totalReservations: 247,
@@ -362,18 +365,44 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {(businessData?.isBlocked || user?.isBlocked) && (
-        <div className="bg-red-600 text-white px-6 py-4 rounded-2xl shadow-lg flex items-center justify-center gap-4 animate-pulse">
-          <ShieldAlert className="w-8 h-8 flex-shrink-0" />
-          <div>
-            <h3 className="font-bold text-lg">KONTO ZABLOKOWANE</h3>
-            <p className="text-red-100">Twój profil został zablokowany przez administratora i jest obecnie niewidoczny dla klientów.</p>
+        <div className="bg-red-600 text-white px-6 py-6 rounded-2xl shadow-lg flex flex-col md:flex-row items-center gap-6">
+          <div className="p-4 bg-red-500/30 rounded-full">
+            <ShieldAlert className="w-10 h-10" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="font-bold text-xl mb-1">KONTO ZABLOKOWANE</h3>
+            <p className="text-red-100 text-sm md:text-base max-w-2xl">
+              Twój profil został zablokowany przez administratora i jest obecnie niewidoczny dla klientów.
+            </p>
             {(businessData?.blockReason || user?.blockReason) && (
-              <p className="text-white font-medium mt-1">Powód: {businessData?.blockReason || user?.blockReason}</p>
+              <div className="mt-3 p-3 bg-red-700/50 rounded-lg inline-block border border-red-500/30">
+                <p className="text-red-100 text-xs font-semibold uppercase tracking-wider mb-1">Powód blokady</p>
+                <p className="text-white font-medium">"{businessData?.blockReason || user?.blockReason}"</p>
+              </div>
             )}
-            <p className="text-red-100 text-sm mt-1">Skontaktuj się z obsługą w celu wyjaśnienia.</p>
+
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-6">
+              <button
+                onClick={() => router.push('/business/messages?create=true&subject=Blokada%20Konta&category=blocked')}
+                className="px-5 py-2.5 bg-white text-red-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2"
+              >
+                <Mail size={18} />
+                Skontaktuj się z supportem
+              </button>
+              <button
+                onClick={() => window.location.href = 'mailto:odwolania@bookly.pl?subject=Odwołanie od blokady - ' + (businessData?.companyName || user?.companyName)}
+                className="px-5 py-2.5 bg-red-700 text-white border border-red-500/50 rounded-xl font-medium text-sm hover:bg-red-800 transition-colors flex items-center gap-2"
+              >
+                <Edit size={18} />
+                Napisz odwołanie
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+
+
       {/* Informacje o firmie */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100/50 p-6">
         <div className="flex items-start justify-between mb-6">
@@ -919,6 +948,13 @@ export default function DashboardPage() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      <div className="mt-8 flex justify-center">
+        <p className="text-gray-400 text-sm">
+          &copy; {new Date().getFullYear()} Bookly Business. Wszystkie prawa zastrzeżone.
+        </p>
+      </div>
+
     </div>
   );
 }

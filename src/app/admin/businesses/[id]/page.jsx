@@ -32,7 +32,8 @@ import {
     Ban,
     Power,
     Wifi,
-    WifiOff
+    WifiOff,
+    History
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -45,6 +46,8 @@ export default function BusinessDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
+    const [timeline, setTimeline] = useState([]);
+    const [loadingTimeline, setLoadingTimeline] = useState(false);
 
     // Edit Form State
     const [editForm, setEditForm] = useState({
@@ -61,7 +64,12 @@ export default function BusinessDetailsPage() {
 
     // Block Modal State
     const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+    const [isUnblockModalOpen, setIsUnblockModalOpen] = useState(false);
     const [blockReasonInput, setBlockReasonInput] = useState('');
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
 
     useEffect(() => {
         const fetchBusiness = async () => {
@@ -91,6 +99,28 @@ export default function BusinessDetailsPage() {
             fetchBusiness();
         }
     }, [id, router]);
+
+    // Fetch timeline when tab is active
+    useEffect(() => {
+        if (activeTab === 'timeline' && id) {
+            fetchTimeline();
+        }
+    }, [activeTab, id]);
+
+    const fetchTimeline = async () => {
+        try {
+            setLoadingTimeline(true);
+            const response = await fetch(`/api/admin/businesses/${id}/timeline`, { credentials: 'include' });
+            if (response.ok) {
+                const data = await response.json();
+                setTimeline(data.timeline || []);
+            }
+        } catch (error) {
+            console.error('Error fetching timeline:', error);
+        } finally {
+            setLoadingTimeline(false);
+        }
+    };
 
     const handleDeleteService = async (serviceId) => {
         if (!confirm('Czy na pewno chcesz usunąć tę usługę?')) return;
@@ -182,12 +212,13 @@ export default function BusinessDetailsPage() {
     };
 
     const handleDeleteBusiness = async () => {
-        if (!confirm('UWAGA: Czy na pewno chcesz trwale usunąć ten biznes? Tej operacji NIE MOŻNA cofnąć.')) return;
+        setIsDeleteModalOpen(true);
+        setDeleteConfirmationInput('');
+    };
 
-        // Double check
-        const companyName = prompt('Aby potwierdzić, wpisz nazwę firmy: ' + business.companyName);
-        if (companyName !== business.companyName) {
-            toast.error('Nazwa nie pasuje. Anulowano.');
+    const handleConfirmDelete = async () => {
+        if (deleteConfirmationInput !== business.companyName) {
+            toast.error('Nazwa nie pasuje');
             return;
         }
 
@@ -646,9 +677,81 @@ export default function BusinessDetailsPage() {
                         <ShieldAlert className="w-4 h-4" />
                         Akcje Administracyjne
                     </button>
+                    <button
+                        onClick={() => setActiveTab('timeline')}
+                        className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'timeline'
+                            ? 'border-yellow-500 text-yellow-400'
+                            : 'border-transparent text-gray-400 hover:text-gray-200'
+                            }`}
+                    >
+                        <History className="w-4 h-4" />
+                        Historia
+                    </button>
                 </div>
 
                 {/* Tab Content */}
+                {activeTab === 'timeline' && (
+                    <div className="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <History className="w-5 h-5 text-yellow-500" />
+                            Oś czasu aktywności
+                        </h3>
+
+                        {loadingTimeline ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                            </div>
+                        ) : timeline.length === 0 ? (
+                            <div className="text-center py-12 text-gray-500">
+                                Brak zarejestrowanej aktywności.
+                            </div>
+                        ) : (
+                            <div className="relative border-l border-gray-800 ml-4 space-y-8">
+                                {timeline.map((log, index) => (
+                                    <div key={log._id || index} className="relative pl-8">
+                                        <div className="absolute -left-2.5 top-1.5 w-5 h-5 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center">
+                                            <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1">
+                                            <div className="font-medium text-white flex items-center gap-2">
+                                                {(() => {
+                                                    switch (log.action) {
+                                                        case 'employee_created': return 'Dodano pracownika';
+                                                        case 'employee_deleted': return 'Usunięto pracownika';
+                                                        case 'service_created': return 'Dodano usługę';
+                                                        case 'service_updated': return 'Zaktualizowano usługę';
+                                                        case 'service_deleted': return 'Usunięto usługę';
+                                                        case 'business_edited': return 'Edytowano dane firmy';
+                                                        case 'business_verified': return 'Zweryfikowano firmę';
+                                                        case 'business_rejected': return 'Odrzucono weryfikację';
+                                                        default: return log.action.replace(/_/g, ' ');
+                                                    }
+                                                })()}
+                                                <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
+                                                    {log.userRole === 'admin' ? 'Administrator' : log.userRole || 'System'}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                {new Date(log.timestamp).toLocaleString('pl-PL')}
+                                            </div>
+                                        </div>
+
+                                        <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-lg border border-gray-800/50 block">
+                                            {log.userEmail && <span className="block text-xs text-gray-500 mb-1">Przez: {log.userEmail}</span>}
+                                            {log.details ? (
+                                                <span className="font-mono text-xs text-gray-300">
+                                                    {JSON.stringify(log.details, null, 2)}
+                                                </span>
+                                            ) : '-'}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === 'overview' && (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -776,7 +879,7 @@ export default function BusinessDetailsPage() {
                                             </label>
                                         </div>
                                         <p className="text-xs text-gray-500 mb-3">
-                                            Zablokowanie konta uniemożliwi firmie logowanie i przyjmowanie rezerwacji.
+                                            Wyłączenie konta sprawi, że wizytówka firmy przestanie być widoczna dla użytkowników.
                                         </p>
                                         <div className={`text-xs font-semibold py-1 px-2 rounded inline-block ${business.isActive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                                             {business.isActive ? 'KONTO AKTYWNE' : 'KONTO NIEAKTYWNE'}
@@ -794,9 +897,7 @@ export default function BusinessDetailsPage() {
                                                     checked={business.isBlocked}
                                                     onChange={() => {
                                                         if (business.isBlocked) {
-                                                            if (confirm('Czy na pewno chcesz ODBLOKOWAĆ ten biznes?')) {
-                                                                handleToggleBlock(false, '');
-                                                            }
+                                                            setIsUnblockModalOpen(true);
                                                         } else {
                                                             setBlockReasonInput('');
                                                             setIsBlockModalOpen(true);
@@ -813,6 +914,13 @@ export default function BusinessDetailsPage() {
                                         <div className={`text-xs font-semibold py-1 px-2 rounded inline-block ${business.isBlocked ? 'bg-orange-500/10 text-orange-500' : 'bg-gray-800 text-gray-500'}`}>
                                             {business.isBlocked ? 'ZABLOKOWANY' : 'BRAK BLOKADY'}
                                         </div>
+
+                                        {business.isBlocked && business.blockReason && (
+                                            <div className="mt-3 p-3 bg-red-900/20 border border-red-900/30 rounded-lg">
+                                                <p className="text-xs text-red-400 font-semibold mb-1">Powód blokady:</p>
+                                                <p className="text-sm text-gray-300 italic">"{business.blockReason}"</p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Verification Toggle */}
@@ -1326,6 +1434,96 @@ export default function BusinessDetailsPage() {
                                     className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-bold"
                                 >
                                     Zablokuj
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Unblock Modal */}
+                {isUnblockModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                            <div className="flex items-center gap-3 mb-4 text-green-500">
+                                <Shield className="w-8 h-8" />
+                                <h3 className="text-xl font-bold text-white">Odblokuj Biznes</h3>
+                            </div>
+
+                            <p className="text-gray-400 mb-4">
+                                Czy na pewno chcesz odblokować ten biznes? Biznes ponownie stanie się widoczny dla klientów i będzie mógł przyjmować rezerwacje.
+                            </p>
+
+                            {business.blockReason && (
+                                <div className="mb-6 p-4 bg-gray-950 border border-gray-800 rounded-xl">
+                                    <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wider">Ostatni powód blokady</p>
+                                    <p className="text-gray-300 italic">"{business.blockReason}"</p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsUnblockModalOpen(false)}
+                                    className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors font-medium"
+                                >
+                                    Anuluj
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        handleToggleBlock(false, '');
+                                        setIsUnblockModalOpen(false);
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors font-bold"
+                                >
+                                    Odblokuj
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Delete Confirmation Modal */}
+                {isDeleteModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                            <div className="flex items-center gap-3 mb-4 text-red-500">
+                                <Trash2 className="w-8 h-8" />
+                                <h3 className="text-xl font-bold text-white">Usuń Biznes</h3>
+                            </div>
+
+                            <p className="text-gray-300 mb-2">
+                                Czy na pewno chcesz trwale usunąć biznes <span className="font-bold text-white">{business.companyName}</span>?
+                            </p>
+                            <p className="text-red-400 text-sm mb-6 font-medium bg-red-950/30 p-3 rounded-lg border border-red-900/50">
+                                Uwaga: Ta operacja jest nieodwracalna. Wszystkie dane, pracownicy i rezerwacje zostaną usunięte.
+                            </p>
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-500 mb-2">
+                                    Aby potwierdzić, wpisz nazwę firmy: <span className="select-all text-white font-mono bg-gray-800 px-1 rounded">{business.companyName}</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={deleteConfirmationInput}
+                                    onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                                    placeholder={business.companyName}
+                                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500"
+                                    autoComplete="off"
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors font-medium"
+                                >
+                                    Anuluj
+                                </button>
+                                <button
+                                    onClick={handleConfirmDelete}
+                                    disabled={deleteConfirmationInput !== business.companyName}
+                                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-bold"
+                                >
+                                    Usuń trwale
                                 </button>
                             </div>
                         </div>

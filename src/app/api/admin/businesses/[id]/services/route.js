@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Business from '@/app/models/Business';
+import AdminLog from '@/app/models/AdminLog';
+import User from '@/app/models/User';
+import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 // Helper to find service index
 const findServiceIndex = (business, serviceId) => {
@@ -31,6 +35,33 @@ export async function DELETE(request, { params }) {
         }
 
         await business.save();
+
+        // CREATE LOG
+        try {
+            const token = cookies().get('adminToken')?.value;
+            if (token) {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const adminUser = await User.findById(decoded.id).select('email adminRole');
+                if (adminUser) {
+                    await AdminLog.create({
+                        userId: adminUser._id,
+                        userEmail: adminUser.email,
+                        userRole: adminUser.adminRole,
+                        action: 'service_deleted',
+                        targetType: 'business',
+                        targetId: business._id,
+                        details: {
+                            businessId: business._id,
+                            serviceId: serviceId,
+                            businessName: business.companyName
+                        },
+                        timestamp: new Date()
+                    });
+                }
+            }
+        } catch (logError) {
+            console.error('Failed to create admin log:', logError);
+        }
 
         return NextResponse.json({
             message: 'Service deleted successfully',
@@ -68,6 +99,34 @@ export async function PUT(request, { params }) {
         if (description) business.services[index].description = description;
 
         await business.save();
+
+        // CREATE LOG
+        try {
+            const token = cookies().get('adminToken')?.value;
+            if (token) {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const adminUser = await User.findById(decoded.id).select('email adminRole');
+                if (adminUser) {
+                    await AdminLog.create({
+                        userId: adminUser._id,
+                        userEmail: adminUser.email,
+                        userRole: adminUser.adminRole,
+                        action: 'service_updated',
+                        targetType: 'business',
+                        targetId: business._id,
+                        details: {
+                            businessId: business._id,
+                            serviceId: serviceId,
+                            updatedName: name,
+                            businessName: business.companyName
+                        },
+                        timestamp: new Date()
+                    });
+                }
+            }
+        } catch (logError) {
+            console.error('Failed to create admin log:', logError);
+        }
 
         return NextResponse.json({
             message: 'Service updated successfully',

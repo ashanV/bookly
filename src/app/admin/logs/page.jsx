@@ -17,31 +17,11 @@ export default function AdminLogsPage() {
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
 
 
-    const [activeTab, setActiveTab] = useState('logs');
-    const [timelineEvents, setTimelineEvents] = useState([]);
-
     useEffect(() => {
-        if (activeTab === 'logs') {
-            fetchLogs(1);
-        } else if (activeTab === 'timeline') {
-            fetchTimelineEvents();
-        }
-    }, [activeTab]);
+        fetchLogs(1);
+    }, []);
 
-    const fetchTimelineEvents = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/admin/business/timeline');
-            const data = await res.json();
-            if (data.success) {
-                setTimelineEvents(data.data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch timeline:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+
 
 
 
@@ -202,90 +182,7 @@ export default function AdminLogsPage() {
 
 
 
-    const renderTimeline = () => {
-        return (
-            <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
-                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                            <Clock className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-white">Historia Biznesowa</h3>
-                            <p className="text-sm text-gray-500">Kluczowe wydarzenia w cyklu życia firm</p>
-                        </div>
-                    </div>
 
-                    <div className="relative border-l-2 border-gray-800 ml-4 space-y-8">
-                        {timelineEvents.map((event, idx) => {
-                            let icon = <Info className="w-4 h-4" />;
-                            let color = 'text-gray-400';
-                            let bg = 'bg-gray-800';
-                            let title = 'Zdarzenie';
-
-                            if (event.action === 'business_created') {
-                                icon = <CheckCircle className="w-4 h-4" />;
-                                color = 'text-green-400';
-                                bg = 'bg-green-500/10';
-                                title = 'Nowa Rejestracja Firmy';
-                            } else if (event.action === 'business_deleted') {
-                                icon = <AlertCircle className="w-4 h-4" />;
-                                color = 'text-red-400';
-                                bg = 'bg-red-500/10';
-                                title = 'Usunięcie Firmy';
-                            } else if (event.action === 'payment_success') {
-                                icon = <span className="font-bold text-xs">$</span>;
-                                color = 'text-emerald-400';
-                                bg = 'bg-emerald-500/10';
-                                title = 'Płatność Zaakceptowana';
-                            } else if (event.action === 'payment_failed') {
-                                icon = <AlertCircle className="w-4 h-4" />;
-                                color = 'text-red-400';
-                                bg = 'bg-red-500/10';
-                                title = 'Błąd Płatności';
-                            } else if (event.action === 'subscription_cancelled') {
-                                icon = <Info className="w-4 h-4" />;
-                                color = 'text-orange-400';
-                                bg = 'bg-orange-500/10';
-                                title = 'Anulowanie Subskrypcji';
-                            }
-
-                            return (
-                                <div key={event._id || idx} className="relative pl-8">
-                                    <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-gray-900 ${bg} ${color} flex items-center justify-center`}>
-                                        {/* Dot */}
-                                    </div>
-                                    <div className="bg-gray-950/50 border border-gray-800 rounded-lg p-4">
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`p-1.5 rounded-md ${bg} ${color}`}>
-                                                    {icon}
-                                                </div>
-                                                <span className={`font-medium ${color}`}>{title}</span>
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {new Date(event.timestamp).toLocaleString('pl-PL')}
-                                            </div>
-                                        </div>
-                                        <div className="text-sm text-gray-300">
-                                            <p className="mb-1"><span className="text-gray-500">Firma:</span> {event.details?.companyName || event.userEmail}</p>
-                                            {event.details?.city && <p className="mb-1"><span className="text-gray-500">Miasto:</span> {event.details.city}</p>}
-                                            {event.details?.amount && <p><span className="text-gray-500">Kwota:</span> {event.details.amount} PLN</p>}
-                                            {event.details?.reason && <p><span className="text-gray-500">Powód:</span> {event.details.reason}</p>}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {timelineEvents.length === 0 && (
-                            <div className="pl-8 text-gray-500 italic">Brak zdarzeń do wyświetlenia.</div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
 
 
@@ -293,149 +190,127 @@ export default function AdminLogsPage() {
         <>
             <AdminHeader title="Logi Systemowe" subtitle="Historia aktywności i zdarzeń w systemie" />
 
-            <div className="px-6 border-b border-gray-800">
-                <div className="flex gap-6">
-                    <button
-                        onClick={() => setActiveTab('logs')}
-                        className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'logs' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                            }`}
-                    >
-                        Logi Systemowe
-                        {activeTab === 'logs' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500 rounded-t-full" />}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('timeline')}
-                        className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'timeline' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                            }`}
-                    >
-                        Business Timeline
-                        {activeTab === 'timeline' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full" />}
-                    </button>
-                </div>
-            </div>
-
             <div className="p-6">
-                {activeTab === 'timeline' ? renderTimeline() : (
-                    <div className="space-y-6 animate-in fade-in duration-500">
-                        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Szukaj po ID, emailu, akcji..."
-                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-                                />
-                            </div>
-                            {/* Placeholder na filtry - do implementacji w przyszłości */}
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Szukaj po ID, emailu, akcji..."
+                                className="w-full pl-10 pr-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                            />
                         </div>
+                        {/* Placeholder na filtry - do implementacji w przyszłości */}
+                    </div>
 
-                        <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden ring-1 ring-white/5">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-gray-800 bg-gray-900/80">
-                                        <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Użytkownik</th>
-                                        <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Akcja</th>
-                                        <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Cel</th>
-                                        <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Czas</th>
-                                        <th className="w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-800">
-                                    {loading ? (
-                                        Array.from({ length: 5 }).map((_, i) => (
-                                            <tr key={i} className="animate-pulse">
-                                                <td colSpan={6} className="px-6 py-4">
-                                                    <div className="h-8 bg-gray-800 rounded w-full"></div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : logs.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                                Brak logów do wyświetlenia
+                    <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden ring-1 ring-white/5">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-gray-800 bg-gray-900/80">
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Użytkownik</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Akcja</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Cel</th>
+                                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Czas</th>
+                                    <th className="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td colSpan={6} className="px-6 py-4">
+                                                <div className="h-8 bg-gray-800 rounded w-full"></div>
                                             </td>
                                         </tr>
-                                    ) : logs.map(log => {
-                                        const config = getActionConfig(log.action);
-                                        const targetUrl = getTargetLink(log.targetType, log.targetId);
-                                        const isExpanded = expandedLogId === log._id;
+                                    ))
+                                ) : logs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                            Brak logów do wyświetlenia
+                                        </td>
+                                    </tr>
+                                ) : logs.map(log => {
+                                    const config = getActionConfig(log.action);
+                                    const targetUrl = getTargetLink(log.targetType, log.targetId);
+                                    const isExpanded = expandedLogId === log._id;
 
-                                        return (
-                                            <React.Fragment key={log._id}>
-                                                <tr
-                                                    onClick={() => toggleExpand(log._id)}
-                                                    className={`group cursor-pointer transition-colors ${isExpanded ? 'bg-gray-800/40' : 'hover:bg-gray-800/30'}`}
-                                                >
-                                                    <td className="px-6 py-4">
-                                                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-transparent ${config.bg} ${config.color}`}>
-                                                            {config.icon}
-                                                            {config.label}
+                                    return (
+                                        <React.Fragment key={log._id}>
+                                            <tr
+                                                onClick={() => toggleExpand(log._id)}
+                                                className={`group cursor-pointer transition-colors ${isExpanded ? 'bg-gray-800/40' : 'hover:bg-gray-800/30'}`}
+                                            >
+                                                <td className="px-6 py-4">
+                                                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-transparent ${config.bg} ${config.color}`}>
+                                                        {config.icon}
+                                                        {config.label}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm text-gray-200 font-medium">{log.userEmail}</span>
+                                                        <span className="text-xs text-gray-500 capitalize">{log.userRole}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm text-gray-300 font-mono">{log.action}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {targetUrl ? (
+                                                        <Link
+                                                            href={targetUrl}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="inline-flex items-center gap-1 text-sm text-purple-400 hover:text-purple-300 hover:underline"
+                                                        >
+                                                            {log.targetType}
+                                                            <ArrowRight className="w-3 h-3" />
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-500 capitalize">
+                                                            {log.targetType || '-'}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2 text-gray-500 text-sm">
+                                                        <Clock className="w-3.5 h-3.5" />
+                                                        {new Date(log.timestamp).toLocaleString('pl-PL')}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-500">
+                                                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                </td>
+                                            </tr>
+                                            {isExpanded && (
+                                                <tr className="bg-gray-900/30">
+                                                    <td colSpan={6} className="px-6 pb-6 pt-0 border-b border-gray-800">
+                                                        <div className="pl-4 border-l-2 border-gray-700 ml-2 mt-2">
+                                                            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Szczegóły operacji</h4>
+                                                            {renderDiff(log.details)}
+
+                                                            <div className="mt-4 flex gap-6 text-xs text-gray-600 font-mono">
+                                                                <span>ID: {log._id}</span>
+                                                                {log.ip && <span>IP: {log.ip}</span>}
+                                                                {log.userAgent && <span className="truncate max-w-xs" title={log.userAgent}>UA: {log.userAgent}</span>}
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm text-gray-200 font-medium">{log.userEmail}</span>
-                                                            <span className="text-xs text-gray-500 capitalize">{log.userRole}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-sm text-gray-300 font-mono">{log.action}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        {targetUrl ? (
-                                                            <Link
-                                                                href={targetUrl}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="inline-flex items-center gap-1 text-sm text-purple-400 hover:text-purple-300 hover:underline"
-                                                            >
-                                                                {log.targetType}
-                                                                <ArrowRight className="w-3 h-3" />
-                                                            </Link>
-                                                        ) : (
-                                                            <span className="text-sm text-gray-500 capitalize">
-                                                                {log.targetType || '-'}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-2 text-gray-500 text-sm">
-                                                            <Clock className="w-3.5 h-3.5" />
-                                                            {new Date(log.timestamp).toLocaleString('pl-PL')}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-500">
-                                                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                     </td>
                                                 </tr>
-                                                {isExpanded && (
-                                                    <tr className="bg-gray-900/30">
-                                                        <td colSpan={6} className="px-6 pb-6 pt-0 border-b border-gray-800">
-                                                            <div className="pl-4 border-l-2 border-gray-700 ml-2 mt-2">
-                                                                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Szczegóły operacji</h4>
-                                                                {renderDiff(log.details)}
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
 
-                                                                <div className="mt-4 flex gap-6 text-xs text-gray-600 font-mono">
-                                                                    <span>ID: {log._id}</span>
-                                                                    {log.ip && <span>IP: {log.ip}</span>}
-                                                                    {log.userAgent && <span className="truncate max-w-xs" title={log.userAgent}>UA: {log.userAgent}</span>}
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-
-                            {renderPagination()}
-                        </div>
+                        {renderPagination()}
                     </div>
-                )}
+                </div>
             </div>
         </>
     );
 }
+
 

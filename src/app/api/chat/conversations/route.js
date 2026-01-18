@@ -26,22 +26,30 @@ export async function GET(req) {
       if (status) {
         query.status = status;
       }
-    } else if (role === 'user' && token) {
-      // Użytkownik widzi tylko swoje konwersacje
+    } else if ((role === 'user' || role === 'business') && token) {
+      // Użytkownik/Biznes widzi tylko swoje konwersacje
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded.id) throw new Error('Invalid token payload');
+
         query.userId = decoded.id;
+
+        // Jeśli to biznes, filtruj też po userType
+        if (role === 'business') {
+          query.userType = 'business';
+        }
+
         if (status) {
           query.status = status;
         } else {
-          // Użytkownik nigdy nie widzi usuniętych przez admina (kosza)
+          // Nie pokazuj usuniętych przez admina
           query.status = { $ne: 'deleted' };
         }
       } catch (error) {
         return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
       }
     } else {
-      // Anonimowy użytkownik - brak konwersacji
+      // Anonimowy użytkownik - brak konwersacji lub błędna rola
       return NextResponse.json({ conversations: [] }, { status: 200 });
     }
 
@@ -78,7 +86,7 @@ export async function POST(req) {
     await connectDB();
 
     const body = await req.json();
-    const { subject, category, userName, userEmail, message, userId, userType } = body;
+    const { subject, category, userName, userEmail, message, userId, userType, messageType, fileUrl, fileName, fileSize } = body;
     const role = body.role || 'user';
 
     const token = role === 'admin'
@@ -88,6 +96,7 @@ export async function POST(req) {
     let finalUserType = userType || 'anonymous';
     let finalUserName = userName || 'Użytkownik nie zalogowany';
     let finalUserEmail = userEmail || null;
+    let finalUserAvatar = null;
 
     // Jeśli użytkownik jest zalogowany, użyj danych z bazy danych
     if (token) {
@@ -105,7 +114,13 @@ export async function POST(req) {
         }
 
         if (dbUser) {
-          finalUserName = dbUser.name || (dbUser.firstName && dbUser.lastName ? `${dbUser.firstName} ${dbUser.lastName}` : dbUser.firstName || dbUser.lastName || finalUserName);
+          if (finalUserType === 'business') {
+            finalUserName = dbUser.companyName || dbUser.name || finalUserName;
+            finalUserAvatar = dbUser.profileImage || null;
+          } else {
+            finalUserName = dbUser.name || (dbUser.firstName && dbUser.lastName ? `${dbUser.firstName} ${dbUser.lastName}` : finalUserName);
+            finalUserAvatar = dbUser.profileImage || null; // Assuming User model has profileImage too, or avatar
+          }
           finalUserEmail = dbUser.email || finalUserEmail;
         }
       } catch (error) {
@@ -119,10 +134,11 @@ export async function POST(req) {
       userType: finalUserType,
       userName: finalUserName,
       userEmail: finalUserEmail,
+      userAvatar: finalUserAvatar,
       subject: subject || 'Zgłoszenie',
       category: category || 'other',
       status: 'open',
-      priority: 'medium',
+      priority: category === 'blocked' ? 'high' : 'medium',
       messageCount: 0,
       unreadCount: 0
     });
@@ -130,15 +146,18 @@ export async function POST(req) {
     await conversation.save();
 
     // Utwórz pierwszą wiadomość
-    if (message) {
+    if (message || fileUrl) {
       const firstMessage = new ChatMessage({
         conversationId: conversation._id,
         senderId: finalUserId || 'anonymous',
         senderType: finalUserType,
         senderName: finalUserName,
         senderEmail: finalUserEmail,
-        message: message,
-        type: 'message',
+        message: message || '',
+        type: messageType || 'message',
+        fileUrl: fileUrl,
+        fileName: fileName,
+        fileSize: fileSize,
         read: false
       });
 

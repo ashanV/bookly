@@ -100,6 +100,14 @@ export async function POST(req) {
       );
     }
 
+    // Sprawdzenie czy biznes jest zablokowany
+    if (business.isBlocked) {
+      return NextResponse.json(
+        { error: "Ten biznes został zablokowany i nie może przyjmować rezerwacji." },
+        { status: 403 } // Forbidden
+      );
+    }
+
     // Sprawdzenie, czy pracownik istnieje (jeśli podano)
     if (employeeId) {
       const employee = business.employees?.find(emp => emp.id === parseInt(employeeId));

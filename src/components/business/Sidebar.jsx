@@ -15,7 +15,8 @@ import {
     Store,
     Megaphone,
     DollarSign,
-    BookCheck
+    BookCheck,
+    MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,6 +31,7 @@ const Sidebar = () => {
         { name: 'Klienci', icon: Users, path: '/business/dashboard/clients' },
         { name: 'Zespół', icon: Users, path: '/business/dashboard/team' },
         { name: 'Usługi', icon: Scissors, path: '/business/dashboard/services' },
+        { name: 'Wiadomości', icon: MessageSquare, path: '/business/messages' },
         { name: 'Marketing', icon: Megaphone, path: '/business/dashboard/marketing' },
         { name: 'Finanse', icon: DollarSign, path: '/business/dashboard/finance' },
         { name: 'Ustawienia', icon: Settings, path: '/business/dashboard/settings' },

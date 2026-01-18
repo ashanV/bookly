@@ -435,30 +435,52 @@ export default function AdminChatWindow({ conversation, admins = [], onClose, on
               </div>
               <div>
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold text-white tracking-tight">{conversation.userName}</h3>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${conversation.status === 'open' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' :
-                    conversation.status === 'in_progress' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20' :
-                      'bg-gray-500/20 text-gray-400 border border-gray-500/20'
-                    }`}>
-                    {conversation.status === 'open' ? 'Aktywne' :
-                      conversation.status === 'in_progress' ? 'W toku' : 'Zamknięte'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-400 mt-1 font-medium">
-                  <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
-                    {conversation.userEmail || 'Brak emaila'}
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-gray-700" />
-                  <span className="text-gray-500 uppercase text-[10px] font-bold tracking-wider">{conversation.category}</span>
-                  {conversation.supportName && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-gray-700" />
-                      <span className="text-purple-400 uppercase text-[10px] font-bold tracking-wider flex items-center gap-1">
-                        <ShieldCheck size={10} />
-                        Obsługuje: {conversation.supportName}
-                      </span>
-                    </>
+                  {conversation.userAvatar ? (
+                    <div className="relative">
+                      <img src={conversation.userAvatar} alt="avatar" className="w-10 h-10 rounded-xl object-cover" />
+                      <div className="absolute -bottom-1 -right-1 bg-purple-600 text-[10px] text-white px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        {conversation.userType === 'business' ? 'BIZ' : 'USER'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg
+                        ${conversation.userType === 'business' ? 'bg-indigo-500' : 'bg-blue-500'}`}>
+                      {conversation.userName?.charAt(0).toUpperCase()}
+                    </div>
                   )}
+                  <div>
+                    <h3
+                      onClick={() => {
+                        if (conversation.userType === 'business') {
+                          window.open(`/admin/businesses/${conversation.userId}`, '_blank');
+                        }
+                      }}
+                      className={`font-bold text-white leading-tight flex items-center gap-2 ${conversation.userType === 'business' ? 'cursor-pointer hover:underline hover:text-purple-600 transition-colors' : ''}`}
+                    >
+                      {conversation.userName}
+                      <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
+                        {conversation.status === 'in_progress' ? 'W TOKU' : conversation.status}
+                      </span>
+                    </h3>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
+                      {conversation.userEmail}
+                      {conversation.category && (
+                        <>
+                          <span>•</span>
+                          <span className="uppercase">{conversation.category}</span>
+                        </>
+                      )}
+                      {conversation.supportName && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-purple-600 font-medium">
+                            <ShieldCheck size={12} />
+                            OBSŁUGUJE: {conversation.supportName.toUpperCase()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

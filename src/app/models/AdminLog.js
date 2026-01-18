@@ -22,7 +22,9 @@ const AdminLogSchema = new mongoose.Schema({
             // Klienci
             'client_created',
             // Pracownicy
-            'employee_created',
+            'employee_created', 'employee_deleted',
+            // Usługi
+            'service_created', 'service_updated', 'service_deleted',
             // Rezerwacje
             'reservation_viewed', 'reservation_cancelled', 'dispute_resolved',
             // Support
