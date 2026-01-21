@@ -40,7 +40,10 @@ const UserSchema = new mongoose.Schema({
 
   // Status użytkownika
   isActive: { type: Boolean, default: true },
+  deletedAt: { type: Date, default: null },
   forcePasswordReset: { type: Boolean, default: false },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, {
   strict: true,
   validateBeforeSave: true

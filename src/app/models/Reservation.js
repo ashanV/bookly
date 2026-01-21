@@ -3,47 +3,53 @@ import mongoose from "mongoose";
 const ReservationSchema = new mongoose.Schema({
   // ID biznesu
   businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
-  
+
   // Dane klienta
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   clientName: { type: String, required: true },
   clientEmail: { type: String, required: true },
   clientPhone: { type: String, required: true },
-  
+
   // Pracownik
   employeeId: { type: String, default: null }, // ID pracownika z employees array
-  
+
   // Szczegóły usługi
   service: { type: String, required: true },
   serviceId: { type: String, default: null }, // ID usługi z services array
   date: { type: Date, required: true },
   time: { type: String, required: true },
   duration: { type: Number, required: true }, // w minutach
+  // Płatność
   price: { type: Number, required: true },
-  
-  // Status
-  status: { 
-    type: String, 
-    enum: ['pending', 'confirmed', 'cancelled', 'completed'], 
-    default: 'pending' 
+  paymentMethod: {
+    type: String,
+    enum: ['gotówka', 'karta', 'blik', 'online', 'unknown'],
+    default: 'gotówka'
   },
-  
+
+  // Status
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+    default: 'pending'
+  },
+
   // Notatki
   notes: { type: String, default: '' },
-  
+
   // Numer referencyjny rezerwacji
-  referenceNumber: { 
-    type: String, 
-    unique: true, 
+  referenceNumber: {
+    type: String,
+    unique: true,
     sparse: true, // Pozwala na null dla starych rezerwacji
     index: true // Indeks dla szybkiego wyszukiwania
   },
-  
+
   // Integracja z Google Calendar
   googleCalendarEventId: { type: String, default: null },
   googleCalendarSynced: { type: Boolean, default: false },
   googleCalendarSyncedAt: { type: Date, default: null },
-  
+
   // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
@@ -53,7 +59,7 @@ const ReservationSchema = new mongoose.Schema({
 });
 
 // Automatyczna aktualizacja updatedAt
-ReservationSchema.pre('save', function(next) {
+ReservationSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });

@@ -137,6 +137,11 @@ const BusinessSchema = new mongoose.Schema({
   isBlocked: { type: Boolean, default: false },
   blockReason: { type: String, default: '' },
 
+  // Password Reset
+  forcePasswordReset: { type: Boolean, default: false },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
+
   // Integracja z Google Calendar
   googleCalendarTokens: {
     accessToken: { type: String, default: null, set: encrypt, get: decrypt },

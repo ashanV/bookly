@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
-import Business from '@/app/models/Business';
-import User from '@/app/models/User'; // For admin auth check
+import User from '@/app/models/User';
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
@@ -25,20 +24,17 @@ export async function POST(req, { params }) {
         }
 
         const { id } = await params;
+        const { action } = await req.json(); // 'link', 'force', 'temp'
 
-        let action = 'temp'; // Default for backward compatibility if body is empty
-        try {
-            const body = await req.json();
-            if (body.action) action = body.action;
-        } catch (e) {
-            // Body might be empty, default to temp
+        if (!id || !action) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
         await connectDB();
-        const business = await Business.findById(id);
+        const user = await User.findById(id);
 
-        if (!business) {
-            return NextResponse.json({ error: "Business not found" }, { status: 404 });
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
         let responseData = { success: true, message: "Action completed" };
@@ -47,62 +43,62 @@ export async function POST(req, { params }) {
             const resetToken = crypto.randomBytes(32).toString('hex');
             const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-            business.resetPasswordToken = resetTokenHash;
-            business.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+            user.resetPasswordToken = resetTokenHash;
+            user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
-            const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password/business/${resetToken}`;
+            const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password/${resetToken}`;
 
-            const emailText = `Hasło do konta firmowego zostało zresetowane przez administratora. Kliknij w link, aby ustawić nowe hasło: ${resetUrl}`;
+            const emailText = `Twoje hasło zostało zresetowane przez administratora. Kliknij w link, aby ustawić nowe hasło: ${resetUrl}`;
             const emailHtml = `
-                <h2>Reset Hasła Firmowego</h2>
-                <p>Hasło do Twojego konta firmowego <strong>${business.companyName}</strong> zostało zresetowane przez administratora.</p>
+                <h2>Reset Hasła</h2>
+                <p>Twoje hasło zostało zresetowane przez administratora.</p>
                 <p>Kliknij poniższy link, aby ustawić nowe hasło:</p>
                 <a href="${resetUrl}" style="padding: 10px 20px; background-color: #7c3aed; color: white; text-decoration: none; border-radius: 5px;">Zmień Hasło</a>
                 <p>Link wygaśnie za 1 godzinę.</p>
             `;
 
             await sendEmail({
-                to: business.email,
-                subject: 'Reset Hasła Firmowego - Bookly',
+                to: user.email,
+                subject: 'Reset Hasła - Bookly',
                 text: emailText,
                 html: emailHtml
             });
 
-            await business.save();
+            await user.save();
             responseData.message = "Reset link sent";
 
         } else if (action === 'force') {
-            business.forcePasswordReset = true;
-            // Business model doesn't have tokenVersion for manual invalidation in this schema version, 
-            // but usually we'd invalidate via auth middleware checking password change time.
-            // For now, setting the flag is enough to prompt change on next login.
+            user.forcePasswordReset = true;
+            user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate sessions
 
-            await business.save();
-            responseData.message = "Business forced to reset password on next login";
+            // Optionally send email about forced change next time
+            await user.save();
+            responseData.message = "User forced to reset password on next login";
 
         } else if (action === 'temp') {
             const tempPassword = `Bookly${Math.floor(Math.random() * 9000) + 1000}!`;
             const salt = await bcrypt.genSalt(10);
-            business.password = await bcrypt.hash(tempPassword, salt);
-            business.forcePasswordReset = true; // Force change after first login
+            user.password = await bcrypt.hash(tempPassword, salt);
+            user.forcePasswordReset = true; // Force them to change it after using temp
+            user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate old sessions
 
-            const emailText = `Hasło do konta firmowego zostało zresetowane przez administratora. Twoje nowe hasło tymczasowe to: ${tempPassword}. Zaloguj się i zmień je niezwłocznie.`;
+            const emailText = `Twoje hasło zostało zresetowane przez administratora. Twoje nowe hasło tymczasowe to: ${tempPassword}. Zaloguj się i zmień je niezwłocznie.`;
             const emailHtml = `
-                <h2>Reset Hasła Firmowego</h2>
-                <p>Hasło do konta firmowego <strong>${business.companyName}</strong> zostało zresetowane przez administratora.</p>
+                <h2>Reset Hasła</h2>
+                <p>Twoje hasło zostało zresetowane przez administratora.</p>
                 <p>Twoje nowe hasło tymczasowe:</p>
                 <h3 style="background: #f3f4f6; padding: 10px; display: inline-block;">${tempPassword}</h3>
                 <p>Zaloguj się i zmień je niezwłocznie.</p>
             `;
 
             await sendEmail({
-                to: business.email,
+                to: user.email,
                 subject: 'Nowe Hasło Tymczasowe - Bookly',
                 text: emailText,
                 html: emailHtml
             });
 
-            await business.save();
+            await user.save();
             responseData.message = "Temporary password generated";
             responseData.tempPassword = tempPassword;
         } else {
@@ -112,7 +108,7 @@ export async function POST(req, { params }) {
         return NextResponse.json(responseData);
 
     } catch (error) {
-        console.error('Error in business password reset:', error);
+        console.error('Error in password reset:', error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -53,22 +53,45 @@ export async function POST(req) {
     }
 
     // Update Session Info
-    user.lastIp = req.headers.get('x-forwarded-for') || 'unknown';
-    user.lastUserAgent = req.headers.get('user-agent') || 'unknown';
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
+    user.lastIp = ip;
+    user.lastUserAgent = userAgent;
     if (user.adminRole) {
       user.lastAdminLogin = new Date();
     }
     await user.save();
 
+    // Create Session
+    const Session = (await import("@/app/models/Session")).default;
+    const { parseUserAgent } = await import("@/lib/userAgent");
+    const { browser, os, deviceType } = parseUserAgent(userAgent);
+
+    const session = await Session.create({
+      userId: user._id,
+      token: "jwt", // Placeholder, or we can store hash of the actual token later if needed. For now "jwt" is fine as we rely on _id.
+      ip,
+      userAgent,
+      browser,
+      os,
+      deviceType,
+      expiresAt: new Date(Date.now() + timeoutMinutes * 60 * 1000)
+    });
+
     const token = jwt.sign(
       {
         id: user._id,
         role: 'client',
-        tokenVersion: user.tokenVersion || 0 // Include token version
+        tokenVersion: user.tokenVersion || 0,
+        sessionId: session._id // Include Session ID
       },
       process.env.JWT_SECRET,
       { expiresIn: `${timeoutMinutes}m` }
     );
+
+    // Update session with token hash if we wanted to, but for now skipping to keep it simple.
+
 
     const response = NextResponse.json({
       message: "Zalogowano",

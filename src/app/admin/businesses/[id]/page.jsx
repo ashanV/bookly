@@ -36,6 +36,7 @@ import {
     History
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import ResetPasswordModal from '@/components/admin/ResetPasswordModal';
 
 export default function BusinessDetailsPage() {
     const params = useParams();
@@ -69,7 +70,12 @@ export default function BusinessDetailsPage() {
 
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    // Delete Modal State
+
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+
+    // Reset Password Modal State
+    const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchBusiness = async () => {
@@ -293,24 +299,21 @@ export default function BusinessDetailsPage() {
         }
     };
 
-    const handleResetPassword = async () => {
-        if (!confirm('Czy na pewno zresetować hasło? Zostanie wygenerowane nowe hasło tymczasowe.')) return;
-        setUpdating(true);
-        try {
-            const response = await fetch(`/api/admin/businesses/${id}/reset-password`, {
-                method: 'POST'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                alert(`Hasło zresetowane. Nowe hasło tymczasowe: ${data.tempPassword}`);
-            } else {
-                toast.error('Błąd resetowania hasła');
-            }
-        } catch (error) {
-            toast.error('Wystąpił błąd');
-        } finally {
-            setUpdating(false);
-        }
+    const handleResetPasswordClick = () => {
+        setIsResetPasswordModalOpen(true);
+    };
+
+    const handleResetPasswordConfirm = async (action) => {
+        const response = await fetch(`/api/admin/businesses/${id}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        });
+
+        if (!response.ok) throw new Error('Failed to reset password');
+        const data = await response.json();
+        toast.success(`Akcja wykonana: ${data.message || 'Sukces'}`);
+        return data;
     };
 
     const handleImpersonate = async () => {
@@ -1352,7 +1355,7 @@ export default function BusinessDetailsPage() {
                                 <h3 className="text-xl font-bold text-white mb-6">Dostęp do konta</h3>
                                 <div className="space-y-4">
                                     <button
-                                        onClick={handleResetPassword}
+                                        onClick={handleResetPasswordClick}
                                         disabled={updating}
                                         className="w-full flex items-center justify-between p-4 bg-gray-800/50 border border-gray-700 rounded-xl hover:bg-gray-800 transition-colors group"
                                     >
@@ -1529,6 +1532,14 @@ export default function BusinessDetailsPage() {
                         </div>
                     </div>
                 )}
+
+                <ResetPasswordModal
+                    isOpen={isResetPasswordModalOpen}
+                    onClose={() => setIsResetPasswordModalOpen(false)}
+                    targetName={business.companyName}
+                    targetEmail={business.email}
+                    onConfirm={handleResetPasswordConfirm}
+                />
             </div>
         </div>
     );
