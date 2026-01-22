@@ -22,7 +22,7 @@ export default function AdminHeader({ title, subtitle }) {
         };
 
         fetchActiveAdmins();
-        const interval = setInterval(fetchActiveAdmins, 30000); // Update every 30s
+        const interval = setInterval(fetchActiveAdmins, 60000); // Update every 60s
         return () => clearInterval(interval);
     }, []);
 
