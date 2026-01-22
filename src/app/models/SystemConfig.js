@@ -67,6 +67,51 @@ const SystemConfigSchema = new mongoose.Schema({
         type: Number,
         default: 1440,
         description: 'Czas wygaśnięcia sesji w minutach (domyślnie 24h)'
+    },
+
+    // Identity & Branding
+    siteName: {
+        type: String,
+        default: 'Bookly',
+        description: 'Nazwa serwisu'
+    },
+    contactEmail: {
+        type: String,
+        default: 'kontakt@bookly.pl',
+        description: 'Email kontaktowy (główny)'
+    },
+    supportEmail: {
+        type: String,
+        description: 'Email do supportu (opcjonalny)'
+    },
+    socialLinks: {
+        facebook: String,
+        instagram: String,
+        twitter: String,
+        linkedin: String
+    },
+    logoUrl: {
+        type: String,
+        description: 'URL do logo serwisu'
+    },
+    faviconUrl: {
+        type: String,
+        description: 'URL do favicony'
+    },
+
+    // Monetization
+    commissionRate: {
+        type: Number,
+        default: 10,
+        min: 0,
+        max: 100,
+        description: 'Globalna stawka prowizji (%)'
+    },
+    currency: {
+        type: String,
+        default: 'PLN',
+        enum: ['PLN', 'EUR', 'USD'],
+        description: 'Waluta serwisu'
     }
 }, {
     timestamps: true,

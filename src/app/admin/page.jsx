@@ -68,25 +68,70 @@ export default function AdminDashboardPage() {
         reservations: 0,
         tickets: 0
     });
+    const [recentActivity, setRecentActivity] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock data - in real app, fetch from API
     useEffect(() => {
-        // Simulate loading stats
-        setStats({
-            users: 1247,
-            businesses: 89,
-            reservations: 3421,
-            tickets: 12
-        });
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('/api/admin/dashboard/stats');
+                const data = await response.json();
+
+                if (data.stats) {
+                    setStats(data.stats);
+                }
+
+                if (data.recentActivity) {
+                    setRecentActivity(data.recentActivity.map(log => ({
+                        action: formatAction(log.action),
+                        user: log.userEmail || 'System',
+                        time: getRelativeTime(new Date(log.timestamp)),
+                        type: getActionType(log.action)
+                    })));
+                }
+            } catch (error) {
+                console.error('Failed to fetch dashboard stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
     }, []);
 
-    const recentActivity = [
-        { action: 'Nowy użytkownik zarejestrowany', user: 'jan.kowalski@email.com', time: '2 min temu', type: 'success' },
-        { action: 'Biznes oczekuje na weryfikację', user: 'Salon Piękna Sp. z o.o.', time: '15 min temu', type: 'warning' },
-        { action: 'Zgłoszenie otrzymane', user: 'anna.nowak@email.com', time: '1h temu', type: 'info' },
-        { action: 'Rezerwacja anulowana', user: 'piotr.wisniewski@email.com', time: '2h temu', type: 'error' },
-        { action: 'Nowa recenzja dodana', user: 'maria.kowalczyk@email.com', time: '3h temu', type: 'success' },
-    ];
+    // Helper to format action names
+    const formatAction = (action) => {
+        const formatMap = {
+            'user_registered': 'Nowy użytkownik zarejestrowany',
+            'business_created': 'Nowy biznes utworzony',
+            'business_verified': 'Biznes zweryfikowany',
+            'reservation_cancelled': 'Rezerwacja anulowana',
+            'ticket_created': 'Zgłoszenie otrzymane',
+            'ticket_viewed': 'Zgłoszenie wyświetlone',
+            'admin_login': 'Logowanie administratora',
+            'admin_login_failed': 'Nieudane logowanie admina'
+        };
+        return formatMap[action] || action.replace(/_/g, ' ');
+    };
+
+    // Helper for relative time
+    const getRelativeTime = (date) => {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) return `${diffInSeconds} sek. temu`;
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min. temu`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} godz. temu`;
+        return `${Math.floor(diffInSeconds / 86400)} dni temu`;
+    };
+
+    // Helper for action type styles
+    const getActionType = (action) => {
+        if (action.includes('error') || action.includes('failed') || action.includes('cancelled')) return 'error';
+        if (action.includes('warning') || action.includes('deleted')) return 'warning';
+        if (action.includes('success') || action.includes('registered') || action.includes('created') || action.includes('verified')) return 'success';
+        return 'info';
+    };
 
     return (
         <>
@@ -102,31 +147,31 @@ export default function AdminDashboardPage() {
                         <>
                             <StatCard
                                 title="Użytkownicy"
-                                value={stats.users.toLocaleString()}
-                                change={12}
+                                value={loading ? "..." : stats.users.toLocaleString()}
+                                change={12} // To be implemented: calculate real change
                                 changeType="positive"
                                 icon={Users}
                                 color="bg-blue-600"
                             />
                             <StatCard
                                 title="Biznesy"
-                                value={stats.businesses}
-                                change={5}
+                                value={loading ? "..." : stats.businesses}
+                                change={5} // To be implemented
                                 changeType="positive"
                                 icon={Building2}
                                 color="bg-purple-600"
                             />
                             <StatCard
                                 title="Rezerwacje (miesiąc)"
-                                value={stats.reservations.toLocaleString()}
-                                change={-3}
+                                value={loading ? "..." : stats.reservations.toLocaleString()}
+                                change={-3} // To be implemented
                                 changeType="negative"
                                 icon={Calendar}
                                 color="bg-green-600"
                             />
                             <StatCard
                                 title="Otwarte zgłoszenia"
-                                value={stats.tickets}
+                                value={loading ? "..." : stats.tickets}
                                 icon={MessageSquare}
                                 color="bg-orange-600"
                             />
@@ -175,13 +220,22 @@ export default function AdminDashboardPage() {
                     <div className="lg:col-span-2 bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6">
                         <h2 className="text-lg font-semibold text-white mb-4">Ostatnia aktywność</h2>
                         <div className="divide-y divide-gray-800">
-                            {recentActivity.map((activity, index) => (
-                                <ActivityItem key={index} {...activity} />
-                            ))}
+                            {loading ? (
+                                <p className="text-gray-400 text-center py-4">Ładowanie...</p>
+                            ) : recentActivity.length > 0 ? (
+                                recentActivity.map((activity, index) => (
+                                    <ActivityItem key={index} {...activity} />
+                                ))
+                            ) : (
+                                <p className="text-gray-400 text-center py-4">Brak ostatniej aktywności</p>
+                            )}
                         </div>
-                        <button className="w-full mt-4 py-2 text-sm text-purple-400 hover:text-purple-300 transition-colors">
+                        <a
+                            href="/admin/logs"
+                            className="block w-full mt-4 py-2 text-sm text-center text-purple-400 hover:text-purple-300 transition-colors"
+                        >
                             Zobacz wszystkie →
-                        </button>
+                        </a>
                     </div>
 
                     {/* Quick Actions */}
