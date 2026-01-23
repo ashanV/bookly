@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import mongoose from 'mongoose';
-import Conversation from '@/app/models/Conversation';
-import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { getSupportStats } from '@/lib/supportStats';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
     try {
@@ -21,75 +22,8 @@ export async function GET(request) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        // 1. Summary Stats
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        const summary = await Conversation.aggregate([
-            {
-                $facet: {
-                    totalOpen: [
-                        { $match: { status: 'open' } },
-                        { $count: 'count' }
-                    ],
-                    newToday: [
-                        { $match: { createdAt: { $gte: startOfDay } } },
-                        { $count: 'count' }
-                    ],
-                    unassigned: [
-                        { $match: { status: 'open', supportId: null } },
-                        { $count: 'count' }
-                    ]
-                }
-            }
-        ]);
-
-        // 2. Tickets Over Time (Last 14 days)
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-        const ticketsOverTime = await Conversation.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: fourteenDaysAgo }
-                }
-            },
-            {
-                $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]);
-
-        // 3. Category Distribution
-        const categoryDistribution = await Conversation.aggregate([
-            {
-                $group: {
-                    _id: "$category",
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { count: -1 } }
-        ]);
-
-        // Format data for frontend
-        const stats = {
-            summary: {
-                totalOpen: summary[0].totalOpen[0]?.count || 0,
-                newToday: summary[0].newToday[0]?.count || 0,
-                unassigned: summary[0].unassigned[0]?.count || 0
-            },
-            ticketsOverTime: ticketsOverTime.map(item => ({
-                date: item._id,
-                count: item.count
-            })),
-            categoryDistribution: categoryDistribution.map(item => ({
-                name: item._id || 'other', // Handle potential nulls
-                value: item.count
-            }))
-        };
+        // 2. Get Stats (Cached or Fresh)
+        const stats = await getSupportStats();
 
         return NextResponse.json(stats);
 

@@ -4,6 +4,7 @@ import React from 'react';
 import { Bell, Search, User, MessageSquare, LogOut, ChevronDown } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useRouter } from 'next/navigation';
+import { pusherClient } from '@/lib/pusher-client';
 
 export default function AdminHeader({ title, subtitle }) {
     const [activeAdmins, setActiveAdmins] = React.useState([]);
@@ -114,57 +115,95 @@ export default function AdminHeader({ title, subtitle }) {
         }
     };
 
-    // ... fetch active admins ...
+    // --- Notifications Logic (Pusher + Initial Fetch) ---
 
-    // Fetch notifications stats
+    // Moved updateNotifications callback outside to be stable
+    const updateNotifications = React.useCallback((stats) => {
+        if (stats?.summary) {
+            const serverCount = stats.summary.newToday || 0;
+            setRawServerCount(serverCount);
+
+            const key = getStorageKey();
+            const storedSeen = parseInt(localStorage.getItem(key) || '0', 10);
+            const unread = Math.max(0, serverCount - storedSeen);
+            setUnreadTickets(unread);
+        }
+    }, []); // Removed getStorageKey dependency as it is a stable closure-less helper or should be ref'd?
+    // getStorageKey relies on Date(), which changes daily. It's fine.
+
     React.useEffect(() => {
+        if (!adminUser) return;
+
         const fetchStats = async () => {
             try {
                 const res = await fetch('/api/admin/support/stats');
                 const data = await res.json();
-                if (data.summary) {
-                    const serverCount = data.summary.newToday || 0;
-                    setRawServerCount(serverCount);
-
-                    // Calculate unread based on stored seen count
-                    const key = getStorageKey();
-                    const storedSeen = parseInt(localStorage.getItem(key) || '0', 10);
-
-                    // If server has MORE than we saw, show difference. 
-                    // If server has fewer (maybe deleted?), reset logic or just show 0.
-                    const unread = Math.max(0, serverCount - storedSeen);
-                    setUnreadTickets(unread);
-                }
+                updateNotifications(data);
             } catch (error) {
                 console.error('Failed to fetch notification stats:', error);
             }
         };
 
+        fetchStats();
+
+        // Pusher Subscription
+        const channel = pusherClient.subscribe('admin-stats');
+        channel.bind('stats-update', (data) => {
+            updateNotifications(data);
+        });
+
+        return () => {
+            pusherClient.unsubscribe('admin-stats');
+        };
+    }, [adminUser, updateNotifications]);
+
+    // --- Active Admins Logic (Consolidated) ---
+
+    const fetchActiveAdmins = React.useCallback(async () => {
+        try {
+            const res = await fetch('/api/admin/active-admin');
+            if (res.ok) {
+                const data = await res.json();
+                setActiveAdmins(data.users || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch active admins:', error);
+        }
+    }, []);
+
+    const sendHeartbeat = React.useCallback(async () => {
+        try {
+            await fetch('/api/admin/active-admin', { method: 'POST' });
+        } catch (error) {
+            console.error('Failed to send heartbeat:', error);
+        }
+    }, []);
+
+    // 1. Fetch initial list & set up polling for list (every 1 min)
+    // The list in Redis expires every 5 mins, so 1 min refresh is plenty to catch dropouts.
+    React.useEffect(() => {
         if (adminUser) {
-            fetchStats();
-            const interval = setInterval(fetchStats, 60000); // 1 min
+            fetchActiveAdmins();
+            const interval = setInterval(fetchActiveAdmins, 60 * 1000);
             return () => clearInterval(interval);
         }
-    }, [adminUser]);
+    }, [adminUser, fetchActiveAdmins]);
+
+    // 2. Send Heartbeat (every 2 mins)
+    // Redis Key TTL is 5 mins. 2 mins ensures we stay alive even if one fails.
+    React.useEffect(() => {
+        if (adminUser) {
+            sendHeartbeat();
+            const interval = setInterval(sendHeartbeat, 2 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [adminUser, sendHeartbeat]);
 
     const displayedAdmins = React.useMemo(() => {
-        if (!adminUser) return activeAdmins;
-
-        const admins = [...activeAdmins];
-        const isUserInList = admins.some(u =>
-            (u._id && adminUser._id && u._id.toString() === adminUser._id.toString())
-        );
-
-        if (!isUserInList && adminUser._id) {
-            admins.push({
-                ...adminUser,
-                role: adminUser.adminRole
-            });
-        }
-
-        return admins.map(admin => ({
+        if (!activeAdmins) return [];
+        return activeAdmins.map(admin => ({
             ...admin,
-            isCurrentUser: adminUser._id && admin._id === adminUser._id
+            isCurrentUser: adminUser?._id && admin._id === adminUser._id
         }));
     }, [activeAdmins, adminUser]);
 

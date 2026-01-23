@@ -7,22 +7,12 @@ import {
 } from 'recharts';
 import { Activity, Users, AlertCircle, Clock } from 'lucide-react';
 import { useCsrf } from '@/hooks/useCsrf';
+import { pusherClient } from '@/lib/pusher-client';
 
 export default function SupportStats() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const { secureFetch } = useCsrf();
-
-    // Initial fetch
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    // Set up polling interval (every 5 minutes)
-    useEffect(() => {
-        const interval = setInterval(fetchStats, 5 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, []);
 
     const fetchStats = async () => {
         try {
@@ -37,6 +27,20 @@ export default function SupportStats() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchStats();
+
+        // Pusher Subscription
+        const channel = pusherClient.subscribe('admin-stats');
+        channel.bind('stats-update', (data) => {
+            setStats(data);
+        });
+
+        return () => {
+            pusherClient.unsubscribe('admin-stats');
+        };
+    }, []);
 
     if (loading) return <div className="animate-pulse h-64 bg-gray-900/50 rounded-2xl mb-8"></div>;
     if (!stats) return null;

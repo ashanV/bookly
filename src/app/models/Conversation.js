@@ -110,7 +110,28 @@ ConversationSchema.pre('save', function (next) {
 ConversationSchema.index({ status: 1, createdAt: -1 });
 ConversationSchema.index({ userId: 1, status: 1 });
 ConversationSchema.index({ supportId: 1, status: 1 });
+ConversationSchema.index({ category: 1 }); // Stats optimization
 ConversationSchema.index({ deletedAt: 1 }, { expireAfterSeconds: 2592000 }); // Auto-usuwanie po 30 dniach
+
+// Trigger support stats update after save
+ConversationSchema.post('save', async function () {
+  try {
+    // Dynamic import to avoid circular dependency
+    const { updateSupportStats } = await import('@/lib/supportStats');
+    // Fire and forget (don't await to block response, or await if consistency required)
+    // For admin dashboard, "eventual consistency" (ms latency) is fine.
+    // However, in serverless, "fire and forget" might be killed if function ends.
+    // Next.js (Vercel) usually waits for promises in `waitUntil` but here we are in a model hook.
+    // Best effort: await it. It should be fast (Redis set + Pusher trigger).
+    // The "heavy" calculation part is inside updateSupportStats. 
+    // If we want to make it fast for the user saving the ticket, we should optimistically return.
+    // But since we removed the polling, we need this to run.
+    await updateSupportStats();
+  } catch (err) {
+    console.error('Failed to trigger support stats update:', err);
+  }
+});
+
 
 if (mongoose.models.Conversation) {
   delete mongoose.models.Conversation;
