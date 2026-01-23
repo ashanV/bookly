@@ -121,6 +121,29 @@ export default function AdminSidebar({ collapsed, onToggle }) {
 
     const roleBadge = getRoleBadge();
 
+    // State for support stats
+    const [unreadTickets, setUnreadTickets] = React.useState(0);
+
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await fetch('/api/admin/support/stats');
+                const data = await res.json();
+                if (data.summary?.totalOpen) {
+                    setUnreadTickets(data.summary.totalOpen);
+                }
+            } catch (error) {
+                console.error('Failed to fetch sidebar stats:', error);
+            }
+        };
+
+        if (adminUser) {
+            fetchStats();
+            const interval = setInterval(fetchStats, 60000);
+            return () => clearInterval(interval);
+        }
+    }, [adminUser]);
+
     return (
         <aside className={`fixed left-0 top-0 h-screen bg-gray-900 border-r border-gray-800 z-50 transition-all duration-300 flex flex-col ${collapsed ? 'w-20' : 'w-64'}`}>
             {/* Header */}
@@ -155,19 +178,32 @@ export default function AdminSidebar({ collapsed, onToggle }) {
 
                         const isActive = pathname === item.path;
                         const Icon = item.icon;
+                        const isSupport = item.path === '/admin/support';
 
                         return (
                             <li key={item.path}>
                                 <Link
                                     href={item.path}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${isActive
                                         ? 'bg-purple-600/20 text-purple-400'
                                         : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                         }`}
                                     title={collapsed ? item.label : undefined}
                                 >
                                     <Icon className="w-5 h-5 flex-shrink-0" />
-                                    {!collapsed && <span className="truncate">{item.label}</span>}
+                                    {!collapsed && (
+                                        <span className="truncate flex-1 flex items-center justify-between">
+                                            {item.label}
+                                            {isSupport && unreadTickets > 0 && (
+                                                <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                                                    {unreadTickets}
+                                                </span>
+                                            )}
+                                        </span>
+                                    )}
+                                    {collapsed && isSupport && unreadTickets > 0 && (
+                                        <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-gray-900"></span>
+                                    )}
                                 </Link>
                             </li>
                         );
