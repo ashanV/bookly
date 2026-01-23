@@ -26,6 +26,27 @@ export default function AdminHeader({ title, subtitle }) {
         return () => clearInterval(interval);
     }, []);
 
+    const displayedAdmins = React.useMemo(() => {
+        if (!adminUser) return activeAdmins;
+
+        const admins = [...activeAdmins];
+        const isUserInList = admins.some(u =>
+            (u._id && adminUser._id && u._id.toString() === adminUser._id.toString())
+        );
+
+        if (!isUserInList && adminUser._id) {
+            admins.push({
+                ...adminUser,
+                role: adminUser.adminRole
+            });
+        }
+
+        return admins.map(admin => ({
+            ...admin,
+            isCurrentUser: adminUser._id && admin._id === adminUser._id
+        }));
+    }, [activeAdmins, adminUser]);
+
     return (
         <header className="sticky top-0 z-40 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
             <div className="flex items-center justify-between px-6 py-4">
@@ -46,7 +67,7 @@ export default function AdminHeader({ title, subtitle }) {
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                             </span>
                             <span className="text-xs font-medium text-gray-300">
-                                {activeAdmins.length} online
+                                {displayedAdmins.length} online
                             </span>
                         </div>
 
@@ -56,13 +77,13 @@ export default function AdminHeader({ title, subtitle }) {
                                 <p className="text-xs font-medium text-gray-400">Aktywni administratorzy</p>
                             </div>
                             <div className="max-h-64 overflow-y-auto py-2">
-                                {activeAdmins.length > 0 ? (
-                                    activeAdmins.map((user) => (
-                                        <div key={user._id} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-800/50">
+                                {displayedAdmins.length > 0 ? (
+                                    displayedAdmins.map((user, idx) => (
+                                        <div key={user._id || idx} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-800/50">
                                             <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
                                             <div className="min-w-0">
                                                 <p className="text-sm text-white truncate">
-                                                    {user.firstName} {user.lastName}
+                                                    {user.firstName} {user.lastName}{user.isCurrentUser && ' (you)'}
                                                 </p>
                                                 <p className="text-xs text-purple-400 capitalize truncate">
                                                     {user.role}

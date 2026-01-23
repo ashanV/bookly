@@ -50,6 +50,14 @@ const ReservationSchema = new mongoose.Schema({
   googleCalendarSynced: { type: Boolean, default: false },
   googleCalendarSyncedAt: { type: Date, default: null },
 
+  // Rozliczenia
+  payoutId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payout',
+    default: null,
+    index: true
+  },
+
   // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
