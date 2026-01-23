@@ -18,7 +18,7 @@ export default function FeaturedServices() {
         {
             id: 1,
             image:
-                "https://images.unsplash.com/photo-1562004760-acb5df6b5102?w=800&h=500&fit=crop",
+                "https://images.unsplash.com/photo-1503951914875-befea7470dac?w=800&h=500&fit=crop",
             category: "Fryzjer",
             categoryColor: "bg-blue-50 text-blue-600 border-blue-100",
             name: "Strzyżenie męskie Premium",

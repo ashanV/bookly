@@ -38,7 +38,7 @@ const mockStudios = [
     likes: 456,
     location: "Warszawa, Mokotów",
     distance: "1.2 km",
-    image: "https://images.unsplash.com/photo-1562004760-acb5df6b5102?w=400&h=300&fit=crop",
+    image: "https://images.unsplash.com/photo-1503951914875-befea7470dac?w=400&h=300&fit=crop",
     nextAvailable: "Dziś 14:30",
     isPromoted: true,
     discount: 20,

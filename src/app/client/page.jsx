@@ -28,7 +28,7 @@ const mockBookings = [
     status: "confirmed",
     address: "ul. Mokotowska 15, Warszawa",
     specialist: "Michał Nowak",
-    image: "https://images.unsplash.com/photo-1562004760-acb5df6b5102?w=100&h=100&fit=crop",
+    image: "https://images.unsplash.com/photo-1503951914875-befea7470dac?w=100&h=100&fit=crop",
     phone: "+48 123 456 789",
     canCancel: true,
     canReschedule: true
@@ -72,7 +72,7 @@ const mockFavorites = [
     name: "Elite Barber Shop",
     category: "Fryzjer",
     rating: 4.8,
-    image: "https://images.unsplash.com/photo-1562004760-acb5df6b5102?w=100&h=100&fit=crop",
+    image: "https://images.unsplash.com/photo-1503951914875-befea7470dac?w=100&h=100&fit=crop",
     location: "Warszawa, Mokotów",
     nextAvailable: "Dziś 15:00"
   },
