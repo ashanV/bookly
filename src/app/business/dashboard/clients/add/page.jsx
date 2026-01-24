@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { User, ChevronDown, ChevronLeft, ChevronRight, Edit2, Loader2, Calendar, X, Plus, MapPin, Check, Home, Briefcase, MoreHorizontal, MoreVertical } from 'lucide-react';
-import ReferralClientModal from '@/components/clients/ReferralClientModal';
-import LanguageSelectionModal from '@/components/clients/LanguageSelectionModal';
-import AddressModal from '@/components/clients/AddressModal';
-import ConfirmDeleteModal from '@/components/clients/ConfirmDeleteModal';
+import ReferralClientModal from '@/components/dashboard/clients/ReferralClientModal';
+import LanguageSelectionModal from '@/components/dashboard/clients/LanguageSelectionModal';
+import AddressModal from '@/components/dashboard/clients/AddressModal';
+import ConfirmDeleteModal from '@/components/dashboard/clients/ConfirmDeleteModal';
 
 // Polish month names
 const MONTHS_PL = [

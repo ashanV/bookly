@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import BusinessLayout from '@/components/business/BusinessLayout';
+import BusinessLayout from '@/components/dashboard/business-chat/BusinessLayout';
 
 export default function Layout({ children }) {
     const pathname = usePathname();

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import ServicesSection from '@/components/services/ServicesSection';
+import ServicesSection from '@/components/dashboard/services/ServicesSection';
 
 export default function ServicesPage() {
     const { user } = useAuth();

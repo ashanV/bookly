@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import BusinessMessages from '@/components/business/BusinessMessages';
+import BusinessMessages from '@/components/dashboard/business-chat/BusinessMessages';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function BusinessMessagesPage() {

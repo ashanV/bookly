@@ -4,10 +4,10 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import ServiceFormLayout from '@/components/services/ServiceFormLayout';
-import ServiceBasicInfo from '@/components/services/ServiceBasicInfo';
-import ServicePricing from '@/components/services/ServicePricing';
-import ServiceEmployees from '@/components/services/ServiceEmployees';
+import ServiceFormLayout from '@/components/dashboard/services/ServiceFormLayout';
+import ServiceBasicInfo from '@/components/dashboard/services/ServiceBasicInfo';
+import ServicePricing from '@/components/dashboard/services/ServicePricing';
+import ServiceEmployees from '@/components/dashboard/services/ServiceEmployees';
 
 export default function EditServicePage({ params }) {
     const { id } = use(params);

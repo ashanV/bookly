@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, ChevronDown, FileSpreadsheet, FileText, Import, RefreshCw, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
-import ClientList from '@/components/clients/ClientList';
-import ClientDrawer from '@/components/clients/ClientDrawer';
+import ClientList from '@/components/dashboard/clients/ClientList';
+import ClientDrawer from '@/components/dashboard/clients/ClientDrawer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 

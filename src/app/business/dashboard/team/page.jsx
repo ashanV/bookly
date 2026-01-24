@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import WorkSchedule from '@/components/team/WorkSchedule';
-import TeamList from '@/components/team/TeamList';
+import WorkSchedule from '@/components/dashboard/team/WorkSchedule';
+import TeamList from '@/components/dashboard/team/TeamList';
 import { Users, CalendarDays } from 'lucide-react';
 
 export default function TeamPage() {

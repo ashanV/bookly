@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
-import ReservationsHeader from '@/components/reservations/ReservationsHeader';
-import ReservationsSearchBar from '@/components/reservations/ReservationsSearchBar';
-import ReservationsTable from '@/components/reservations/ReservationsTable';
-import ReservationDetailModal from '@/components/reservations/ReservationDetailModal';
-import ReservationEditModal from '@/components/reservations/ReservationEditModal';
-import ReservationDeleteModal from '@/components/reservations/ReservationDeleteModal';
+import ReservationsHeader from '@/components/dashboard/reservations/ReservationsHeader';
+import ReservationsSearchBar from '@/components/dashboard/reservations/ReservationsSearchBar';
+import ReservationsTable from '@/components/dashboard/reservations/ReservationsTable';
+import ReservationDetailModal from '@/components/dashboard/reservations/ReservationDetailModal';
+import ReservationEditModal from '@/components/dashboard/reservations/ReservationEditModal';
+import ReservationDeleteModal from '@/components/dashboard/reservations/ReservationDeleteModal';
 
 export default function ReservationsPage() {
   const router = useRouter();

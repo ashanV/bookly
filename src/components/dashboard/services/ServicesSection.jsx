@@ -6,10 +6,10 @@ import {
     Link as LinkIcon, Settings, FileText
 } from 'lucide-react';
 import Link from 'next/link';
-import ServiceCategorySidebar from '@/components/services/ServiceCategorySidebar';
-import ServiceList from '@/components/services/ServiceList';
-import ServiceModal from '@/components/services/ServiceModal';
-import CategoryModal from '@/components/services/CategoryModal';
+import ServiceCategorySidebar from '@/components/dashboard/services/ServiceCategorySidebar';
+import ServiceList from '@/components/dashboard/services/ServiceList';
+import ServiceModal from '@/components/dashboard/services/ServiceModal';
+import CategoryModal from '@/components/dashboard/services/CategoryModal';
 
 export default function ServicesSection({
     services,

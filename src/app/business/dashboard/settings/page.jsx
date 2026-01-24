@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
 import { Building2, Settings, ArrowLeft, Lock, User, Image as ImageIcon, MessageSquare, Clock, AlertTriangle, CheckSquare } from 'lucide-react';
-import ProfileSection from '@/components/settings/ProfileSection';
-import ContactDataSection from '@/components/settings/ContactDataSection';
-import OpeningHoursSection from '@/components/settings/OpeningHoursSection';
-import PortfolioSection from '@/components/settings/PortfolioSection';
-import ReviewsSection from '@/components/settings/ReviewsSection';
-import Tasks from '@/components/clients/Tasks';
+import ProfileSection from '@/components/dashboard/settings/ProfileSection';
+import ContactDataSection from '@/components/dashboard/settings/ContactDataSection';
+import OpeningHoursSection from '@/components/dashboard/settings/OpeningHoursSection';
+import PortfolioSection from '@/components/dashboard/settings/PortfolioSection';
+import ReviewsSection from '@/components/dashboard/settings/ReviewsSection';
+import Tasks from '@/components/dashboard/clients/Tasks';
 
 export default function BusinessSettings() {
     const { user, updateProfile } = useAuth();
