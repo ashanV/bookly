@@ -29,6 +29,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import SubscriptionBanner from '@/components/SubscriptionBanner';
 
 
 // Lazy load heavy chart components
@@ -401,8 +402,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-
-
+      {/* Subscription Banner */}
+      <SubscriptionBanner business={businessData || user} />
       {/* Informacje o firmie */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100/50 p-6">
         <div className="flex items-start justify-between mb-6">

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, Fragment, } from 'react';
-import { Check, Star, Zap, Crown, Users, Calendar, Clock, Shield, Phone, Mail, ArrowRight, ChevronDown, ChevronUp, Play, X, Building, TrendingUp, Heart, Award, Headphones, Globe } from 'lucide-react';
+import { useState, Fragment, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Check, Star, Zap, Crown, Users, Calendar, Clock, Shield, Phone, Mail, ArrowRight, ChevronDown, ChevronUp, Play, X, Building, TrendingUp, Heart, Award, Headphones, Globe, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // --- Komponenty Podrzędne ---
 
@@ -44,8 +46,8 @@ const HeroSection = ({ billingCycle, setBillingCycle }) => (
                     <button
                         onClick={() => setBillingCycle('monthly')}
                         className={`px-6 py-3 rounded-lg font-medium cursor-pointer transition-all duration-200 ${billingCycle === 'monthly'
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
                         Miesięczny
@@ -53,8 +55,8 @@ const HeroSection = ({ billingCycle, setBillingCycle }) => (
                     <button
                         onClick={() => setBillingCycle('yearly')}
                         className={`px-6 py-3 rounded-lg font-medium cursor-pointer transition-all duration-200 ${billingCycle === 'yearly'
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
                         Roczny
@@ -68,15 +70,16 @@ const HeroSection = ({ billingCycle, setBillingCycle }) => (
     </div>
 );
 
-const PlanCard = ({ plan, billingCycle, getPrice, getSavings, hoveredPlan, setHoveredPlan }) => {
+const PlanCard = ({ plan, billingCycle, getPrice, getSavings, hoveredPlan, setHoveredPlan, onSubscribe, isLoading, loadingPlan }) => {
     const Icon = plan.icon;
     const savings = getSavings(plan);
+    const isThisLoading = isLoading && loadingPlan === plan.id;
 
     return (
         <div
             className={`relative bg-white rounded-2xl shadow-xl border-2 transition-all duration-300 ${plan.popular
-                    ? 'border-purple-200 scale-105 shadow-2xl ring-4 ring-purple-100'
-                    : 'border-gray-100 hover:border-gray-200 hover:shadow-xl'
+                ? 'border-purple-200 scale-105 shadow-2xl ring-4 ring-purple-100'
+                : 'border-gray-100 hover:border-gray-200 hover:shadow-xl'
                 } ${hoveredPlan === plan.id ? 'transform scale-105' : ''}`}
             onMouseEnter={() => setHoveredPlan(plan.id)}
             onMouseLeave={() => setHoveredPlan(null)}
@@ -141,18 +144,29 @@ const PlanCard = ({ plan, billingCycle, getPrice, getSavings, hoveredPlan, setHo
                     </div>
                 </div>
                 <button
+                    onClick={() => onSubscribe(plan.id)}
+                    disabled={isLoading}
                     className={`w-full py-4 px-6 rounded-xl font-medium transition-all duration-200 group ${plan.popular
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 shadow-lg'
-                            : 'bg-gray-900 text-white hover:bg-gray-800 hover:transform hover:scale-105'
-                        }`}
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 shadow-lg'
+                        : 'bg-gray-900 text-white hover:bg-gray-800 hover:transform hover:scale-105'
+                        } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                    <span className="flex items-center justify-center cursor-pointer">
-                        Rozpocznij bezpłatny trial
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <span className="flex items-center justify-center">
+                        {isThisLoading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                Przekierowuję...
+                            </>
+                        ) : (
+                            <>
+                                Rozpocznij bezpłatny trial
+                                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
                     </span>
                 </button>
                 <p className="text-center text-sm text-gray-500 mt-4">
-                    14 dni za darmo, bez karty kredytowej
+                    14 dni za darmo, następnie płatność
                 </p>
             </div>
         </div>
@@ -372,11 +386,14 @@ const PageFooter = () => (
 // --- Główny Komponent Strony ---
 
 export default function BooklyBusinessPricing() {
+    const router = useRouter();
     const [billingCycle, setBillingCycle] = useState('monthly');
     const [hoveredPlan, setHoveredPlan] = useState(null);
     const [expandedFAQ, setExpandedFAQ] = useState(null);
     const [showComparison, setShowComparison] = useState(false);
     const [selectedTestimonial, setSelectedTestimonial] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingPlan, setLoadingPlan] = useState(null);
 
     // --- Dane ---
     const plans = [
@@ -430,6 +447,86 @@ export default function BooklyBusinessPricing() {
         setExpandedFAQ(expandedFAQ === index ? null : index);
     };
 
+    // Handle subscription checkout
+    const handleSubscribe = async (planId, autoCheckout = false) => {
+        setIsLoading(true);
+        setLoadingPlan(planId);
+
+        try {
+            const response = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    planId,
+                    billingCycle
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.requiresLogin) {
+                    // Save selected plan to localStorage before redirect
+                    localStorage.setItem('pendingSubscription', JSON.stringify({
+                        planId,
+                        billingCycle,
+                        timestamp: Date.now()
+                    }));
+                    toast.error('Musisz być zalogowany, aby wykupić subskrypcję');
+                    router.push(`/business/auth?callbackUrl=/business/pricing`);
+                    return;
+                }
+                throw new Error(data.error || 'Wystąpił błąd');
+            }
+
+            // Clear pending subscription on success
+            localStorage.removeItem('pendingSubscription');
+
+            // Redirect to Stripe Checkout
+            if (data.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error('Subscription error:', error);
+            if (!autoCheckout) {
+                toast.error(error.message || 'Wystąpił błąd podczas przetwarzania');
+            }
+        } finally {
+            setIsLoading(false);
+            setLoadingPlan(null);
+        }
+    };
+
+    // Check for pending subscription after login redirect
+    useEffect(() => {
+        const pendingSubscription = localStorage.getItem('pendingSubscription');
+        if (pendingSubscription) {
+            try {
+                const { planId, billingCycle: savedBillingCycle, timestamp } = JSON.parse(pendingSubscription);
+
+                // Only process if less than 10 minutes old
+                if (Date.now() - timestamp < 10 * 60 * 1000) {
+                    // Set the billing cycle to match the saved one
+                    setBillingCycle(savedBillingCycle);
+
+                    // Small delay to ensure state is set
+                    setTimeout(() => {
+                        toast.loading('Kontynuowanie płatności...', { duration: 2000 });
+                        handleSubscribe(planId, true);
+                    }, 500);
+                } else {
+                    // Expired, remove it
+                    localStorage.removeItem('pendingSubscription');
+                }
+            } catch (e) {
+                localStorage.removeItem('pendingSubscription');
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // --- Renderowanie Głównego Komponentu ---
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -446,6 +543,9 @@ export default function BooklyBusinessPricing() {
                             getSavings={getSavings}
                             hoveredPlan={hoveredPlan}
                             setHoveredPlan={setHoveredPlan}
+                            onSubscribe={handleSubscribe}
+                            isLoading={isLoading}
+                            loadingPlan={loadingPlan}
                         />
                     ))}
                 </section>

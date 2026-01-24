@@ -149,6 +149,24 @@ const BusinessSchema = new mongoose.Schema({
     expiryDate: { type: Date, default: null }
   },
   googleCalendarConnected: { type: Boolean, default: false },
+
+  // Stripe Subscription
+  subscription: {
+    stripeCustomerId: { type: String, default: null },
+    stripeSubscriptionId: { type: String, default: null },
+    plan: {
+      type: String,
+      enum: ['free', 'starter', 'professional', 'enterprise'],
+      default: 'free'
+    },
+    status: {
+      type: String,
+      enum: ['active', 'past_due', 'canceled', 'trialing', 'inactive'],
+      default: 'inactive'
+    },
+    currentPeriodEnd: { type: Date, default: null },
+    cancelAtPeriodEnd: { type: Boolean, default: false }
+  }
 }, {
   strict: true,
   validateBeforeSave: true,

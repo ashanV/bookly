@@ -54,6 +54,7 @@ export async function GET() {
             isVerified: user.isVerified,
             isBlocked: user.isBlocked,
             blockReason: user.blockReason || '',
+            subscription: user.subscription || null,
           },
         });
       }
