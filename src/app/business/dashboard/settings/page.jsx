@@ -1,20 +1,33 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
-import { Building2, Settings, ArrowLeft, Lock, User, Image as ImageIcon, MessageSquare, Clock, AlertTriangle, CheckSquare } from 'lucide-react';
+import {
+    Building2, ArrowLeft, Lock, Image as ImageIcon,
+    MessageSquare, Store, Calendar, Tag, Landmark, Users, FileText
+} from 'lucide-react';
 import ProfileSection from '@/components/dashboard/settings/ProfileSection';
 import ContactDataSection from '@/components/dashboard/settings/ContactDataSection';
 import OpeningHoursSection from '@/components/dashboard/settings/OpeningHoursSection';
 import PortfolioSection from '@/components/dashboard/settings/PortfolioSection';
 import ReviewsSection from '@/components/dashboard/settings/ReviewsSection';
-import Tasks from '@/components/dashboard/clients/Tasks';
+import CompanyConfigSection from '@/components/dashboard/settings/company-settings/CompanyConfigSection';
+import CompanyEditForm from '@/components/dashboard/settings/company-settings/CompanyEditForm';
+import SettingsCardGrid from '@/components/dashboard/settings/SettingsCardGrid';
+import LocationsSection from '@/components/dashboard/settings/company-settings/LocationsSection';
+import AddLocationWizard from '@/components/dashboard/settings/company-settings/AddLocationWizard';
 
 export default function BusinessSettings() {
+    const router = useRouter();
     const { user, updateProfile } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('profile');
+
+    // Navigation State
+    const [activeCategory, setActiveCategory] = useState('settings');
+    const [activeSection, setActiveSection] = useState(null);
+    const [showAddLocationWizard, setShowAddLocationWizard] = useState(false);
 
     // Profile State
     const [profileImage, setProfileImage] = useState(null);
@@ -23,7 +36,9 @@ export default function BusinessSettings() {
     const [description, setDescription] = useState('');
     const [facebook, setFacebook] = useState('');
     const [instagram, setInstagram] = useState('');
+    const [twitter, setTwitter] = useState('');
     const [website, setWebsite] = useState('');
+    const [taxSettings, setTaxSettings] = useState('retail_excl');
     const [city, setCity] = useState('');
     const [address, setAddress] = useState('');
     const [postalCode, setPostalCode] = useState('');
@@ -196,8 +211,6 @@ export default function BusinessSettings() {
         const updatedPortfolio = portfolio.filter(img => img.id !== id);
         setPortfolio(updatedPortfolio);
 
-        // Try to delete from Cloudinary if possible (optional logic skipped for brevity/safety)
-
         await saveBusinessProfile({ portfolioImages: updatedPortfolio.map(img => img.url) });
         toast.success('Zdjęcie zostało usunięte!');
     };
@@ -211,7 +224,8 @@ export default function BusinessSettings() {
         try {
             const updateData = {
                 companyName: businessName,
-                description, facebook, instagram, website,
+                description, facebook, instagram, twitter, website,
+                taxSettings,
                 city, address, postalCode,
                 ...updates
             };
@@ -305,30 +319,76 @@ export default function BusinessSettings() {
         }
     };
 
-    const applyHoursToAllEmployees = async () => {
-        // Placeholder or removal - logic moved to Team page, but might be useful here if we want to sync global hours to employees?
-        // For now, let's keep it simple and maybe remove it if it's not needed here anymore, 
-        // OR keep it but it needs to fetch employees first. 
-        // Since we removed employees state, we can't easily do it here without fetching them.
-        // I'll remove it from here to avoid complexity and since it's an employee management feature.
-        toast.info("Zarządzanie godzinami pracowników zostało przeniesione do zakładki Zespół.");
-    };
-
-    const tabs = [
-        { id: 'profile', label: 'Profil Firmy', icon: Building2 },
-        { id: 'data', label: 'Dane Kontaktowe', icon: User },
-        { id: 'hours', label: 'Godziny Otwarcia', icon: Clock },
-        { id: 'portfolio', label: 'Portfolio', icon: ImageIcon },
-        { id: 'reviews', label: 'Opinie', icon: MessageSquare },
-        { id: 'tasks', label: 'Zadania', icon: CheckSquare }
+    // --- Navigation Config ---
+    const categories = [
+        { id: 'settings', label: 'Ustawienia' },
+        { id: 'online', label: 'Obecność online' },
+        { id: 'marketing', label: 'Marketing' }
     ];
 
-    const reviewsArray = Array.isArray(reviews) ? reviews : [];
-    const avgRating = reviewsArray.length > 0 ? reviewsArray.reduce((acc, r) => acc + (r.rating || 0), 0) / reviewsArray.length : 0;
+    const cards = {
+        settings: [
+            { id: 'company', title: 'Konfiguracja firmy', description: 'Edytuj dane firmy oraz zarządzaj lokalizacjami.', icon: Store, component: 'profile', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'planning', title: 'Planowanie', description: 'Ustaw dostępność i preferencje rezerwacji.', icon: Calendar, component: 'hours', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'contact', title: 'Dane kontaktowe', description: 'Zarządzaj adresem email, telefonem oraz hasłem.', icon: Lock, component: 'data', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'sales', title: 'Sprzedaż', description: 'Skonfiguruj formy płatności i podatki.', icon: Tag, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'billing', title: 'Rozliczenia', description: 'Zarządzaj fakturami i rozliczeniami.', icon: Landmark, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'team', title: 'Zespół', description: 'Zarządzaj uprawnieniami i urlopami.', icon: Users, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'forms', title: 'Formularze', description: 'Skonfiguruj szablony formularzy.', icon: FileText, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' }
+        ],
+        online: [
+            { id: 'portfolio', title: 'Portfolio', description: 'Zarządzaj zdjęciami swoich prac.', icon: ImageIcon, component: 'portfolio', color: 'text-blue-600', bgColor: 'bg-blue-50' }
+        ],
+        marketing: [
+            { id: 'reviews', title: 'Opinie', description: 'Przeglądaj i zarządzaj opiniami.', icon: MessageSquare, component: 'reviews', color: 'text-pink-600', bgColor: 'bg-pink-50' }
+        ]
+    };
+
+    const getActiveSectionComponent = () => {
+        switch (activeSection) {
+            case 'legacy-profile':
+                return (
+                    <ProfileSection
+                        profileImage={profileImage} bannerImage={bannerImage} businessName={businessName} description={description}
+                        facebook={facebook} instagram={instagram} website={website} city={city} address={address} postalCode={postalCode}
+                        onProfileImageChange={handleImageUpload} onBannerImageChange={handleBannerUpload}
+                        onBusinessNameChange={setBusinessName} onDescriptionChange={setDescription}
+                        onFacebookChange={setFacebook} onInstagramChange={setInstagram} onWebsiteChange={setWebsite}
+                        onCityChange={setCity} onAddressChange={setAddress} onPostalCodeChange={setPostalCode} onSave={handleSaveProfile}
+                    />
+                );
+            case 'data':
+                return (
+                    <ContactDataSection
+                        phone={phone} email={email} currentPassword={currentPassword} newPassword={newPassword} confirmPassword={confirmPassword}
+                        onPhoneChange={setPhone} onEmailChange={setEmail} onCurrentPasswordChange={setCurrentPassword}
+                        onNewPasswordChange={setNewPassword} onConfirmPasswordChange={setConfirmPassword}
+                        onUpdateContactData={handleUpdateContactData} onPasswordChangeClick={handlePasswordChangeClick}
+                    />
+                );
+            case 'hours':
+                return (
+                    <OpeningHoursSection
+                        openingHours={openingHours} onUpdateOpeningHours={updateOpeningHours}
+                        onSaveHours={() => setShowHoursConfirmModal(true)} onApplyToAllEmployees={() => toast.info("Przeniesione do zakładki Zespół.")}
+                    />
+                );
+            case 'portfolio':
+                return <PortfolioSection portfolio={portfolio} onPortfolioUpload={handlePortfolioUpload} onDeleteImage={deletePortfolioImage} />;
+            case 'reviews':
+                const reviewsArray = Array.isArray(reviews) ? reviews : [];
+                const avgRating = reviewsArray.length > 0 ? reviewsArray.reduce((acc, r) => acc + (r.rating || 0), 0) / reviewsArray.length : 0;
+                return <ReviewsSection reviews={reviewsArray} avgRating={avgRating} onRefresh={fetchBusinessData} />;
+            default:
+                return null;
+        }
+    };
+
+    const activeSectionTitle = Object.values(cards).flat().find(c => c.component === activeSection)?.title || 'Szczegóły';
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     <p className="text-gray-500 font-medium">Ładowanie ustawień...</p>
@@ -338,7 +398,7 @@ export default function BusinessSettings() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
+        <div className="min-h-screen bg-white">
             {/* Modals */}
             {showPasswordConfirmModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -377,123 +437,102 @@ export default function BusinessSettings() {
                 </div>
             )}
 
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => window.history.back()} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                            <ArrowLeft size={20} />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
+                {!activeSection && (
+                    <div className="mb-8 text-left">
+                        <h1 className="text-2xl font-bold text-gray-900">Ustawienia obszaru roboczego</h1>
+                        <p className="text-gray-500">Zarządzaj ustawieniami dla {businessName}.</p>
+                    </div>
+                )}
+                {activeSection && !['profile', 'profile-edit', 'locations'].includes(activeSection) && (
+                    <div className="mb-8 text-left flex items-center gap-4">
+                        <button onClick={() => setActiveSection(null)} className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                            <ArrowLeft size={20} className="text-gray-600" />
                         </button>
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <Settings className="text-white" size={24} />
-                        </div>
                         <div>
-                            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                                Ustawienia Biznesu
-                            </h1>
-                            <p className="text-sm text-gray-500">Zarządzaj swoim profilem i danymi</p>
+                            <h1 className="text-2xl font-bold text-gray-900">{activeSectionTitle}</h1>
+                            <p className="text-gray-500">Zarządzaj ustawieniami tej sekcji</p>
                         </div>
                     </div>
-                </div>
-            </header>
+                )}
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Sidebar */}
-                    <aside className="lg:w-64 flex-shrink-0">
-                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sticky top-24">
-                            <nav className="space-y-2">
-                                {tabs.map(tab => {
-                                    const Icon = tab.icon;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setActiveTab(tab.id)}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-left ${activeTab === tab.id
-                                                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
-                                                : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
-                                                }`}
-                                        >
-                                            <Icon size={20} />
-                                            <span className="text-sm">{tab.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </nav>
-                        </div>
-                    </aside>
+                {/* Tabs (Only visible in main view) */}
+                {!activeSection && (
+                    <div className="flex overflow-x-auto pb-4 mb-6 gap-6 scrollbar-hide text-left">
+                        {categories.map(cat => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={`whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all ${activeCategory === cat.id ? 'bg-black text-white shadow-md' : 'bg-transparent text-gray-600 hover:bg-gray-100'}`}
+                            >
+                                {cat.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
-                    {/* Main Content */}
-                    <main className="flex-1 min-w-0">
-                        {activeTab === 'profile' && (
-                            <ProfileSection
-                                profileImage={profileImage}
-                                bannerImage={bannerImage}
-                                businessName={businessName}
-                                description={description}
-                                facebook={facebook}
-                                instagram={instagram}
-                                website={website}
-                                city={city}
-                                address={address}
-                                postalCode={postalCode}
-                                onProfileImageChange={handleImageUpload}
-                                onBannerImageChange={handleBannerUpload}
-                                onBusinessNameChange={setBusinessName}
-                                onDescriptionChange={setDescription}
-                                onFacebookChange={setFacebook}
-                                onInstagramChange={setInstagram}
-                                onWebsiteChange={setWebsite}
-                                onCityChange={setCity}
-                                onAddressChange={setAddress}
-                                onPostalCodeChange={setPostalCode}
-                                onSave={handleSaveProfile}
-                            />
-                        )}
-                        {activeTab === 'data' && (
-                            <ContactDataSection
-                                phone={phone}
-                                email={email}
-                                currentPassword={currentPassword}
-                                newPassword={newPassword}
-                                confirmPassword={confirmPassword}
-                                onPhoneChange={setPhone}
-                                onEmailChange={setEmail}
-                                onCurrentPasswordChange={setCurrentPassword}
-                                onNewPasswordChange={setNewPassword}
-                                onConfirmPasswordChange={setConfirmPassword}
-                                onUpdateContactData={handleUpdateContactData}
-                                onPasswordChangeClick={handlePasswordChangeClick}
-                            />
-                        )}
-                        {activeTab === 'hours' && (
-                            <OpeningHoursSection
-                                openingHours={openingHours}
-                                onUpdateOpeningHours={updateOpeningHours}
-                                onSaveHours={() => setShowHoursConfirmModal(true)}
-                                onApplyToAllEmployees={applyHoursToAllEmployees}
-                            />
-                        )}
-                        {activeTab === 'portfolio' && (
-                            <PortfolioSection
-                                portfolio={portfolio}
-                                onPortfolioUpload={handlePortfolioUpload}
-                                onDeleteImage={deletePortfolioImage}
-                            />
-                        )}
-                        {activeTab === 'reviews' && (
-                            <ReviewsSection
-                                reviews={reviewsArray}
-                                avgRating={avgRating}
-                                onRefresh={fetchBusinessData}
-                            />
-                        )}
-                        {activeTab === 'tasks' && (
-                            <Tasks />
-                        )}
-                    </main>
-                </div>
+                {/* Content */}
+                {activeSection === 'profile-edit' ? (
+                    <CompanyEditForm
+                        businessName={businessName} setBusinessName={setBusinessName}
+                        taxSettings={taxSettings} setTaxSettings={setTaxSettings}
+                        facebook={facebook} setFacebook={setFacebook}
+                        instagram={instagram} setInstagram={setInstagram}
+                        twitter={twitter} setTwitter={setTwitter}
+                        website={website} setWebsite={setWebsite}
+                        onSave={() => { handleSaveProfile(); setActiveSection('profile'); }}
+                        onClose={() => setActiveSection('profile')}
+                    />
+                ) : activeSection === 'profile' ? (
+                    <CompanyConfigSection
+                        businessName={businessName} facebook={facebook} instagram={instagram} website={website}
+                        onBack={() => setActiveSection(null)}
+                        onEditClick={() => setActiveSection('profile-edit')}
+                        onSidebarClick={(tab) => {
+                            if (tab === 'locations') setActiveSection('locations');
+                            else if (tab === 'details') setActiveSection('profile');
+                        }}
+                        activeTab="details"
+                    />
+                ) : activeSection === 'locations' ? (
+                    <LocationsSection
+                        businessId={user?.id}
+                        businessName={businessName}
+                        address={address}
+                        city={city}
+                        phone={phone}
+                        avgRating={reviews.length > 0 ? reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length : 0}
+                        reviewCount={reviews.length}
+                        onBack={() => setActiveSection(null)}
+                        onSidebarClick={(tab) => {
+                            if (tab === 'details') setActiveSection('profile');
+                            else if (tab === 'locations') setActiveSection('locations');
+                        }}
+                        onAddClick={() => setShowAddLocationWizard(true)}
+                        activeTab="locations"
+                    />
+                ) : activeSection ? (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
+                        {getActiveSectionComponent()}
+                    </div>
+                ) : (
+                    <SettingsCardGrid cards={cards} activeCategory={activeCategory} onCardClick={setActiveSection} />
+                )}
             </div>
+
+            {/* Add Location Wizard Overlay */}
+            {showAddLocationWizard && (
+                <AddLocationWizard
+                    onClose={() => setShowAddLocationWizard(false)}
+                    businessId={user?.id}
+                    onNext={(newLocation) => {
+                        toast.success("Lokalizacja dodana");
+                        setShowAddLocationWizard(false);
+                        router.refresh();
+                    }}
+                />
+            )}
         </div>
     );
 }
