@@ -3,6 +3,12 @@ import bcrypt from "bcryptjs";
 
 import { encrypt, decrypt } from "../../lib/crypto";
 
+// Import extracted schemas
+import ServiceSchema from "./schemas/ServiceSchema";
+import ReviewSchema from "./schemas/ReviewSchema";
+import EmployeeSchema from "./schemas/EmployeeSchema";
+import LocationSchema from "./schemas/LocationSchema";
+
 const BusinessSchema = new mongoose.Schema({
   // Dane kontaktowe właściciela
   firstName: { type: String, required: true },
@@ -11,7 +17,7 @@ const BusinessSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
-    index: true, // Explicitly indexed as requested
+    index: true,
     match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address.']
   },
   phone: {
@@ -24,17 +30,17 @@ const BusinessSchema = new mongoose.Schema({
   // Dane firmy
   companyName: { type: String, required: true },
   companyType: { type: String, required: true },
-  category: { type: String, required: true, index: true }, // Added index
+  category: { type: String, required: true, index: true },
   description: { type: String, default: '' },
 
   // Obrazy firmy (Cloudinary URLs)
-  profileImage: { type: String, default: '' }, // Avatar/logo firmy
-  bannerImage: { type: String, default: '' }, // Baner główny
-  portfolioImages: [{ type: String }], // Tablica URL-i do portfolio
-  hiddenPortfolioImages: [{ type: String }], // Zdjecia ukryte przez admina
+  profileImage: { type: String, default: '' },
+  bannerImage: { type: String, default: '' },
+  portfolioImages: [{ type: String }],
+  hiddenPortfolioImages: [{ type: String }],
 
   // Lokalizacja
-  city: { type: String, required: true, index: true }, // Added index
+  city: { type: String, required: true, index: true },
   address: { type: String, required: true },
   postalCode: {
     type: String,
@@ -42,16 +48,8 @@ const BusinessSchema = new mongoose.Schema({
     match: [/^\d{2}-\d{3}$/, 'Invalid postal code format (XX-XXX).']
   },
 
-  // Usługi i działalność
-  services: [{
-    id: { type: String },
-    name: { type: String, required: true, index: true }, // Added index for frequent searches
-    duration: { type: Number, required: true },
-    price: { type: Number, required: true },
-    description: { type: String },
-    category: { type: String, default: 'Ogólne', index: true },
-    employees: [{ type: Number }] // Array of employee IDs
-  }],
+  // Usługi i działalność - using extracted schema
+  services: [ServiceSchema],
   categories: [{
     name: { type: String, required: true },
     color: { type: String },
@@ -69,67 +67,17 @@ const BusinessSchema = new mongoose.Schema({
   pricing: { type: String, default: '' },
   teamSize: { type: String, default: '' },
 
-  // Pracownicy
-  employees: [{
-    id: { type: Number }, // Timestamp based ID
-    name: { type: String, required: true },
-    position: { type: String },
-    phone: { type: String },
-    email: { type: String },
-    bio: { type: String },
-    avatar: { type: String }, // Initials
-    avatarImage: { type: String }, // Base64 or URL
-    role: { type: String, enum: ['admin', 'manager', 'employee', 'calendar-only', 'no-access'], default: 'employee' },
-    assignedServices: [{
-      serviceId: { type: String }, // Changed to String to match service ID type
-      duration: { type: Number },
-      price: { type: Number },
-      available: { type: Boolean, default: true }
-    }],
-    availability: {
-      monday: { open: String, close: String, closed: Boolean },
-      tuesday: { open: String, close: String, closed: Boolean },
-      wednesday: { open: String, close: String, closed: Boolean },
-      thursday: { open: String, close: String, closed: Boolean },
-      friday: { open: String, close: String, closed: Boolean },
-      saturday: { open: String, close: String, closed: Boolean },
-      sunday: { open: String, close: String, closed: Boolean }
-    },
-    vacations: [{
-      id: { type: Number },
-      startDate: { type: String },
-      endDate: { type: String },
-      reason: { type: String }
-    }],
-    breaks: [{
-      id: { type: Number },
-      day: { type: String },
-      startTime: { type: String },
-      endTime: { type: String },
-      reason: { type: String }
-    }]
-  }],
+  // Pracownicy - using extracted schema
+  employees: [EmployeeSchema],
 
-  // Opinie
-  reviews: [{
-    author: { type: String, required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    text: { type: String, required: true },
-    date: { type: Date, default: Date.now },
-    service: { type: String },
-    verified: { type: Boolean, default: false },
-    hidden: { type: Boolean, default: false } // Ukryte przez admina
-  }],
+  // Opinie - using extracted schema
+  reviews: [ReviewSchema],
 
   // Social Media i marketing
   website: { type: String, default: '' },
   instagram: { type: String, default: '' },
   facebook: { type: String, default: '' },
   newsletter: { type: Boolean, default: false },
-
-  // Metadata
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
 
   // Status biznesu
   isActive: { type: Boolean, default: true },
@@ -157,7 +105,8 @@ const BusinessSchema = new mongoose.Schema({
     plan: {
       type: String,
       enum: ['free', 'starter', 'professional', 'enterprise'],
-      default: 'free'
+      default: 'free',
+      index: true
     },
     status: {
       type: String,
@@ -168,74 +117,18 @@ const BusinessSchema = new mongoose.Schema({
     cancelAtPeriodEnd: { type: Boolean, default: false }
   },
 
-  // Multiple Locations
-  locations: [{
-    id: { type: String, required: true },
-    name: { type: String, required: true },
-    phone: { type: String },
-    email: { type: String },
-    businessType: { type: String },
-    additionalTypes: [{ type: String }],
-    address: {
-      street: { type: String },
-      apartmentNumber: { type: String },
-      district: { type: String },
-      city: { type: String },
-      region: { type: String },
-      province: { type: String },
-      postCode: { type: String },
-      country: { type: String, default: 'Polska' }
-    },
-    billingAddress: {
-      street: { type: String },
-      apartmentNumber: { type: String },
-      district: { type: String },
-      city: { type: String },
-      region: { type: String },
-      province: { type: String },
-      postCode: { type: String },
-      country: { type: String, default: 'Polska' }
-    },
-    workingHours: {
-      monday: {
-        open: String, close: String, closed: { type: Boolean, default: false },
-        ranges: [{ open: String, close: String }]
-      },
-      tuesday: {
-        open: String, close: String, closed: { type: Boolean, default: false },
-        ranges: [{ open: String, close: String }]
-      },
-      wednesday: {
-        open: String, close: String, closed: { type: Boolean, default: false },
-        ranges: [{ open: String, close: String }]
-      },
-      thursday: {
-        open: String, close: String, closed: { type: Boolean, default: false },
-        ranges: [{ open: String, close: String }]
-      },
-      friday: {
-        open: String, close: String, closed: { type: Boolean, default: false },
-        ranges: [{ open: String, close: String }]
-      },
-      saturday: {
-        open: String, close: String, closed: { type: Boolean, default: true },
-        ranges: [{ open: String, close: String }]
-      },
-      sunday: {
-        open: String, close: String, closed: { type: Boolean, default: true },
-        ranges: [{ open: String, close: String }]
-      }
-    },
-    noAddress: { type: Boolean, default: false },
-    isPrimary: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now }
-  }]
+  // Multiple Locations - using extracted schema
+  locations: [LocationSchema]
 }, {
+  timestamps: true,
   strict: true,
   validateBeforeSave: true,
   toJSON: { getters: true },
   toObject: { getters: true }
 });
+
+// Compound indexes for common queries
+BusinessSchema.index({ city: 1, category: 1 });
 
 // Helper functions for validation
 const validateTimeFormat = (time) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
@@ -243,13 +136,10 @@ const validateTimeFormat = (time) => /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(ti
 const validateDaySchedule = (daySchedule) => {
   if (!daySchedule || daySchedule.closed) return true;
 
-  // Check if open and close times are present
   if (!daySchedule.open || !daySchedule.close) return false;
 
-  // Check format
   if (!validateTimeFormat(daySchedule.open) || !validateTimeFormat(daySchedule.close)) return false;
 
-  // Check logic (open < close)
   const [openH, openM] = daySchedule.open.split(':').map(Number);
   const [closeH, closeM] = daySchedule.close.split(':').map(Number);
 
@@ -272,10 +162,8 @@ BusinessSchema.pre('validate', function (next) {
   next();
 });
 
-// Automatyczna aktualizacja updatedAt i hashowanie hasła
+// Hashowanie hasła przed zapisem (timestamps handled automatically)
 BusinessSchema.pre('save', async function (next) {
-  this.updatedAt = Date.now();
-
   if (!this.isModified('password')) {
     return next();
   }
@@ -289,10 +177,9 @@ BusinessSchema.pre('save', async function (next) {
   }
 });
 
-// Delete cached model to force schema refresh (useful during development)
-if (mongoose.models.Business) {
+// Delete cached model only in development (prevents issues in production)
+if (process.env.NODE_ENV === 'development' && mongoose.models.Business) {
   delete mongoose.models.Business;
 }
 
 export default mongoose.model("Business", BusinessSchema);
-
