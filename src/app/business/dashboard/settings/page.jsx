@@ -13,16 +13,14 @@ import ContactDataSection from '@/components/dashboard/settings/ContactDataSecti
 import OpeningHoursSection from '@/components/dashboard/settings/OpeningHoursSection';
 import PortfolioSection from '@/components/dashboard/settings/PortfolioSection';
 import ReviewsSection from '@/components/dashboard/settings/ReviewsSection';
-import CompanyConfigSection from '@/components/dashboard/settings/company-settings/CompanyConfigSection';
-import CompanyEditForm from '@/components/dashboard/settings/company-settings/CompanyEditForm';
 import SettingsCardGrid from '@/components/dashboard/settings/SettingsCardGrid';
-import LocationsSection from '@/components/dashboard/settings/company-settings/LocationsSection';
 import AddLocationWizard from '@/components/dashboard/settings/company-settings/AddLocationWizard';
 
 export default function BusinessSettings() {
     const router = useRouter();
     const { user, updateProfile } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [businessData, setBusinessData] = useState(null);
 
     // Navigation State
     const [activeCategory, setActiveCategory] = useState('settings');
@@ -85,6 +83,7 @@ export default function BusinessSettings() {
                 if (response.ok) {
                     const data = await response.json();
                     const business = data.business;
+                    setBusinessData(business);
 
                     if (business.workingHours) {
                         const mappedHours = openingHours.map(day => ({
@@ -328,8 +327,8 @@ export default function BusinessSettings() {
 
     const cards = {
         settings: [
-            { id: 'company', title: 'Konfiguracja firmy', description: 'Edytuj dane firmy oraz zarządzaj lokalizacjami.', icon: Store, component: 'profile', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'planning', title: 'Planowanie', description: 'Ustaw dostępność i preferencje rezerwacji.', icon: Calendar, component: 'hours', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'company', title: 'Konfiguracja firmy', description: 'Edytuj dane firmy oraz zarządzaj lokalizacjami.', icon: Store, route: '/business/dashboard/settings/company-settings', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'planning', title: 'Planowanie', description: 'Czas i kalendarz, lista oczekujących, zasoby.', icon: Calendar, route: '/business/dashboard/settings/planning', color: 'text-purple-600', bgColor: 'bg-purple-50' },
             { id: 'contact', title: 'Dane kontaktowe', description: 'Zarządzaj adresem email, telefonem oraz hasłem.', icon: Lock, component: 'data', color: 'text-purple-600', bgColor: 'bg-purple-50' },
             { id: 'sales', title: 'Sprzedaż', description: 'Skonfiguruj formy płatności i podatki.', icon: Tag, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
             { id: 'billing', title: 'Rozliczenia', description: 'Zarządzaj fakturami i rozliczeniami.', icon: Landmark, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
@@ -473,51 +472,25 @@ export default function BusinessSettings() {
                 )}
 
                 {/* Content */}
-                {activeSection === 'profile-edit' ? (
-                    <CompanyEditForm
-                        businessName={businessName} setBusinessName={setBusinessName}
-                        taxSettings={taxSettings} setTaxSettings={setTaxSettings}
-                        facebook={facebook} setFacebook={setFacebook}
-                        instagram={instagram} setInstagram={setInstagram}
-                        twitter={twitter} setTwitter={setTwitter}
-                        website={website} setWebsite={setWebsite}
-                        onSave={() => { handleSaveProfile(); setActiveSection('profile'); }}
-                        onClose={() => setActiveSection('profile')}
-                    />
-                ) : activeSection === 'profile' ? (
-                    <CompanyConfigSection
-                        businessName={businessName} facebook={facebook} instagram={instagram} website={website}
-                        onBack={() => setActiveSection(null)}
-                        onEditClick={() => setActiveSection('profile-edit')}
-                        onSidebarClick={(tab) => {
-                            if (tab === 'locations') setActiveSection('locations');
-                            else if (tab === 'details') setActiveSection('profile');
-                        }}
-                        activeTab="details"
-                    />
-                ) : activeSection === 'locations' ? (
-                    <LocationsSection
-                        businessId={user?.id}
-                        businessName={businessName}
-                        address={address}
-                        city={city}
-                        phone={phone}
-                        avgRating={reviews.length > 0 ? reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length : 0}
-                        reviewCount={reviews.length}
-                        onBack={() => setActiveSection(null)}
-                        onSidebarClick={(tab) => {
-                            if (tab === 'details') setActiveSection('profile');
-                            else if (tab === 'locations') setActiveSection('locations');
-                        }}
-                        onAddClick={() => setShowAddLocationWizard(true)}
-                        activeTab="locations"
-                    />
-                ) : activeSection ? (
+                {activeSection ? (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
                         {getActiveSectionComponent()}
                     </div>
                 ) : (
-                    <SettingsCardGrid cards={cards} activeCategory={activeCategory} onCardClick={setActiveSection} />
+                    <SettingsCardGrid
+                        cards={cards}
+                        activeCategory={activeCategory}
+                        onCardClick={(component) => {
+                            // Find the card by component
+                            const allCards = Object.values(cards).flat();
+                            const card = allCards.find(c => c.component === component || c.id === component);
+                            if (card?.route) {
+                                router.push(card.route);
+                            } else if (component) {
+                                setActiveSection(component);
+                            }
+                        }}
+                    />
                 )}
             </div>
 

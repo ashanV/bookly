@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
@@ -54,6 +54,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "canvas": "^3.2.0",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",

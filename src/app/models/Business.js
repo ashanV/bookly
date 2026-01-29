@@ -64,6 +64,31 @@ const BusinessSchema = new mongoose.Schema({
     saturday: { open: String, close: String, closed: Boolean },
     sunday: { open: String, close: String, closed: Boolean }
   },
+
+  // Time and Calendar Settings
+  timeZone: { type: String, default: 'Europe/Warsaw' },
+  timeFormat: { type: String, enum: ['12h', '24h'], default: '24h' },
+  firstDayOfWeek: { type: String, enum: ['monday', 'sunday'], default: 'monday' },
+  calendarSettings: {
+    visitColor: { type: String, default: 'employee' }, // 'service' or 'employee'
+    showWaitingTime: { type: Boolean, default: true },
+    showBlockTime: { type: Boolean, default: true },
+    blockTypes: [{
+      name: { type: String, required: true },
+      duration: { type: Number, default: 60 }, // w minutach
+      isPaid: { type: Boolean, default: true },
+      icon: { type: String, default: 'calendar' }
+    }]
+  },
+  waitlistSettings: {
+    enabled: { type: Boolean, default: true },
+    mode: { type: String, enum: ['automatic', 'manual'], default: 'automatic' },
+    priority: { type: String, enum: ['first_come', 'vip'], default: 'first_come' },
+    onlineBooking: {
+      active: { type: Boolean, default: true },
+      timePreference: { type: String, enum: ['any', 'morning', 'afternoon'], default: 'any' }
+    }
+  },
   pricing: { type: String, default: '' },
   teamSize: { type: String, default: '' },
 

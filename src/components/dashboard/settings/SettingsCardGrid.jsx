@@ -14,8 +14,8 @@ export default function SettingsCardGrid({ cards, activeCategory, onCardClick })
                         onClick={() => {
                             if (card.comingSoon) {
                                 toast.info("Ta funkcja będzie dostępna wkrótce.");
-                            } else if (card.component) {
-                                onCardClick(card.component);
+                            } else if (card.route || card.component || card.id) {
+                                onCardClick(card.component || card.id);
                             }
                         }}
                         className={`
