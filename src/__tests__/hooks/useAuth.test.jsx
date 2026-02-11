@@ -1,6 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Mock dependencies
 const mockPush = vi.fn();
@@ -20,6 +21,9 @@ vi.mock('@/hooks/useCsrf', () => ({
 // Mock global fetch
 global.fetch = vi.fn();
 
+// Wrapper with AuthProvider for renderHook
+const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
+
 describe('useAuth Hook', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -33,7 +37,7 @@ describe('useAuth Hook', () => {
     });
 
     it('should initialize with loading state', async () => {
-        const { result } = renderHook(() => useAuth());
+        const { result } = renderHook(() => useAuth(), { wrapper });
 
         // Initially loading should be true (or fast enough to be false if effect runs instantly in test env)
         // strict mode might cause effect to run fast.
@@ -41,7 +45,7 @@ describe('useAuth Hook', () => {
     });
 
     it('should fetch user on mount', async () => {
-        const { result } = renderHook(() => useAuth());
+        const { result } = renderHook(() => useAuth(), { wrapper });
 
         await waitFor(() => {
             expect(result.current.loading).toBe(false);
@@ -53,7 +57,7 @@ describe('useAuth Hook', () => {
     });
 
     it('should handle logout', async () => {
-        const { result } = renderHook(() => useAuth());
+        const { result } = renderHook(() => useAuth(), { wrapper });
 
         // Wait for init
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -72,7 +76,7 @@ describe('useAuth Hook', () => {
     });
 
     it('should check roles correctly', async () => {
-        const { result } = renderHook(() => useAuth());
+        const { result } = renderHook(() => useAuth(), { wrapper });
         await waitFor(() => expect(result.current.loading).toBe(false));
 
         expect(result.current.hasRole('client')).toBe(true);
@@ -82,7 +86,7 @@ describe('useAuth Hook', () => {
     });
 
     it('should handle registration success', async () => {
-        const { result } = renderHook(() => useAuth());
+        const { result } = renderHook(() => useAuth(), { wrapper });
 
         // Mock register response
         mockSecureFetch.mockResolvedValue({
