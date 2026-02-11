@@ -1,6 +1,7 @@
 import { connectDB } from "@/lib/mongodb";
 import Client from "../../models/Client";
 import { NextResponse } from "next/server";
+import { createClientSchema, validateInput } from "@/lib/validations";
 
 // GET - List clients for a business
 export async function GET(req) {
@@ -101,6 +102,15 @@ export async function POST(req) {
     try {
         const body = await req.json();
 
+        // Walidacja przez Zod
+        const validation = validateInput(createClientSchema, body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: validation.error },
+                { status: 400 }
+            );
+        }
+
         const {
             businessId,
             firstName,
@@ -125,22 +135,7 @@ export async function POST(req) {
             consent,
             tags,
             notes
-        } = body;
-
-        // Validate required fields
-        if (!businessId) {
-            return NextResponse.json(
-                { error: "Brak businessId" },
-                { status: 400 }
-            );
-        }
-
-        if (!firstName || !lastName) {
-            return NextResponse.json(
-                { error: "Imię i nazwisko są wymagane" },
-                { status: 400 }
-            );
-        }
+        } = validation.data;
 
         await connectDB();
 

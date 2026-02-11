@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { csrfMiddleware } from "@/lib/csrf";
+import { adminLoginSchema, validateInput } from "@/lib/validations";
 
 export async function POST(req) {
     // Strict rate limiting for admin login (5 attempts per 15 min)
@@ -23,16 +24,14 @@ export async function POST(req) {
 
     try {
         const body = await req.json();
-        const { email, password, pin } = body;
 
-        // Walidacja podstawowa
-        if (!email || !password || !pin) {
-            return NextResponse.json({ error: "Email, hasło i PIN są wymagane" }, { status: 400 });
+        // Walidacja przez Zod
+        const validation = validateInput(adminLoginSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        if (!/^\d{6}$/.test(pin)) {
-            return NextResponse.json({ error: "PIN musi składać się z 6 cyfr" }, { status: 400 });
-        }
+        const { email, password, pin } = validation.data;
 
         await connectDB();
 

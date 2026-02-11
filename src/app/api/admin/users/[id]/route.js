@@ -4,6 +4,7 @@ import User from '@/app/models/User';
 import Business from '@/app/models/Business';
 import Reservation from '@/app/models/Reservation';
 import { sendEmail } from '@/lib/mail';
+import { adminUserUpdateSchema, validateInput } from '@/lib/validations';
 
 export async function GET(request, { params }) {
     try {
@@ -80,6 +81,12 @@ export async function PUT(request, { params }) {
         const { id } = await params;
         const body = await request.json();
 
+        // Walidacja przez Zod
+        const validation = validateInput(adminUserUpdateSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
         // 1. Get Admin Info from Token directly (for logging)
         const token = request.cookies.get('adminToken')?.value;
         let adminUser = null;
@@ -100,24 +107,21 @@ export async function PUT(request, { params }) {
         }
 
         // 3. Update Fields (Partial Updates)
-        const { firstName, lastName, email, phone, birthDate, isActive, adminRole, forcePasswordReset, newPassword, blockReason, invalidateSessions } = body;
+        const { firstName, lastName, email, phone, birthDate, isActive, adminRole, forcePasswordReset, newPassword, blockReason, invalidateSessions } = validation.data;
 
         const changes = [];
 
         if (firstName !== undefined) {
-            if (!firstName.trim()) return NextResponse.json({ error: 'First name cannot be empty' }, { status: 400 });
             if (user.firstName !== firstName) changes.push(`firstName: ${user.firstName} -> ${firstName}`);
             user.firstName = firstName;
         }
 
         if (lastName !== undefined) {
-            if (!lastName.trim()) return NextResponse.json({ error: 'Last name cannot be empty' }, { status: 400 });
             if (user.lastName !== lastName) changes.push(`lastName: ${user.lastName} -> ${lastName}`);
             user.lastName = lastName;
         }
 
         if (email !== undefined) {
-            if (!email.includes('@')) return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
 
             if (email !== user.email) {
                 const exists = await User.findOne({ email });

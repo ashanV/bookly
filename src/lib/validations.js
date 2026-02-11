@@ -121,6 +121,67 @@ export const contactSchema = z.object({
 });
 
 // ============================================
+// Admin Schemas
+// ============================================
+
+export const adminLoginSchema = z.object({
+    email: emailSchema,
+    password: z.string().min(1, 'Hasło jest wymagane'),
+    pin: z.string().regex(/^\d{6}$/, 'PIN musi składać się z 6 cyfr'),
+});
+
+export const adminRoleSchema = z.object({
+    email: emailSchema,
+    role: z.enum(['admin', 'moderator', 'developer'], {
+        errorMap: () => ({ message: 'Nieprawidłowa rola' }),
+    }),
+});
+
+export const adminUserUpdateSchema = z.object({
+    firstName: z.string().min(1, 'Imię nie może być puste').optional(),
+    lastName: z.string().min(1, 'Nazwisko nie może być puste').optional(),
+    email: emailSchema.optional(),
+    phone: phoneSchema,
+    birthDate: z.string().optional(),
+    isActive: z.boolean().optional(),
+    adminRole: z.string().optional(),
+    forcePasswordReset: z.boolean().optional(),
+    newPassword: z.string().min(6, 'Hasło musi mieć minimum 6 znaków').optional(),
+    blockReason: z.string().optional(),
+    invalidateSessions: z.boolean().optional(),
+});
+
+// ============================================
+// Client Schema
+// ============================================
+
+export const createClientSchema = z.object({
+    businessId: z.string().min(1, 'ID biznesu jest wymagane'),
+    firstName: z.string().min(1, 'Imię jest wymagane'),
+    lastName: z.string().min(1, 'Nazwisko jest wymagane'),
+    email: z.string().email('Nieprawidłowy format email').optional().or(z.literal('')),
+    phone: z.string().optional().or(z.literal('')),
+    phonePrefix: z.string().optional(),
+    birthDate: z.string().optional().or(z.literal('')),
+    birthYear: z.string().optional().or(z.literal('')),
+    gender: z.string().optional().or(z.literal('')),
+    pronouns: z.string().optional().or(z.literal('')),
+    referralSource: z.string().optional(),
+    referredBy: z.string().optional().or(z.literal('')),
+    preferredLanguage: z.string().optional().or(z.literal('')),
+    occupation: z.string().optional().or(z.literal('')),
+    country: z.string().optional().or(z.literal('')),
+    additionalEmail: z.string().optional().or(z.literal('')),
+    additionalPhone: z.string().optional().or(z.literal('')),
+    additionalPhonePrefix: z.string().optional(),
+    addresses: z.array(z.any()).optional(),
+    emergencyContacts: z.array(z.any()).optional(),
+    consent: z.any().optional(),
+    tags: z.array(z.string()).optional(),
+    notes: z.string().optional().or(z.literal('')),
+});
+
+// ============================================
 // Business Update Schema
 // ============================================
 

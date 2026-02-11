@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { csrfMiddleware } from "@/lib/csrf";
 import { sendEmail } from "@/lib/mail";
+import { adminRoleSchema, validateInput } from "@/lib/validations";
 import { ROLE_PERMISSIONS, generatePin } from "@/lib/adminPermissions";
 
 // GET - List all admin users
@@ -53,15 +54,14 @@ export async function POST(req) {
         }
 
         const body = await req.json();
-        const { email, role } = body;
 
-        if (!email || !role) {
-            return NextResponse.json({ error: "Email i rola są wymagane" }, { status: 400 });
+        // Walidacja przez Zod
+        const validation = validateInput(adminRoleSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        if (!['admin', 'moderator', 'developer'].includes(role)) {
-            return NextResponse.json({ error: "Nieprawidłowa rola" }, { status: 400 });
-        }
+        const { email, role } = validation.data;
 
         await connectDB();
 

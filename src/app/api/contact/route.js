@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { csrfMiddleware } from "@/lib/csrf";
+import { contactSchema, validateInput } from "@/lib/validations";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -20,6 +21,16 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
+
+    // Walidacja przez Zod
+    const validation = validateInput(contactSchema, body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
     const {
       name,
       email,
@@ -28,24 +39,7 @@ export async function POST(request) {
       businessType,
       subject,
       message
-    } = body;
-
-    // Walidacja wymaganych pól
-    if (!name || !email || !subject || !message) {
-      return NextResponse.json(
-        { error: "Pola: imię i nazwisko, email, temat i wiadomość są wymagane." },
-        { status: 400 }
-      );
-    }
-
-    // Walidacja formatu email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Podaj prawidłowy adres email." },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Przygotowanie treści emaila
     const emailContent = `
