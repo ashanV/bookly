@@ -3,89 +3,94 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { DayPicker } from 'react-day-picker';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, addWeeks, startOfWeek } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import DailyCalendar from '@/components/dashboard/calendar/DailyCalendar';
 import {
-  Calendar as CalendarIcon,
-  Clock,
-  User,
-  Phone,
-  Mail,
   ChevronLeft,
   ChevronRight,
   Settings,
-  LogOut,
-  ArrowLeft,
-  Building2,
   RefreshCw,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Cloud,
+  Plus,
+  Calendar,
+  SlidersHorizontal,
+  ChevronDown,
+  X,
+  Check,
+  User as UserIcon,
+  RotateCcw,
+  LayoutList,
+  CalendarDays,
+  CalendarRange
 } from 'lucide-react';
+import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
 function CalendarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading, isAuthenticated, logout } = useAuth('/business/auth');
+  const { user, loading, isAuthenticated } = useAuth('/business/auth');
+
+  // State
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [reservations, setReservations] = useState([]);
-  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
+  const [viewType, setViewType] = useState('Dzień');
 
+  // Authentication Check
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/business/auth');
     }
   }, [loading, isAuthenticated, router]);
 
+  // Initial Data Fetch
   useEffect(() => {
     if (user && user.role === 'business') {
+      fetchBusinessData();
       fetchReservations();
-      checkGoogleCalendarConnection();
     }
   }, [user, currentMonth]);
 
-  useEffect(() => {
-    const success = searchParams?.get('success');
-    const error = searchParams?.get('error');
-
-    if (success === 'connected') {
-      setNotification({ type: 'success', message: 'Pomyślnie połączono z Google Calendar!' });
-      checkGoogleCalendarConnection();
-      // Usunięcie parametru z URL
-      router.replace('/business/dashboard/calendar');
-    } else if (error) {
-      const errorMessages = {
-        auth_failed: 'Autoryzacja nie powiodła się',
-        callback_failed: 'Błąd podczas połączenia z Google Calendar',
-        business_not_found: 'Nie znaleziono biznesu'
-      };
-      setNotification({
-        type: 'error',
-        message: errorMessages[error] || 'Wystąpił błąd'
-      });
-      // Usunięcie parametru z URL
-      router.replace('/business/dashboard/calendar');
+  // Fetch Employees
+  const fetchBusinessData = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`/api/businesses/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.business?.employees) {
+          setEmployees(data.business.employees);
+          // Initialize selection with all employees
+          setSelectedEmployeeIds(data.business.employees.map(e => e._id));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch employees:', error);
     }
-  }, [searchParams, router]);
+  };
 
-  // Auto-ukrywanie powiadomienia po 5 sekundach
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
+  const toggleEmployee = (id) => {
+    setSelectedEmployeeIds(prev =>
+      prev.includes(id) ? prev.filter(eId => eId !== id) : [...prev, id]
+    );
+  };
 
+  const selectAll = () => {
+    setSelectedEmployeeIds(employees.map(e => e._id));
+  };
+
+  const clearAll = () => {
+    setSelectedEmployeeIds([]);
+  };
+
+  // Fetch Reservations
   const fetchReservations = async () => {
     try {
       setIsLoading(true);
@@ -94,10 +99,7 @@ function CalendarContent() {
 
       const response = await fetch(
         `/api/reservations/list?startDate=${format(start, 'yyyy-MM-dd')}&endDate=${format(end, 'yyyy-MM-dd')}`,
-        {
-          credentials: 'include',
-          method: 'GET'
-        }
+        { credentials: 'include' }
       );
 
       if (response.ok) {
@@ -105,442 +107,340 @@ function CalendarContent() {
         setReservations(data.reservations || []);
       }
     } catch (error) {
-      console.error('Błąd pobierania rezerwacji:', error);
+      console.error('Error fetching reservations:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const checkGoogleCalendarConnection = async () => {
-    try {
-      const response = await fetch('/api/google-calendar/status', {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGoogleCalendarConnected(data.connected || false);
-      }
-    } catch (error) {
-      console.error('Błąd sprawdzania połączenia z Google Calendar:', error);
-    }
+  const handleRefresh = () => {
+    fetchReservations();
   };
 
-  const handleGoogleCalendarConnect = async () => {
-    try {
-      window.location.href = '/api/google-calendar/auth';
-    } catch (error) {
-      console.error('Błąd połączenia z Google Calendar:', error);
-    }
+  const jumpTo = (weeks) => {
+    const newDate = addWeeks(new Date(), weeks);
+    setSelectedDate(newDate);
+    setCurrentMonth(newDate);
+    setIsDatePickerOpen(false);
   };
 
-  const handleSyncToGoogleCalendar = async () => {
-    try {
-      setIsSyncing(true);
-      const response = await fetch('/api/google-calendar/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Synchronizacja zakończona! Utworzono ${data.created || 0} wydarzeń.`);
-        fetchReservations();
-        checkGoogleCalendarConnection();
-      } else {
-        const error = await response.json();
-        alert(`Błąd synchronizacji: ${error.error || 'Nieznany błąd'}`);
-      }
-    } catch (error) {
-      console.error('Błąd synchronizacji:', error);
-      alert('Wystąpił błąd podczas synchronizacji');
-    } finally {
-      setIsSyncing(false);
-    }
+  const handleResetView = () => {
+    setSelectedDate(new Date());
+    setViewType('Dzień');
+    // Optional: Reset other filters if needed
   };
 
-  const getReservationsForDate = (date) => {
-    return reservations.filter(reservation => {
-      const reservationDate = new Date(reservation.date);
-      return isSameDay(reservationDate, date);
-    });
+  const handleViewChange = (type) => {
+    setViewType(type);
+    setIsViewDropdownOpen(false);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-700 border-green-300';
-      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
-      case 'cancelled': return 'bg-red-100 text-red-700 border-red-300';
-      case 'completed': return 'bg-blue-100 text-blue-700 border-blue-300';
-      default: return 'bg-gray-100 text-gray-700 border-gray-300';
-    }
-  };
+  if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
+  if (!isAuthenticated) return null;
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'confirmed': return 'Potwierdzona';
-      case 'pending': return 'Oczekująca';
-      case 'cancelled': return 'Anulowana';
-      case 'completed': return 'Zakończona';
-      default: return 'Nieznany';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'confirmed': return <CheckCircle size={16} />;
-      case 'pending': return <AlertCircle size={16} />;
-      case 'cancelled': return <XCircle size={16} />;
-      case 'completed': return <CheckCircle size={16} />;
-      default: return null;
-    }
-  };
-
-  const handlePreviousMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/business/auth');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Ładowanie kalendarza...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || user?.role !== 'business') {
-    return null;
-  }
-
-  const selectedDateReservations = getReservationsForDate(selectedDate);
+  const todayReservations = reservations.filter(r => isSameDay(new Date(r.date), selectedDate));
+  const filteredEmployees = employees.filter(e => selectedEmployeeIds.includes(e._id));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => window.history.back()}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <CalendarIcon className="text-white" size={24} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  Kalendarz
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Zarządzaj rezerwacjami
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {googleCalendarConnected ? (
-                <button
-                  onClick={handleSyncToGoogleCalendar}
-                  disabled={isSyncing}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  < RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
-                  <span className="hidden sm:inline">{isSyncing ? 'Synchronizowanie...' : 'Synchronizuj z Google'}</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleGoogleCalendarConnect}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                >
-                  <Cloud size={18} />
-                  <span className="hidden sm:inline">Połącz z Google Calendar</span>
-                </button>
-              )}
-              <button
-                onClick={() => router.push('/business/dashboard/settings')}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <Settings size={20} />
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <LogOut size={18} />
-                <span className="hidden sm:inline">Wyloguj</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col h-screen bg-white font-sans text-gray-900" onClick={() => { setIsDatePickerOpen(false); setIsTeamDropdownOpen(false); setIsViewDropdownOpen(false); }}>
+      {/* Top Toolbar */}
+      <header className="h-16 px-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 z-50 relative" onClick={e => e.stopPropagation()}>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Powiadomienia */}
-        {notification && (
-          <div className={`mb-6 p-4 rounded-xl shadow-lg ${notification.type === 'success'
-            ? 'bg-green-50 border-2 border-green-200 text-green-800'
-            : 'bg-red-50 border-2 border-red-200 text-red-800'
-            }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {notification.type === 'success' ? (
-                  <CheckCircle size={20} className="text-green-600" />
-                ) : (
-                  <XCircle size={20} className="text-red-600" />
-                )}
-                <span className="font-medium">{notification.message}</span>
-              </div>
-              <button
-                onClick={() => setNotification(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XCircle size={20} />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Left: Navigation Controls */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSelectedDate(new Date())}
+            className="px-4 py-1.5 bg-white border border-gray-300 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            Dzisiaj
+          </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Kalendarz */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                {format(currentMonth, 'MMMM yyyy', { locale: pl })}
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePreviousMonth}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-all"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  onClick={() => setCurrentMonth(new Date())}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
-                >
-                  Dzisiaj
-                </button>
-                <button
-                  onClick={handleNextMonth}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-all"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            </div>
-
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              locale={pl}
-              className="w-full"
-              modifiers={{
-                hasReservations: reservations.map(r => new Date(r.date))
+          <div className="flex items-center bg-white border border-gray-300 rounded-full px-1 py-1 shadow-sm relative">
+            <button
+              onClick={() => {
+                if (viewType === 'Miesiąc') {
+                  setSelectedDate(subDays(selectedDate, 30)); // Rough month jump, or use subMonths if available. 
+                  // Ideally use subMonths from date-fns but need to import it. 
+                  // Let's check imports. Just subDays(30) is risky. 
+                  // Actually, I can use addWeeks(..., -4) or improved logic.
+                  // Wait, I should import addMonths/subMonths.
+                  // For now let's reuse subDays if I don't want to re-import.
+                  // But date-fns is powerful.
+                  // Let's stick to subDays(28) or similar? No.
+                  // I'll update the imports first in next step if needed. 
+                  // Or I assume subDays logic is temporary.
+                  // Actually, let's use the native setMonth.
+                  const d = new Date(selectedDate);
+                  d.setMonth(d.getMonth() - 1);
+                  setSelectedDate(d);
+                  return;
+                }
+                let diff = 1;
+                if (viewType === '3 dni') diff = 3;
+                if (viewType === 'Tydzień') diff = 7;
+                setSelectedDate(subDays(selectedDate, diff));
               }}
-              modifiersClassNames={{
-                hasReservations: 'has-reservations'
+              className="p-1 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div className="h-4 w-[1px] bg-gray-300 mx-1"></div>
+
+            {/* Date Trigger for Modal */}
+            <button
+              onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+              className="px-3 text-sm font-semibold text-gray-900 min-w-[120px] text-center hover:bg-gray-50 rounded-md transition-colors"
+            >
+              {(() => {
+                if (viewType === '3 dni') {
+                  return `${format(selectedDate, 'd MMM', { locale: pl })} - ${format(addDays(selectedDate, 2), 'd MMM, yyyy', { locale: pl })}`;
+                }
+                if (viewType === 'Tydzień') {
+                  const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
+                  return `${format(start, 'd MMM', { locale: pl })} - ${format(addDays(start, 6), 'd MMM, yyyy', { locale: pl })}`;
+                }
+                if (viewType === 'Miesiąc') {
+                  return format(selectedDate, 'MMMM yyyy', { locale: pl });
+                }
+                return format(selectedDate, 'EEE, d MMM', { locale: pl });
+              })()}
+            </button>
+
+            <div className="h-4 w-[1px] bg-gray-300 mx-1"></div>
+            <button
+              onClick={() => {
+                if (viewType === 'Miesiąc') {
+                  const d = new Date(selectedDate);
+                  d.setMonth(d.getMonth() + 1);
+                  setSelectedDate(d);
+                  return;
+                }
+                let diff = 1;
+                if (viewType === '3 dni') diff = 3;
+                if (viewType === 'Tydzień') diff = 7;
+                setSelectedDate(addDays(selectedDate, diff));
               }}
-              classNames={{
-                months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                month: 'space-y-4',
-                caption: 'flex justify-center pt-1 relative items-center',
-                caption_label: 'text-sm font-medium',
-                nav: 'space-x-1 flex items-center',
-                nav_button: 'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-                nav_button_previous: 'absolute left-1',
-                nav_button_next: 'absolute right-1',
-                table: 'w-full border-collapse space-y-1',
-                head_row: 'flex',
-                head_cell: 'text-gray-500 rounded-md w-9 font-normal text-[0.8rem]',
-                row: 'flex w-full mt-2',
-                cell: 'text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                day: 'h-9 w-9 p-0 font-normal aria-selected:opacity-100',
-                day_selected: 'bg-purple-600 text-white hover:bg-purple-600 hover:text-white focus:bg-purple-600 focus:text-white',
-                day_today: 'bg-purple-100 text-purple-900 font-bold',
-                day_outside: 'text-gray-400 opacity-50',
-                day_disabled: 'text-gray-300',
-                day_range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                day_hidden: 'invisible',
-              }}
-            />
+              className="p-1 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
 
-            <style jsx global>{`
-              .has-reservations::after {
-                content: '';
-                position: absolute;
-                bottom: 2px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 4px;
-                height: 4px;
-                background-color: #9333ea;
-                border-radius: 50%;
-              }
-            `}</style>
-          </div>
+            {/* Date Picker Popover */}
+            {isDatePickerOpen && (
+              <div className="absolute top-full left-0 mt-4 bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 w-[750px] z-[100] animate-in fade-in zoom-in-95 duration-200 cursor-auto" onClick={e => e.stopPropagation()}>
+                <DayPicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setIsDatePickerOpen(false);
+                    }
+                  }}
+                  month={currentMonth}
+                  onMonthChange={setCurrentMonth}
+                  numberOfMonths={2}
+                  pagedNavigation
+                  locale={pl}
+                  className="custom-fresha-picker"
+                  classNames={{
+                    months: "flex gap-12",
+                    month: "space-y-4",
+                    caption: "flex justify-center pt-1 relative items-center mb-4",
+                    caption_label: "text-lg font-bold text-gray-900 capitalize",
+                    nav: "space-x-1 flex items-center",
+                    nav_button: "h-8 w-8 bg-transparent hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors",
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex",
+                    head_cell: "text-gray-400 rounded-md w-10 font-normal text-[0.8rem] capitalize",
+                    row: "flex w-full mt-2",
+                    cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-purple-600 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 hover:bg-gray-100 rounded-full transition-colors",
+                    day_selected: "bg-purple-600 text-white hover:bg-purple-700 hover:text-white focus:bg-purple-600 focus:text-white",
+                    day_today: "bg-gray-100 text-gray-900 font-bold",
+                  }}
+                />
 
-          {/* Lista rezerwacji */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: pl })}
-              </h2>
-              <p className="text-sm text-gray-500">
-                {selectedDateReservations.length} {selectedDateReservations.length === 1 ? 'rezerwacja' : 'rezerwacji'}
-              </p>
-            </div>
-
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : selectedDateReservations.length === 0 ? (
-              <div className="text-center py-8">
-                <CalendarIcon className="mx-auto text-gray-300 mb-2" size={48} />
-                <p className="text-gray-500">Brak rezerwacji na ten dzień</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {selectedDateReservations
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                  .map((reservation) => (
-                    <div
-                      key={reservation._id}
-                      onClick={() => setSelectedReservation(reservation)}
-                      className={`p-4 rounded-xl border-2 cursor-pointer hover:shadow-md transition-all ${getStatusColor(reservation.status)}`}
+                {/* Footer Quick Actions */}
+                <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-gray-100">
+                  {[1, 2, 3, 4, 5].map(week => (
+                    <button
+                      key={week}
+                      onClick={() => jumpTo(week)}
+                      className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(reservation.status)}
-                          <span className="text-xs font-medium">
-                            {getStatusText(reservation.status)}
-                          </span>
-                        </div>
-                        {reservation.googleCalendarSynced && (
-                          <Cloud size={14} className="text-blue-600" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock size={16} />
-                        <span className="font-semibold">{reservation.time}</span>
-                        <span className="text-xs text-gray-600">({reservation.duration} min)</span>
-                      </div>
-                      <h3 className="font-bold text-gray-900 mb-1">{reservation.service}</h3>
-                      <div className="flex items-center gap-2 mb-1">
-                        <User size={14} />
-                        <span className="text-sm">{reservation.clientName}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Phone size={14} />
-                        <span className="text-sm">{reservation.clientPhone}</span>
-                      </div>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-300">
-                        <span className="text-sm font-semibold">{reservation.price} zł</span>
-                      </div>
-                    </div>
+                      Za {week} {week === 1 ? 'tydzień' : week < 5 ? 'tygodnie' : 'tygodni'}
+                    </button>
                   ))}
+                  <button className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center gap-2">
+                    Więcej <ChevronDown size={14} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Employee Filter Dropdown */}
+          <div className="flex items-center gap-2 ml-4 relative" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setIsTeamDropdownOpen(!isTeamDropdownOpen)}
+              className={`flex items-center gap-2 px-4 py-1.5 bg-white border ${isTeamDropdownOpen ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-300'} rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm`}
+            >
+              {selectedEmployeeIds.length === employees.length ? (
+                <>Cały zespół <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} /></>
+              ) : selectedEmployeeIds.length === 1 ? (
+                (() => {
+                  const emp = employees.find(e => e._id === selectedEmployeeIds[0]);
+                  return (
+                    <>
+                      <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                        {emp?.avatar && (emp.avatar.startsWith('http') || emp.avatar.startsWith('/')) ? (
+                          <img src={emp.avatar} alt={emp.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{emp?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <span>{emp?.name}</span>
+                      <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} />
+                    </>
+                  );
+                })()
+              ) : (
+                <>{selectedEmployeeIds.length} pracowników <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} /></>
+              )}
+            </button>
+
+            {isTeamDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-2 space-y-1">
+                  <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                    <UserIcon size={16} /> Pracownicy na zmianie
+                  </button>
+                  <button
+                    onClick={selectAll}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 ${selectedEmployeeIds.length === employees.length ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    <UserIcon size={16} /> Cały zespół
+                  </button>
+                  <div className="flex items-center gap-3 px-3 py-2 mt-2">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">
+                      {user?.firstName?.[0] || 'T'}{user?.lastName?.[0] || 'Y'}
+                    </div>
+                    <span className="text-sm font-medium">{user?.firstName || 'Ty'} (Ty)</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 p-2">
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-sm font-bold text-gray-900">Pracownicy</span>
+                    <button onClick={clearAll} className="text-xs font-semibold text-purple-600 hover:text-purple-700">Wyczyść wszystko</button>
+                  </div>
+                  <div className="space-y-1 mt-1 max-h-60 overflow-y-auto">
+                    {employees.map(emp => (
+                      <div
+                        key={emp._id}
+                        onClick={() => { setSelectedEmployeeIds([emp._id]); setIsTeamDropdownOpen(false); }}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer group"
+                      >
+                        <div
+                          className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${selectedEmployeeIds.includes(emp._id) ? 'bg-purple-600' : 'bg-gray-200'}`}
+                          onClick={(e) => { e.stopPropagation(); toggleEmployee(emp._id); }}
+                        >
+                          {selectedEmployeeIds.includes(emp._id) && <Check size={14} className="text-white" />}
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs overflow-hidden">
+                          {emp.avatar && (emp.avatar.startsWith('http') || emp.avatar.startsWith('/')) ? (
+                            <img src={emp.avatar} alt={emp.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{emp.name ? emp.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?'}</span>
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-700 flex-1">{emp.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <button className="p-2 border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600 shadow-sm ml-2">
+            <SlidersHorizontal size={18} />
+          </button>
         </div>
 
-        {/* Modal szczegółów rezerwacji */}
-        {selectedReservation && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedReservation(null)}>
-            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">Szczegóły rezerwacji</h3>
-                <button
-                  onClick={() => setSelectedReservation(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle size={24} />
-                </button>
-              </div>
+        {/* Right: Actions */}
+        <div className="flex items-center gap-3">
+          <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" onClick={() => router.push('/business/dashboard/settings')}>
+            <Settings size={20} />
+          </button>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Usługa</label>
-                  <p className="text-lg font-semibold text-gray-900">{selectedReservation.service}</p>
-                </div>
+          <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+            <Calendar size={20} />
+          </button>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Data</label>
-                    <p className="text-gray-900">{format(new Date(selectedReservation.date), 'd MMMM yyyy', { locale: pl })}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Godzina</label>
-                    <p className="text-gray-900">{selectedReservation.time}</p>
-                  </div>
-                </div>
+          <button className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-300 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm ml-2 hidden">
+            {/* Hidden original Day button */}
+          </button>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Klient</label>
-                  <p className="text-gray-900">{selectedReservation.clientName}</p>
-                </div>
+          {/* Grouped Refresh and View Dropdown */}
+          <div className="flex items-center bg-white border border-gray-300 rounded-full shadow-sm ml-2 relative" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={handleResetView}
+              className="p-2 hover:bg-gray-50 rounded-l-full border-r border-gray-300 text-gray-600 transition-colors"
+              title="Resetuj widok"
+            >
+              <RotateCcw size={18} />
+            </button>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Email</label>
-                    <p className="text-gray-900">{selectedReservation.clientEmail}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Telefon</label>
-                    <p className="text-gray-900">{selectedReservation.clientPhone}</p>
-                  </div>
-                </div>
+            <div className="relative">
+              <button
+                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+                className="flex items-center gap-2 px-4 py-1.5 hover:bg-gray-50 rounded-r-full text-sm font-semibold text-gray-700 transition-colors min-w-[90px] justify-between"
+              >
+                {viewType} <ChevronDown size={14} className={`transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Cena</label>
-                  <p className="text-2xl font-bold text-purple-600">{selectedReservation.price} zł</p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getStatusIcon(selectedReservation.status)}
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedReservation.status)}`}>
-                      {getStatusText(selectedReservation.status)}
-                    </span>
+              {isViewDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-1">
+                    <button onClick={() => handleViewChange('Dzień')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <LayoutList size={16} /> Dzień
+                    </button>
+                    <button onClick={() => handleViewChange('3 dni')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <CalendarDays size={16} /> 3 dni
+                    </button>
+                    <button onClick={() => handleViewChange('Tydzień')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <CalendarRange size={16} /> Tydzień
+                    </button>
+                    <button onClick={() => handleViewChange('Miesiąc')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <Calendar size={16} /> Miesiąc
+                    </button>
                   </div>
                 </div>
-
-                {selectedReservation.notes && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Notatki</label>
-                    <p className="text-gray-900">{selectedReservation.notes}</p>
-                  </div>
-                )}
-
-                {selectedReservation.googleCalendarSynced && (
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                    <Cloud size={18} className="text-blue-600" />
-                    <span className="text-sm text-blue-700">Zsynchronizowane z Google Calendar</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
-        )}
+
+          <button className="flex items-center gap-2 px-5 py-2 bg-black text-white rounded-full text-sm font-semibold hover:bg-gray-800 transition-colors shadow-sm ml-2">
+            Dodaj <ChevronDown size={14} />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Calendar Area - Clean and Full Width */}
+      <div className="flex-1 overflow-hidden relative bg-white">
+        <DailyCalendar
+          date={selectedDate}
+          employees={filteredEmployees}
+          reservations={todayReservations}
+          onReservationClick={(res) => console.log('Reservation clicked:', res)}
+          onEmptySlotClick={() => { }}
+          viewType={viewType}
+          onViewChange={handleViewChange}
+          onEmployeeFilter={(employeeId) => setSelectedEmployeeIds([employeeId])}
+        />
       </div>
     </div>
   );
@@ -548,16 +448,8 @@ function CalendarContent() {
 
 export default function CalendarPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Ładowanie kalendarza...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<div>Loading...</div>}>
       <CalendarContent />
     </Suspense>
   );
 }
-
