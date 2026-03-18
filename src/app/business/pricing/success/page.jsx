@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Loader2, ArrowRight, Calendar, Zap, AlertCircle } from 'lucide-react';
 
-export default function SubscriptionSuccessPage() {
+function SuccessPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
@@ -173,5 +173,20 @@ export default function SubscriptionSuccessPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+export default function SubscriptionSuccessPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Ładowanie...</p>
+                </div>
+            </div>
+        }>
+            <SuccessPageContent />
+        </Suspense>
     );
 }
