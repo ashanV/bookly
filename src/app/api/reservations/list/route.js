@@ -103,7 +103,11 @@ export async function GET(req) {
     // Dodanie informacji o pracowniku do każdej rezerwacji
     const reservationsWithEmployee = reservations.map(reservation => {
       const employeeInfo = reservation.employeeId
-        ? employees.find(emp => emp.id?.toString() === reservation.employeeId?.toString() || emp.id === parseInt(reservation.employeeId))
+        ? employees.find(emp => 
+            emp._id?.toString() === reservation.employeeId?.toString() ||
+            emp.id?.toString() === reservation.employeeId?.toString() || 
+            emp.id === parseInt(reservation.employeeId)
+          )
         : null;
 
       return {

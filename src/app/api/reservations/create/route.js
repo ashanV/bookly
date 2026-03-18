@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { csrfMiddleware } from "@/lib/csrf";
 import { createReservationSchema, validateInput } from "@/lib/validations";
 import { generateReferenceNumber } from "@/lib/generateReferenceNumber";
+import { format, addMinutes, parseISO } from "date-fns";
 
 export async function POST(req) {
   try {
@@ -110,7 +111,7 @@ export async function POST(req) {
 
     // Sprawdzenie, czy pracownik istnieje (jeśli podano)
     if (employeeId) {
-      const employee = business.employees?.find(emp => emp.id === parseInt(employeeId));
+      const employee = business.employees?.find(emp => emp._id.toString() === employeeId.toString());
       if (!employee) {
         return NextResponse.json(
           { error: "Pracownik nie znaleziony" },
@@ -121,6 +122,41 @@ export async function POST(req) {
 
     // Generowanie unikalnego numeru referencyjnego
     const referenceNumber = await generateReferenceNumber(Reservation);
+
+    // Sprawdzenie nachodzenia na siebie rezerwacji
+    if (employeeId) {
+      const selectedDate = new Date(date);
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingReservations = await Reservation.find({
+        businessId,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        status: { $in: ['pending', 'confirmed'] },
+        employeeId: employeeId.toString()
+      }).lean();
+
+      // Utworzenie dat Date() z połączonym czasem aby wyliczyć nakładanie
+      const newStart = parseISO(`${format(selectedDate, 'yyyy-MM-dd')}T${time}`);
+      const newEnd = addMinutes(newStart, parseInt(duration));
+
+      const hasOverlap = existingReservations.some(res => {
+        const resStart = parseISO(`${format(new Date(res.date), 'yyyy-MM-dd')}T${res.time}`);
+        const resEnd = addMinutes(resStart, res.duration);
+        
+        // Warunek kolizji: StartA < EndB ORAZ EndA > StartB
+        return newStart < resEnd && newEnd > resStart;
+      });
+
+      if (hasOverlap) {
+        return NextResponse.json(
+          { error: "Wybrany termin u tego pracownika jest już częściowo lub w całości zajęty." },
+          { status: 409 }
+        );
+      }
+    }
 
     // Utworzenie rezerwacji
     const reservation = new Reservation({

@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, addWeeks, startOfWeek } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { toast, Toaster } from 'react-hot-toast';
 import DailyCalendar from '@/components/dashboard/calendar/DailyCalendar';
+import AddVisitSidebar from '@/components/dashboard/calendar/AddVisitSidebar';
+import ReservationDetailsSidebar from '@/components/dashboard/calendar/ReservationDetailsSidebar';
 import {
   ChevronLeft,
   ChevronRight,
@@ -42,6 +45,21 @@ function CalendarContent() {
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [viewType, setViewType] = useState('Dzień');
+  const [services, setServices] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [business, setBusiness] = useState(null);
+  
+  // Sidebar states
+  const [isAddVisitSidebarOpen, setIsAddVisitSidebarOpen] = useState(false);
+  const [isReservationDetailsOpen, setIsReservationDetailsOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [draftVisit, setDraftVisit] = useState({
+    date: null,
+    employeeId: null,
+    client: null,
+    services: []
+  });
 
   // Authentication Check
   useEffect(() => {
@@ -55,6 +73,7 @@ function CalendarContent() {
     if (user && user.role === 'business') {
       fetchBusinessData();
       fetchReservations();
+      fetchClients();
     }
   }, [user, currentMonth]);
 
@@ -65,10 +84,17 @@ function CalendarContent() {
       const response = await fetch(`/api/businesses/${user.id}`);
       if (response.ok) {
         const data = await response.json();
+        setBusiness(data.business);
         if (data.business?.employees) {
           setEmployees(data.business.employees);
           // Initialize selection with all employees
           setSelectedEmployeeIds(data.business.employees.map(e => e._id));
+        }
+        if (data.business?.services) {
+          setServices(data.business.services);
+        }
+        if (data.business?.categories) {
+          setCategories(data.business.categories);
         }
       }
     } catch (error) {
@@ -88,6 +114,20 @@ function CalendarContent() {
 
   const clearAll = () => {
     setSelectedEmployeeIds([]);
+  };
+
+  // Fetch Clients
+  const fetchClients = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`/api/clients?businessId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.clients || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch clients:', error);
+    }
   };
 
   // Fetch Reservations
@@ -135,6 +175,252 @@ function CalendarContent() {
     setIsViewDropdownOpen(false);
   };
 
+  const handleSaveVisit = async (overrideVisit) => {
+    const visitToSave = overrideVisit || draftVisit;
+    if (!visitToSave.services || visitToSave.services.length === 0) {
+        alert("Dodaj przynajmniej jedną usługę");
+        return;
+    }
+    
+    // Fallback if no client selected
+    const clientData = visitToSave.client || {
+        firstName: "Klient",
+        lastName: "Gość",
+        email: "brak@danych.pl",
+        phone: "000000000"
+    };
+
+    setIsLoading(true);
+
+    try {
+        if (visitToSave._id) {
+            // Edit mode
+            const service = visitToSave.services[0];
+            const startTime = new Date(visitToSave.date);
+            const res = await fetch('/api/reservations/update', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reservationId: visitToSave._id,
+                    service: service.name,
+                    date: startTime.toISOString(),
+                    time: format(startTime, 'HH:mm'),
+                    duration: service.totalDuration || service.duration,
+                    price: service.price,
+                    employeeId: service.employeeId || visitToSave.employeeId
+                })
+            });
+            if (!res.ok) {
+                let errorMessage = "Błąd podczas aktualizacji rezerwacji";
+                try {
+                    const errPayload = await res.json();
+                    errorMessage = errPayload.error || errorMessage;
+                } catch (parseError) {
+                    const textError = await res.text();
+                    errorMessage = textError || errorMessage;
+                }
+                throw new Error(errorMessage);
+            }
+        } else {
+            // Create mode
+            let currentStartTime = new Date(visitToSave.date);
+            
+            for (const service of visitToSave.services) {
+                const res = await fetch('/api/reservations/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        businessId: user.id,
+                        employeeId: service.employeeId || visitToSave.employeeId,
+                        service: service.name,
+                        serviceId: service._id, // if available
+                        date: currentStartTime.toISOString(),
+                        time: format(currentStartTime, 'HH:mm'),
+                        duration: service.totalDuration || service.duration,
+                        price: service.price,
+                        clientName: `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || 'Klient Gość',
+                        clientEmail: clientData.email || 'brak@danych.pl',
+                        clientPhone: clientData.phone || '000000000'
+                    })
+                });
+                
+                if (!res.ok) {
+                    let errorMessage = "Błąd podczas zapisywania nowej wizyty";
+                    try {
+                        const errPayload = await res.json();
+                        errorMessage = errPayload.error || errorMessage;
+                    } catch (parseError) {
+                        const textError = await res.text();
+                        errorMessage = textError || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                // Advance start time for the next service
+                currentStartTime.setMinutes(currentStartTime.getMinutes() + (service.totalDuration || service.duration));
+            }
+        }
+        
+        toast.success(visitToSave._id ? "Wizyta została zaktualizowana!" : "Nowa wizyta została zapisana!");
+        handleRefresh();
+        setIsAddVisitSidebarOpen(false);
+    } catch (error) {
+        console.error("Błąd zapisu wizyty:", error);
+        toast.error(error.message || "Wystąpił nieznany błąd podczas zapisywania wizyty");
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleReservationClick = (res) => {
+    // Open the new Reservation Details Sidebar instead of the edit form
+    setSelectedReservation(res);
+    setIsReservationDetailsOpen(true);
+  };
+
+  const handleEmptySlotClick = (date, employeeId, action) => {
+    if (action === 'visit') {
+        setDraftVisit({ date, employeeId, client: null, services: [] });
+        setIsAddVisitSidebarOpen(true);
+    }
+  };
+
+  const handleReservationResize = async (reservationId, newDuration) => {
+    // Find the reservation in current state
+    const reservation = reservations.find(r => r._id === reservationId);
+    if (!reservation) return;
+
+    // Optimistic update
+    setReservations(prev => prev.map(r => r._id === reservationId ? { ...r, duration: newDuration } : r));
+
+    try {
+        const res = await fetch('/api/reservations/update', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reservationId,
+                duration: newDuration
+            })
+        });
+        if (!res.ok) {
+            let errorMessage = "Błąd podczas zmiany czasu trwania";
+            try {
+                const errPayload = await res.json();
+                errorMessage = errPayload.error || errorMessage;
+            } catch (e) {}
+            // Revert optimistic update
+            setReservations(prev => prev.map(r => r._id === reservationId ? { ...r, duration: reservation.duration } : r));
+            toast.error(errorMessage);
+            return;
+        }
+        toast.success(`Czas trwania zmieniony na ${newDuration} min`);
+    } catch (error) {
+        // Revert optimistic update
+        setReservations(prev => prev.map(r => r._id === reservationId ? { ...r, duration: reservation.duration } : r));
+        toast.error("Błąd połączenia z serwerem");
+    }
+  };
+
+  const handleReservationDrop = async (reservationId, newTime, newEmployeeId) => {
+    const reservation = reservations.find(r => r._id === reservationId);
+    if (!reservation) return;
+
+    // Optimistic update
+    setReservations(prev => prev.map(r =>
+        r._id === reservationId
+            ? { ...r, time: newTime, employeeId: newEmployeeId }
+            : r
+    ));
+
+    try {
+        const res = await fetch('/api/reservations/update', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reservationId,
+                time: newTime,
+                employeeId: newEmployeeId
+            })
+        });
+        if (!res.ok) {
+            let errorMessage = "Błąd podczas przenoszenia rezerwacji";
+            try {
+                const errPayload = await res.json();
+                errorMessage = errPayload.error || errorMessage;
+            } catch (e) {}
+            // Revert
+            setReservations(prev => prev.map(r =>
+                r._id === reservationId
+                    ? { ...r, time: reservation.time, employeeId: reservation.employeeId }
+                    : r
+            ));
+            toast.error(errorMessage);
+            return;
+        }
+        const empName = employees.find(e => e._id === newEmployeeId)?.name;
+        toast.success(`Przeniesiono na ${newTime}${empName ? ` → ${empName}` : ''}`);
+    } catch (error) {
+        // Revert
+        setReservations(prev => prev.map(r =>
+            r._id === reservationId
+                ? { ...r, time: reservation.time, employeeId: reservation.employeeId }
+                : r
+        ));
+        toast.error("Błąd połączenia z serwerem");
+    }
+  };
+
+  const handleStatusChange = async (reservationId, newStatus) => {
+    const reservation = reservations.find(r => r._id === reservationId);
+    if (!reservation) return;
+
+    // Optimistic update
+    setReservations(prev => prev.map(r => 
+        r._id === reservationId ? { ...r, status: newStatus } : r
+    ));
+    if (selectedReservation?._id === reservationId) {
+        setSelectedReservation(prev => ({ ...prev, status: newStatus }));
+    }
+
+    try {
+        const res = await fetch('/api/reservations/update', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reservationId,
+                status: newStatus
+            })
+        });
+        
+        if (!res.ok) {
+            let errorMessage = "Błąd podczas zmiany statusu";
+            try {
+                const errPayload = await res.json();
+                errorMessage = errPayload.error || errorMessage;
+            } catch (e) {}
+            // Revert
+            setReservations(prev => prev.map(r => 
+                r._id === reservationId ? { ...r, status: reservation.status } : r
+            ));
+            if (selectedReservation?._id === reservationId) {
+                setSelectedReservation(prev => ({ ...prev, status: reservation.status }));
+            }
+            toast.error(errorMessage);
+            return;
+        }
+        toast.success("Zmieniono status rezerwacji");
+    } catch (error) {
+        // Revert
+        setReservations(prev => prev.map(r => 
+            r._id === reservationId ? { ...r, status: reservation.status } : r
+        ));
+        if (selectedReservation?._id === reservationId) {
+            setSelectedReservation(prev => ({ ...prev, status: reservation.status }));
+        }
+        toast.error("Błąd połączenia z serwerem");
+    }
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
   if (!isAuthenticated) return null;
 
@@ -143,6 +429,7 @@ function CalendarContent() {
 
   return (
     <div className="flex flex-col h-screen bg-white font-sans text-gray-900" onClick={() => { setIsDatePickerOpen(false); setIsTeamDropdownOpen(false); setIsViewDropdownOpen(false); }}>
+      <Toaster position="top-right" toastOptions={{ duration: 4000, style: { borderRadius: '12px', padding: '14px 20px', fontSize: '14px' } }} />
       {/* Top Toolbar */}
       <header className="h-16 px-4 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 z-50 relative" onClick={e => e.stopPropagation()}>
 
@@ -435,11 +722,51 @@ function CalendarContent() {
           date={selectedDate}
           employees={filteredEmployees}
           reservations={todayReservations}
-          onReservationClick={(res) => console.log('Reservation clicked:', res)}
-          onEmptySlotClick={() => { }}
+          draftVisit={isAddVisitSidebarOpen ? draftVisit : null}
+          onReservationClick={handleReservationClick}
+          onEmptySlotClick={handleEmptySlotClick}
           viewType={viewType}
           onViewChange={handleViewChange}
           onEmployeeFilter={(employeeId) => setSelectedEmployeeIds([employeeId])}
+          onReservationResize={handleReservationResize}
+          onReservationDrop={handleReservationDrop}
+        />
+        
+        {/* Add Visit Sidebar Overlay */}
+        {isAddVisitSidebarOpen && (
+            <div 
+                className="fixed inset-0 bg-black/20 z-[90] transition-opacity" 
+                onClick={() => setIsAddVisitSidebarOpen(false)}
+            />
+        )}
+        <AddVisitSidebar 
+            isOpen={isAddVisitSidebarOpen} 
+            onClose={() => setIsAddVisitSidebarOpen(false)}
+            services={services}
+            clients={clients}
+            categories={categories}
+            draftVisit={draftVisit}
+            setDraftVisit={setDraftVisit}
+            employees={employees}
+            reservations={reservations}
+            business={business}
+            onSave={handleSaveVisit}
+            isSaving={isLoading}
+        />
+
+        {/* Reservation Details Sidebar Overlay */}
+        {isReservationDetailsOpen && (
+            <div 
+                className="fixed inset-0 bg-black/20 z-[90] transition-opacity" 
+                onClick={() => setIsReservationDetailsOpen(false)}
+            />
+        )}
+        <ReservationDetailsSidebar
+            isOpen={isReservationDetailsOpen}
+            onClose={() => setIsReservationDetailsOpen(false)}
+            reservation={selectedReservation}
+            employeeInfo={employees.find(e => e._id === selectedReservation?.employeeId)}
+            onStatusChange={handleStatusChange}
         />
       </div>
     </div>

@@ -10,7 +10,7 @@ const START_HOUR = 8;
 const END_HOUR = 20;
 const PIXELS_PER_MINUTE = 2.5; // Controls height of time slots
 
-export default function WeekView({ date, employees = [], reservations = [], onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter }) {
+export default function WeekView({ date, employees = [], reservations = [], draftVisit = null, onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter }) {
     const containerRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeEmployeeId, setActiveEmployeeId] = useState(null);
@@ -57,7 +57,7 @@ export default function WeekView({ date, employees = [], reservations = [], onRe
     }, [employees.length, date]); // Re-run when view mode might change
 
     const getReservationStyle = (reservation) => {
-        const start = new Date(reservation.date + 'T' + reservation.time);
+        const start = parseReservationTime(reservation.date, reservation.time);
         const startMinutes = start.getHours() * 60 + start.getMinutes();
         const duration = reservation.duration || 60;
 
@@ -309,6 +309,32 @@ export default function WeekView({ date, employees = [], reservations = [], onRe
                                                     <div className="truncate opacity-75">{reservation.time} - {format(addMinutes(new Date(reservation.date + 'T' + reservation.time), reservation.duration), 'HH:mm')}</div>
                                                 </div>
                                             ))}
+
+                                        {/* Draft Visit Preview (Ghost Block) */}
+                                        {draftVisit && draftVisit.date && draftVisit.employeeId === targetEmployee._id && isSameDay(new Date(draftVisit.date), day) && (
+                                            <div
+                                                className={`absolute inset-x-1 rounded-md p-2 border-l-[3px] shadow-sm z-10 text-xs text-blue-900 border-blue-500 overflow-hidden pointer-events-none transition-all duration-300`}
+                                                style={{
+                                                    backgroundColor: '#dbeafe', // fallback bg-blue-100
+                                                    backgroundImage: 'repeating-linear-gradient(-45deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.08) 8px, rgba(59, 130, 246, 0.15) 8px, rgba(59, 130, 246, 0.15) 16px)',
+                                                    top: `${(new Date(draftVisit.date).getHours() * 60 + new Date(draftVisit.date).getMinutes() - (START_HOUR * 60)) * PIXELS_PER_MINUTE}px`,
+                                                    height: `${(draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION) * PIXELS_PER_MINUTE}px`,
+                                                    borderLeftColor: '#6366f1' // Indigo border from screenshot
+                                                }}
+                                            >
+                                                <div className="font-medium flex items-center justify-between opacity-90 truncate leading-tight">
+                                                    <span>
+                                                        {format(new Date(draftVisit.date), 'HH:mm')} - {format(addMinutes(new Date(draftVisit.date), draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION), 'HH:mm')} 
+                                                        {' '} {draftVisit.client ? `${draftVisit.client.firstName} ${draftVisit.client.lastName}` : 'Bez rezerwacji'}
+                                                    </span>
+                                                </div>
+                                                {draftVisit.services.length > 0 && (
+                                                    <div className="truncate opacity-80 mt-0.5 font-medium">
+                                                        {draftVisit.services.map(s => s.name).join(', ')}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}

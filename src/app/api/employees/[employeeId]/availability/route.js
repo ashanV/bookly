@@ -117,11 +117,7 @@ export async function GET(req, { params }) {
         const slotStart = new Date(currentTime);
         const slotEnd = addMinutes(currentTime, slotDuration);
         
-        return (
-          (isWithinInterval(slotStart, { start: breakStart, end: breakEnd }) ||
-           isWithinInterval(slotEnd, { start: breakStart, end: breakEnd }) ||
-           (isBefore(slotStart, breakStart) && isAfter(slotEnd, breakEnd)))
-        );
+        return slotStart < breakEnd && slotEnd > breakStart;
       });
 
       if (!isInBreak) {
@@ -132,11 +128,7 @@ export async function GET(req, { params }) {
           const slotStart = new Date(currentTime);
           const slotEnd = addMinutes(currentTime, slotDuration);
           
-          return (
-            (isWithinInterval(slotStart, { start: resTime, end: resEnd }) ||
-             isWithinInterval(slotEnd, { start: resTime, end: resEnd }) ||
-             (isBefore(slotStart, resTime) && isAfter(slotEnd, resEnd)))
-          );
+          return slotStart < resEnd && slotEnd > resTime;
         });
 
         if (!conflictsWithReservation) {

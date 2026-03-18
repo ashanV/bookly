@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format, addMinutes, isSameDay } from 'date-fns';
-import { Clock, Plus, LayoutList, CalendarDays, CalendarRange, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
+import { Clock, Plus, LayoutList, CalendarDays, CalendarRange, Calendar as CalendarIcon, ChevronDown, User } from 'lucide-react';
 import QuickActionPopover from './QuickActionPopover';
 import EmployeeMenuPopover from './EmployeeMenuPopover';
 
@@ -9,11 +9,26 @@ const START_HOUR = 0;
 const END_HOUR = 24;
 const PIXELS_PER_MINUTE = 2.5; // Controls height of time slots (roughly 150px per hour)
 
-export default function DayView({ date, employees = [], reservations = [], onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter }) {
+export default function DayView({ date, employees = [], reservations = [], draftVisit = null, onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter, onReservationResize, onReservationDrop }) {
     const containerRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeEmployeeId, setActiveEmployeeId] = useState(null);
     const [anchorRect, setAnchorRect] = useState(null);
+
+    // Resize state
+    const resizeRef = useRef(null);
+    const [resizingId, setResizingId] = useState(null);
+    const [resizeDuration, setResizeDuration] = useState(null);
+
+    // Drag state
+    const dragRef = useRef(null); // { reservationId, reservation, startX, startY, startAbsoluteY, isDragging, ghostTop, ghostEmployeeId }
+    const [draggingId, setDraggingId] = useState(null);
+    const [dragGhost, setDragGhost] = useState(null); // { top (minutes from midnight), employeeId, reservation }
+    const columnRefsMap = useRef({}); // { [employeeId]: DOMElement }
+
+    // Hover Popover State
+    const [hoveredReservation, setHoveredReservation] = useState(null);
+    const hoverTimeoutRef = useRef(null);
 
     // Quick Action Popover State
     const [quickAction, setQuickAction] = useState({ isOpen: false, x: 0, y: 0, date: null, employeeId: null });
@@ -52,8 +67,188 @@ export default function DayView({ date, employees = [], reservations = [], onRes
         }
     }, []);
 
+    // --- Resize handlers ---
+    const justResizedRef = useRef(false);
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!resizeRef.current) return;
+            e.preventDefault();
+
+            // Account for scroll position so resize works while scrolling
+            const scrollTop = containerRef.current ? containerRef.current.scrollTop : 0;
+            const currentAbsoluteY = e.clientY + scrollTop;
+            const deltaY = currentAbsoluteY - resizeRef.current.startAbsoluteY;
+            const deltaMinutes = deltaY / PIXELS_PER_MINUTE;
+
+            // Snap to 15-minute increments
+            let newDuration = resizeRef.current.originalDuration + Math.round(deltaMinutes / 15) * 15;
+            if (newDuration < 15) newDuration = 15;
+            if (newDuration > 480) newDuration = 480; // max 8h
+            resizeRef.current.currentDuration = newDuration;
+            setResizeDuration(newDuration);
+        };
+
+        const handleMouseUp = () => {
+            if (!resizeRef.current) return;
+            const { reservationId, originalDuration, currentDuration } = resizeRef.current;
+            resizeRef.current = null;
+            setResizingId(null);
+            setResizeDuration(null);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+
+            // Flag to prevent click from opening sidebar
+            justResizedRef.current = true;
+            setTimeout(() => { justResizedRef.current = false; }, 300);
+
+            if (currentDuration !== originalDuration && onReservationResize) {
+                onReservationResize(reservationId, currentDuration);
+            }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [onReservationResize]);
+
+    // --- Drag handlers ---
+    useEffect(() => {
+        const DRAG_THRESHOLD = 5;
+
+        const handleDragMouseMove = (e) => {
+            if (!dragRef.current) return;
+            const { startX, startY, isDragging } = dragRef.current;
+
+            // Check threshold before starting actual drag
+            if (!isDragging) {
+                const dx = Math.abs(e.clientX - startX);
+                const dy = Math.abs(e.clientY - startY);
+                if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return;
+                dragRef.current.isDragging = true;
+                setDraggingId(dragRef.current.reservationId);
+                document.body.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+            }
+
+            e.preventDefault();
+
+            // Calculate new time based on mouse Y + scroll
+            const scrollTop = containerRef.current ? containerRef.current.scrollTop : 0;
+            const containerRect = containerRef.current?.getBoundingClientRect();
+            const relativeY = e.clientY - (containerRect?.top || 0) + scrollTop;
+            let minutesFromMidnight = relativeY / PIXELS_PER_MINUTE;
+            // Snap to 15-minute increments
+            minutesFromMidnight = Math.round(minutesFromMidnight / 15) * 15;
+            if (minutesFromMidnight < 0) minutesFromMidnight = 0;
+            if (minutesFromMidnight > 23 * 60 + 45) minutesFromMidnight = 23 * 60 + 45;
+
+            // Determine which employee column the mouse is over
+            let targetEmployeeId = dragRef.current.reservation.employeeId;
+            const employeeList = employees.length > 0 ? employees : [{ _id: 'all' }];
+            for (const emp of employeeList) {
+                const colEl = columnRefsMap.current[emp._id];
+                if (colEl) {
+                    const colRect = colEl.getBoundingClientRect();
+                    if (e.clientX >= colRect.left && e.clientX <= colRect.right) {
+                        targetEmployeeId = emp._id;
+                        break;
+                    }
+                }
+            }
+
+            dragRef.current.ghostMinutes = minutesFromMidnight;
+            dragRef.current.ghostEmployeeId = targetEmployeeId;
+
+            setDragGhost({
+                top: minutesFromMidnight,
+                employeeId: targetEmployeeId,
+                reservation: dragRef.current.reservation,
+            });
+        };
+
+        const handleDragMouseUp = () => {
+            if (!dragRef.current) return;
+            const { isDragging, reservation, ghostMinutes, ghostEmployeeId } = dragRef.current;
+            dragRef.current = null;
+            setDraggingId(null);
+            setDragGhost(null);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+
+            if (!isDragging) return; // Just a click, not a drag
+
+            // Prevent click after drag
+            justResizedRef.current = true;
+            setTimeout(() => { justResizedRef.current = false; }, 300);
+
+            // Calculate new time string
+            const newHours = Math.floor(ghostMinutes / 60);
+            const newMins = ghostMinutes % 60;
+            const newTime = `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
+
+            // Only call if something changed
+            const timeChanged = newTime !== reservation.time;
+            const employeeChanged = ghostEmployeeId !== reservation.employeeId;
+
+            if ((timeChanged || employeeChanged) && onReservationDrop) {
+                onReservationDrop(reservation._id, newTime, ghostEmployeeId);
+            }
+        };
+
+        window.addEventListener('mousemove', handleDragMouseMove);
+        window.addEventListener('mouseup', handleDragMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleDragMouseMove);
+            window.removeEventListener('mouseup', handleDragMouseUp);
+        };
+    }, [onReservationDrop, employees]);
+
+    const handleTileMouseDown = (e, reservation) => {
+        // Don't start drag if clicking the resize handle
+        if (e.target.closest('[data-resize-handle]')) return;
+        // Don't start drag during resize
+        if (resizeRef.current) return;
+
+        dragRef.current = {
+            reservationId: reservation._id,
+            reservation,
+            startX: e.clientX,
+            startY: e.clientY,
+            isDragging: false,
+            ghostMinutes: 0,
+            ghostEmployeeId: reservation.employeeId,
+        };
+    };
+
+    const handleResizeStart = (e, reservation) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const scrollTop = containerRef.current ? containerRef.current.scrollTop : 0;
+        resizeRef.current = {
+            reservationId: reservation._id,
+            startAbsoluteY: e.clientY + scrollTop,
+            originalDuration: reservation.duration || 60,
+            currentDuration: reservation.duration || 60,
+        };
+        setResizingId(reservation._id);
+        setResizeDuration(reservation.duration || 60);
+        document.body.style.cursor = 's-resize';
+        document.body.style.userSelect = 'none';
+    };
+
+    function parseReservationTime(dateStr, timeStr) {
+        const [hours, minutes] = timeStr.split(':');
+        const date = new Date(dateStr);
+        date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        return date;
+    }
+
     const getReservationStyle = (reservation) => {
-        const start = new Date(reservation.date + 'T' + reservation.time);
+        const start = parseReservationTime(reservation.date, reservation.time);
         const startMinutes = start.getHours() * 60 + start.getMinutes();
         const duration = reservation.duration || 60;
 
@@ -104,8 +299,27 @@ export default function DayView({ date, employees = [], reservations = [], onRes
         }
     };
 
+    // --- Hover Handlers ---
+    const handleTileMouseEnter = (e, reservation) => {
+        if (resizingId || draggingId) return; // Don't show hover during drag/resize
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        const rect = e.currentTarget.getBoundingClientRect();
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoveredReservation({
+                reservation,
+                rect,
+                employeeInfo: employees.find(emp => emp._id === reservation.employeeId) || { name: 'Brak pracownika' }
+            });
+        }, 400); // 400ms delay to prevent flashing
+    };
+
+    const handleTileMouseLeave = () => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setHoveredReservation(null);
+    };
+
     return (
-        <div className="flex flex-col h-full bg-white overflow-hidden">
+        <div className="flex flex-col h-full bg-white overflow-hidden relative">
             <QuickActionPopover
                 isOpen={quickAction.isOpen}
                 x={quickAction.x}
@@ -123,6 +337,50 @@ export default function DayView({ date, employees = [], reservations = [], onRes
                 onViewChange={onViewChange}
                 onEmployeeFilter={onEmployeeFilter}
             />
+
+            {/* Hover Popover */}
+            {hoveredReservation && (
+                <div 
+                    className="fixed z-[100] bg-white rounded-lg shadow-xl border border-gray-100 flex flex-col overflow-hidden pointer-events-none w-72"
+                    style={{
+                        top: Math.max(10, hoveredReservation.rect.top - 10) + 'px',
+                        left: Math.min(window.innerWidth - 300, hoveredReservation.rect.right + 10) + 'px',
+                    }}
+                >
+                    {/* Header */}
+                    <div className="bg-blue-600 text-white px-4 py-2.5 flex justify-between items-center text-sm font-medium">
+                        <span>
+                            {hoveredReservation.reservation.time} - {format(addMinutes(parseReservationTime(hoveredReservation.reservation.date, hoveredReservation.reservation.time), hoveredReservation.reservation.duration), 'HH:mm')}
+                        </span>
+                        <span>
+                            {hoveredReservation.reservation.status === 'confirmed' ? 'Zarezerwowana' :
+                             hoveredReservation.reservation.status === 'pending' ? 'Oczekująca' :
+                             hoveredReservation.reservation.status === 'cancelled' ? 'Anulowana' : 'Inny'}
+                        </span>
+                    </div>
+                    {/* Body */}
+                    <div className="p-4 flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex flex-shrink-0 items-center justify-center text-indigo-500">
+                                <User size={20} />
+                            </div>
+                            <span className="font-semibold text-gray-800 text-base">{hoveredReservation.reservation.clientName || 'Bez rezerwacji'}</span>
+                        </div>
+                        
+                        <div className="flex justify-between items-end border-t border-gray-100 pt-3">
+                            <div className="flex flex-col">
+                                <span className="font-medium text-gray-800 text-[13px]">{hoveredReservation.reservation.service}</span>
+                                <span className="text-gray-500 text-[11px] mt-0.5">
+                                    {hoveredReservation.employeeInfo.name?.split(' ')[0]} {hoveredReservation.employeeInfo.name?.split(' ').slice(1).join(' ').charAt(0)}. • {hoveredReservation.reservation.duration} min
+                                </span>
+                            </div>
+                            <span className="font-medium text-gray-900 text-sm">
+                                {hoveredReservation.reservation.price ? `${hoveredReservation.reservation.price} zł` : '-'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Header - Employees */}
             <div className="flex border-b border-gray-200">
@@ -219,7 +477,11 @@ export default function DayView({ date, employees = [], reservations = [], onRes
                         )}
 
                         {(employees.length > 0 ? employees : [{ _id: 'all', firstName: 'Wszyscy' }]).map((employee) => (
-                            <div key={employee._id} className="flex-1 min-w-[200px] border-r border-gray-100 last:border-r-0 relative group z-10">
+                            <div
+                                key={employee._id}
+                                ref={(el) => { if (el) columnRefsMap.current[employee._id] = el; }}
+                                className="flex-1 min-w-[200px] border-r border-gray-100 last:border-r-0 relative group z-10"
+                            >
                                 {/* Transparent Grid for Interaction */}
                                 {timeSlots.map(({ hours, minutes }) => (
                                     <div
@@ -238,29 +500,120 @@ export default function DayView({ date, employees = [], reservations = [], onRes
                                 {/* Reservations for this Employee */}
                                 {reservations
                                     .filter(r => employees.length === 0 || r.employeeId === employee._id || !r.employeeId) // Fallback for no employee assigned
-                                    .map((reservation) => (
+                                    .map((reservation) => {
+                                        const isResizing = resizingId === reservation._id;
+                                        const displayDuration = isResizing ? resizeDuration : reservation.duration;
+                                        const style = isResizing
+                                            ? { ...getReservationStyle(reservation), height: `${displayDuration * PIXELS_PER_MINUTE}px` }
+                                            : getReservationStyle(reservation);
+
+                                        const isDragging = draggingId === reservation._id;
+
+                                        return (
                                         <div
                                             key={reservation._id}
-                                            onClick={(e) => { e.stopPropagation(); onReservationClick(reservation); }}
-                                            className={`absolute inset-x-1 rounded-md p-2 border-l-4 shadow-sm cursor-pointer hover:brightness-95 transition-all overflow-hidden z-10 text-xs
+                                            onMouseDown={(e) => handleTileMouseDown(e, reservation)}
+                                            onMouseEnter={(e) => handleTileMouseEnter(e, reservation)}
+                                            onMouseLeave={handleTileMouseLeave}
+                                            onClick={(e) => { if (!isResizing && !justResizedRef.current && !isDragging) { e.stopPropagation(); onReservationClick(reservation); } }}
+                                            className={`absolute inset-x-1 rounded-md p-2 border-l-4 shadow-sm cursor-grab hover:brightness-95 transition-colors overflow-hidden z-10 text-xs group/tile
+                                                ${isDragging ? 'opacity-30' : ''}
                                                 ${reservation.status === 'confirmed' ? 'bg-green-100 border-green-500 text-green-800' :
                                                     reservation.status === 'pending' ? 'bg-yellow-100 border-yellow-500 text-yellow-800' :
                                                         reservation.status === 'cancelled' ? 'bg-red-100 border-red-500 text-red-800' :
                                                             'bg-blue-100 border-blue-500 text-blue-800'}
                                             `}
-                                            style={getReservationStyle(reservation)}
+                                            style={style}
                                         >
                                             <div className="font-bold flex items-center justify-between">
                                                 <span>{reservation.service}</span>
                                                 {reservation.status === 'pending' && <Clock size={12} />}
                                             </div>
                                             <div className="truncate opacity-90">{reservation.clientName}</div>
-                                            <div className="truncate opacity-75">{reservation.time} - {format(addMinutes(parseReservationTime(reservation.date, reservation.time), reservation.duration), 'HH:mm')}</div>
+                                            <div className="truncate opacity-75">
+                                                {reservation.time} - {format(addMinutes(parseReservationTime(reservation.date, reservation.time), displayDuration), 'HH:mm')}
+                                            </div>
+
+                                            {/* Resize Handle */}
+                                            <div
+                                                data-resize-handle="true"
+                                                onMouseDown={(e) => handleResizeStart(e, reservation)}
+                                                className="absolute bottom-0 left-0 right-0 h-3 cursor-s-resize flex items-center justify-center opacity-0 group-hover/tile:opacity-100 transition-opacity z-20"
+                                                style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.08))' }}
+                                            >
+                                                <div className="w-8 h-[3px] rounded-full bg-gray-400/70"></div>
+                                            </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
+
+                                {/* Draft Visit Preview (Ghost Block) */}
+                                {draftVisit && draftVisit.date && draftVisit.employeeId === employee._id && isSameDay(new Date(draftVisit.date), date) && (
+                                    <div
+                                        className={`absolute inset-x-1 rounded-md p-2 border-l-[3px] shadow-sm z-10 text-xs text-blue-900 border-blue-500 overflow-hidden pointer-events-none transition-all duration-300`}
+                                        style={{
+                                            backgroundColor: '#dbeafe', // fallback bg-blue-100
+                                            backgroundImage: 'repeating-linear-gradient(-45deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.08) 8px, rgba(59, 130, 246, 0.15) 8px, rgba(59, 130, 246, 0.15) 16px)',
+                                            top: `${(new Date(draftVisit.date).getHours() * 60 + new Date(draftVisit.date).getMinutes() - (START_HOUR * 60)) * PIXELS_PER_MINUTE}px`,
+                                            height: `${(draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION) * PIXELS_PER_MINUTE}px`,
+                                            borderLeftColor: '#6366f1' // Indigo border from screenshot
+                                        }}
+                                    >
+                                        <div className="font-medium flex items-center justify-between opacity-90 truncate leading-tight">
+                                            <span>
+                                                {format(new Date(draftVisit.date), 'HH:mm')} - {format(addMinutes(new Date(draftVisit.date), draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION), 'HH:mm')} 
+                                                {' '} {draftVisit.client ? `${draftVisit.client.firstName} ${draftVisit.client.lastName}` : 'Bez rezerwacji'}
+                                            </span>
+                                        </div>
+                                        {draftVisit.services.length > 0 && (
+                                            <div className="truncate opacity-80 mt-0.5 font-medium">
+                                                {draftVisit.services.map(s => s.name).join(', ')}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
+
+                    {/* Drag Ghost Preview */}
+                    {dragGhost && (() => {
+                        const ghost = dragGhost;
+                        const colEl = columnRefsMap.current[ghost.employeeId];
+                        if (!colEl) return null;
+                        const gridEl = colEl.parentElement;
+                        const colRect = colEl.getBoundingClientRect();
+                        const gridRect = gridEl?.getBoundingClientRect();
+                        const leftOffset = colRect.left - (gridRect?.left || 0);
+                        const duration = ghost.reservation.duration || 60;
+                        const ghostH = Math.floor(ghost.top / 60);
+                        const ghostM = ghost.top % 60;
+                        const endMinutes = ghost.top + duration;
+                        const endH = Math.floor(endMinutes / 60);
+                        const endM = endMinutes % 60;
+
+                        return (
+                            <div
+                                className="absolute rounded-md p-2 border-l-4 border-indigo-500 shadow-lg z-50 text-xs pointer-events-none"
+                                style={{
+                                    top: `${ghost.top * PIXELS_PER_MINUTE}px`,
+                                    height: `${duration * PIXELS_PER_MINUTE}px`,
+                                    left: `${leftOffset + 4}px`,
+                                    width: `${colRect.width - 8}px`,
+                                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                                    border: '2px dashed #6366f1',
+                                    borderLeftWidth: '4px',
+                                    borderLeftStyle: 'solid',
+                                }}
+                            >
+                                <div className="font-bold text-indigo-800">{ghost.reservation.service}</div>
+                                <div className="text-indigo-700 opacity-80">{ghost.reservation.clientName}</div>
+                                <div className="text-indigo-600 opacity-70">
+                                    {String(ghostH).padStart(2,'0')}:{String(ghostM).padStart(2,'0')} - {String(endH).padStart(2,'0')}:{String(endM).padStart(2,'0')}
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
         </div>
