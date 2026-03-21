@@ -15,7 +15,7 @@ export async function POST(req) {
 
     const { pusherServer } = await import("@/lib/pusher");
 
-    // Rozgłoś zdarzenie przez Pusher
+    // Emit event via Pusher
     await pusherServer.trigger(`chat-${data.conversationId}`, event, data);
 
     return NextResponse.json({ success: true });
@@ -28,7 +28,7 @@ export async function POST(req) {
   }
 }
 
-// GET - Sprawdź nowe eventy (polling)
+// GET - Check for new events (polling)
 export async function GET(req) {
   try {
     await connectDB();
@@ -39,7 +39,7 @@ export async function GET(req) {
     const lastMessageId = searchParams.get('lastMessageId');
 
     if (event === 'new-message' && conversationId) {
-      // Sprawdź czy są nowe wiadomości
+      // Check for new messages
       const query = { conversationId };
       if (lastMessageId) {
         query._id = { $gt: lastMessageId };

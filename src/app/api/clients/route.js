@@ -20,11 +20,6 @@ export async function GET(req) {
         }
 
         const { getCache, setCache, CACHE_TTL, generateCacheKey } = await import('@/lib/cache');
-
-        // Only cache if no search filters are applied (basic list)
-        // or we could cache specific queries, but filters are dynamic.
-        // Let's cache the full list for a business if no filters, or specific filters.
-        // To be safe and effective: Cache based on full query params.
         const cacheKey = generateCacheKey('clients:list', {
             businessId, search, status, tag
         });
@@ -102,7 +97,7 @@ export async function POST(req) {
     try {
         const body = await req.json();
 
-        // Walidacja przez Zod
+        // Validation through Zod
         const validation = validateInput(createClientSchema, body);
         if (!validation.success) {
             return NextResponse.json(

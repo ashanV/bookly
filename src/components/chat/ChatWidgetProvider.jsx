@@ -4,8 +4,8 @@ import React from 'react';
 import ChatWidget from './ChatWidget';
 
 /**
- * Provider dla widgetu chatu - dodaj do layoutu głównego aplikacji
- * Widget będzie dostępny na wszystkich stronach
+ * Provider for chat widget - add to main app layout
+ * Widget will be available on all pages
  */
 export default function ChatWidgetProvider() {
   return <ChatWidget />;

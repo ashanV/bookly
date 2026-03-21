@@ -43,7 +43,6 @@ export async function register() {
                         messages: processedArgs
                     }).catch(err => {
                         // Silently fail if Pusher logic fails to avoid recursive error loop
-                        // originalConsoleError.call(console, "Failed to push log:", err); 
                     });
 
                 } catch (e) {
@@ -54,6 +53,6 @@ export async function register() {
             }
         };
 
-        console.log('✅ Server-side console.error proxy enabled');
+        console.log('Server-side console.error proxy enabled');
     }
 }

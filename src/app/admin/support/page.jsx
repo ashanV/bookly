@@ -73,24 +73,24 @@ export default function AdminSupportPage() {
         }
     };
 
-    // Subskrypcja Pusher dla aktualizacji na żywo
+    // Pusher subscription for live updates
     useEffect(() => {
         if (!isConnected || !socket) return;
 
         const channel = socket.subscribe('admin-support');
 
         if (channel) {
-            // Nowa konwersacja
+            // New conversation
             channel.bind('new-conversation', (data) => {
                 setConversations(prev => {
-                    // Sprawdź czy już nie mamy tej konwersacji
+                    // Check if we already have this conversation
                     const newId = String(data.conversation._id || data.conversation.id);
                     if (prev.some(c => String(c._id || c.id) === newId)) return prev;
                     return [data.conversation, ...prev];
                 });
             });
 
-            // Aktualizacja statusu lub przypisania
+            // Update status or assignment
             channel.bind('conversation-updated', (data) => {
                 setConversations(prev => prev.map(c => {
                     if (String(c._id || c.id) === String(data.id)) {
@@ -105,15 +105,14 @@ export default function AdminSupportPage() {
                 }));
             });
 
-            // Usunięcie konwersacji (trwałe)
+            // Conversation deletion (permanent)
             channel.bind('conversation-deleted', (data) => {
                 setConversations(prev => prev.filter(c => String(c._id || c.id) !== String(data.id)));
             });
 
-            // Nowa wiadomość (aktualizacja licznika i czasu)
+            // New message (update counter and time)
             channel.bind('message-received', (data) => {
-                // Powiadomienia
-                // Powiadomienia
+                // Notifications
                 const isHidden = document.hidden;
                 // Use Ref to get current selected conversation without closure staleness
                 const currentConv = selectedConversationRef.current;
@@ -124,8 +123,8 @@ export default function AdminSupportPage() {
 
                     if (isHidden && Notification.permission === "granted") {
                         new Notification("Nowa wiadomość w Bookly Support", {
-                            body: `Nowa wiadomość od użytkownika`, // Można rozszerzyć o treść jeśli dostępna
-                            icon: "/icons/icon-192x192.png" // Opcjonalnie
+                            body: `Nowa wiadomość od użytkownika`, // Can be extended with content if available
+                            icon: "/icons/icon-192x192.png" // Optional
                         });
                     }
                 }
@@ -143,7 +142,7 @@ export default function AdminSupportPage() {
                         }
                         return c;
                     });
-                    // Przesuń na górę listę jeśli wiadomość jest nowa
+                    // Move to top of list if message is new
                     const targetIdx = updated.findIndex(c => String(c._id || c.id) === String(data.conversationId));
                     if (targetIdx > 0) {
                         const target = updated.splice(targetIdx, 1)[0];
@@ -165,7 +164,7 @@ export default function AdminSupportPage() {
     const fetchConversations = async () => {
         try {
             setLoading(true);
-            const url = `/api/chat/conversations?role=admin`; // Pobieraj wszystkie dla poprawnego openCount
+            const url = `/api/chat/conversations?role=admin`; // Fetch all for correct openCount
             const response = await fetch(url, { credentials: 'include' });
             const data = await response.json();
             if (response.ok) {
@@ -179,7 +178,7 @@ export default function AdminSupportPage() {
         }
     };
 
-    // Synchronizuj wybrany chat z listą (np. dla auto-przypisania)
+    // Sync selected chat with list (e.g. for auto-assignment)
     useEffect(() => {
         if (!selectedConversation) return;
         const updated = conversations.find(c =>
@@ -187,7 +186,7 @@ export default function AdminSupportPage() {
         );
 
         if (updated) {
-            // Aktualizuj tylko jeśli są istotne różnice, aby uniknąć pętli
+            // Update only if there are significant differences to avoid loops
             if (updated.status !== selectedConversation.status ||
                 updated.supportId !== selectedConversation.supportId ||
                 updated.unreadCount !== selectedConversation.unreadCount) {
@@ -197,7 +196,7 @@ export default function AdminSupportPage() {
     }, [conversations]);
 
     const getSLATimer = (conversation) => {
-        // Jeśli ostatnia wiadomość była od supportu lub bota, klient nie czeka
+        // If the last message was from support or bot, the client is not waiting
         if (conversation.lastMessageBy === 'support' || conversation.status === 'closed') return null;
 
         const lastMsgTime = new Date(conversation.lastMessageAt || conversation.createdAt).getTime();
@@ -242,7 +241,7 @@ export default function AdminSupportPage() {
 
     const handleCloseChat = () => {
         setSelectedConversation(null);
-        fetchConversations(); // Odśwież listę
+        fetchConversations(); // Refresh list
     };
 
     const handleUpdate = () => {
@@ -516,7 +515,7 @@ export default function AdminSupportPage() {
                                                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                                                             className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl py-2 z-50 overflow-hidden"
                                                         >
-                                                            {/* Przypisywanie */}
+                                                            {/* Assignment */}
                                                             <div className="px-3 py-2 border-b border-gray-800 mb-2">
                                                                 <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Przypisz do</p>
                                                                 <div className="space-y-1">

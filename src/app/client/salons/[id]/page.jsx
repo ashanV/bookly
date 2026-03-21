@@ -732,7 +732,7 @@ export default function StudioDetailsPage() {
                     className="grid grid-cols-1 sm:grid-cols-2 gap-6"
                   >
                     {studio.team?.map(member => {
-                      // Znajdź pełne dane pracownika z employees array (zawiera availability)
+                      // Find full employee data from employees array (contains availability)
                       const fullEmployee = studio.employees?.find(emp => emp.id === member.id) || member;
 
                       return (
@@ -756,7 +756,7 @@ export default function StudioDetailsPage() {
                                 router.push(`/client/auth?redirect=${encodeURIComponent(window.location.pathname)}`);
                                 return;
                               }
-                              // Użyj pełnych danych pracownika z availability
+                              // Use full employee data with availability
                               setSelectedEmployee(fullEmployee);
                               setIsEmployeeBookingOpen(true);
                             }}

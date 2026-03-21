@@ -11,11 +11,8 @@ export async function GET() {
 
         try {
             // Try to access system.profile
-            // Note: Profiling must be enabled on the database for this to work
-            // db.setProfilingLevel('all') or 'slow_only'
-
             const queries = await db.collection('system.profile')
-                .find({ op: { $in: ['query', 'command'] }, millis: { $gt: 10 } }) // Filter queries > 10ms (just an example threshold)
+                .find({ op: { $in: ['query', 'command'] }, millis: { $gt: 10 } })
                 .sort({ ts: -1 })
                 .limit(50)
                 .toArray();

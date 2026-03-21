@@ -128,8 +128,7 @@ export default function AdminHeader({ title, subtitle }) {
             const unread = Math.max(0, serverCount - storedSeen);
             setUnreadTickets(unread);
         }
-    }, []); // Removed getStorageKey dependency as it is a stable closure-less helper or should be ref'd?
-    // getStorageKey relies on Date(), which changes daily. It's fine.
+    }, []);
 
     React.useEffect(() => {
         if (!adminUser) return;

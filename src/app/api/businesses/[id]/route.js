@@ -160,7 +160,7 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: csrfError.error }, { status: csrfError.status });
     }
 
-    // ✅ AUTHORIZATION CHECK - Verify JWT token
+    // AUTHORIZATION CHECK - Verify JWT token
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -185,7 +185,7 @@ export async function PUT(req, { params }) {
       );
     }
 
-    // ✅ Only business accounts can modify business data
+    // Only business accounts can modify business data
     if (decoded.role !== 'business') {
       return NextResponse.json(
         { error: "Brak uprawnień - tylko konto biznesowe może edytować dane" },
@@ -201,7 +201,7 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: "Brak ID biznesu" }, { status: 400 });
     }
 
-    // ✅ OWNERSHIP CHECK - User can only modify their OWN business
+    // OWNERSHIP CHECK - User can only modify their OWN business
     if (decoded.id !== id) {
       return NextResponse.json(
         { error: "Brak uprawnień - możesz edytować tylko własny biznes" },

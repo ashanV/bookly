@@ -81,11 +81,11 @@ export default function AddVisitSidebar({
         let d = new Date();
         d.setHours(startHour, startMinute, 0, 0);
         
-        // Oblicz zajęte przedziały czasowe dla wybranego pracownika
+        // Calculate occupied time intervals for the selected employee
         const draftDateStr = draftVisit?.date ? format(draftVisit.date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
         const selectedEmployeeId = (editingServiceIdx !== null ? editingForm?.employeeId : draftVisit?.employeeId) || employees[0]?._id;
         
-        // Oblicz łączny czas trwania usługi (dla sprawdzenia czy cały slot się zmieści)
+        // Calculate the total duration of the service (to check if the entire slot fits)
         const currentServiceDuration = editingServiceIdx !== null 
             ? (editingForm?.duration || 30)
             : (draftVisit?.services?.reduce((acc, s) => acc + (s.duration || 30), 0) || 30);
@@ -94,7 +94,7 @@ export default function AddVisitSidebar({
             .filter(res => {
                 if (res.status === 'cancelled') return false;
                 if (res.employeeId !== selectedEmployeeId) return false;
-                if (draftVisit?._id && res._id === draftVisit._id) return false; // Pomijamy aktualnie edytowaną rezerwację
+                if (draftVisit?._id && res._id === draftVisit._id) return false; // Skipping the currently edited reservation
                 
                 const resDateStr = res.date ? format(new Date(res.date), 'yyyy-MM-dd') : '';
                 return resDateStr === draftDateStr;
@@ -540,7 +540,7 @@ export default function AddVisitSidebar({
                                             setDraftVisit(updatedDraftVisit);
                                             setEditingServiceIdx(null);
                                             
-                                            // Natychmiastowy zapis zmian jeśli edytujemy istniejącą rezerwację
+                                            // Immediate save of changes if editing an existing reservation
                                             if (draftVisit._id && onSave) {
                                                 onSave(updatedDraftVisit);
                                             }

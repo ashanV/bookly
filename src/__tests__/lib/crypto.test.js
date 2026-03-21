@@ -39,11 +39,8 @@ describe('Crypto Library', () => {
 
         it('should return original text if format is invalid (fallback)', () => {
             const invalid = 'not-encrypted';
-            // Mock console.error to avoid noise in test output
-            // const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             const result = decrypt(invalid);
             expect(result).toBe(invalid);
-            // consoleSpy.mockRestore();
         });
 
         it('should return null/undefined/empty as is', () => {

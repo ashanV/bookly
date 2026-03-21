@@ -404,7 +404,7 @@ export default function DashboardPage() {
 
       {/* Subscription Banner */}
       <SubscriptionBanner business={businessData || user} />
-      {/* Informacje o firmie */}
+      {/* Company Information */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100/50 p-6">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -470,7 +470,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Statystyki */}
+      {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6 hover:shadow-xl transition-all group">
           <div className="flex items-center justify-between mb-4">
@@ -541,9 +541,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Wykresy */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Wykres przychodów */}
+        {/* Revenue chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -596,7 +596,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Rozkład usług */}
+        {/* Service distribution */}
         <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -640,7 +640,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ostatnie rezerwacje */}
+        {/* Recent reservations */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -816,7 +816,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Top usługi i Quick Actions */}
+        {/* Top services and Quick Actions */}
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
@@ -882,7 +882,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Top usługi */}
+          {/* Top services */}
           <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Najpopularniejsze usługi</h3>
             <div className="space-y-4">
@@ -918,7 +918,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Wykres rezerwacji */}
+      {/* Reservations vs Cancellations chart */}
       <div className="mt-6 bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>

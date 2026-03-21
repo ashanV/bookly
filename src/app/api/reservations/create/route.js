@@ -25,7 +25,7 @@ export async function POST(req) {
     }
     await connectDB();
 
-    // Sprawdzenie globalnych limitów rezerwacji
+    // Checking global reservation limits
     const config = await SystemConfig.getConfig();
     if (config.maxBookingsEnabled) {
       const today = new Date();
@@ -45,7 +45,7 @@ export async function POST(req) {
       }
     }
 
-    // Pobranie tokenu z cookies (opcjonalne dla klientów)
+    // Retrieving token from cookies (optional for clients)
     const token = req.cookies.get('token')?.value;
     let clientId = null;
 
@@ -56,7 +56,7 @@ export async function POST(req) {
           clientId = decoded.id;
         }
       } catch (error) {
-        // Token nieprawidłowy lub brak - kontynuujemy bez clientId
+        // Invalid or missing token - continue without clientId
       }
     }
 
@@ -92,7 +92,7 @@ export async function POST(req) {
       );
     }
 
-    // Sprawdzenie, czy biznes istnieje
+    // Checking if business exists  
     const business = await Business.findById(businessId);
     if (!business) {
       return NextResponse.json(
@@ -101,7 +101,7 @@ export async function POST(req) {
       );
     }
 
-    // Sprawdzenie czy biznes jest zablokowany
+    // Checking if business is blocked
     if (business.isBlocked) {
       return NextResponse.json(
         { error: "Ten biznes został zablokowany i nie może przyjmować rezerwacji." },
@@ -109,7 +109,7 @@ export async function POST(req) {
       );
     }
 
-    // Sprawdzenie, czy pracownik istnieje (jeśli podano)
+    // Checking if employee exists (if provided)
     if (employeeId) {
       const employee = business.employees?.find(emp => emp._id.toString() === employeeId.toString());
       if (!employee) {
@@ -120,10 +120,10 @@ export async function POST(req) {
       }
     }
 
-    // Generowanie unikalnego numeru referencyjnego
+    // Generating unique reference number
     const referenceNumber = await generateReferenceNumber(Reservation);
 
-    // Sprawdzenie nachodzenia na siebie rezerwacji
+    // Checking for overlapping reservations
     if (employeeId) {
       const selectedDate = new Date(date);
       const startOfDay = new Date(selectedDate);
@@ -138,7 +138,7 @@ export async function POST(req) {
         employeeId: employeeId.toString()
       }).lean();
 
-      // Utworzenie dat Date() z połączonym czasem aby wyliczyć nakładanie
+      // Creating Date() objects with combined time to calculate overlap
       const newStart = parseISO(`${format(selectedDate, 'yyyy-MM-dd')}T${time}`);
       const newEnd = addMinutes(newStart, parseInt(duration));
 
@@ -146,7 +146,7 @@ export async function POST(req) {
         const resStart = parseISO(`${format(new Date(res.date), 'yyyy-MM-dd')}T${res.time}`);
         const resEnd = addMinutes(resStart, res.duration);
         
-        // Warunek kolizji: StartA < EndB ORAZ EndA > StartB
+        // Collision condition: StartA < EndB AND EndA > StartB
         return newStart < resEnd && newEnd > resStart;
       });
 
@@ -158,7 +158,7 @@ export async function POST(req) {
       }
     }
 
-    // Utworzenie rezerwacji
+    // Creating reservation
     const reservation = new Reservation({
       businessId,
       clientId,

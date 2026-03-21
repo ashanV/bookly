@@ -4,7 +4,6 @@ import Reservation from '@/app/models/Reservation';
 import Business from '@/app/models/Business';
 import User from '@/app/models/User';
 import Conversation from '@/app/models/Conversation';
-// import ChatMessage from '@/app/models/ChatMessage'; // Import if needed, but we can query raw collection for speed
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +13,6 @@ export async function POST() {
         const issues = [];
 
         // 1. Orphaned Reservations (Missing Business)
-        // Find reservations where businessId does not exist in Business collection
         const distinctBusinessIds = await Reservation.distinct('businessId');
         const existingBusinesses = await Business.find({ _id: { $in: distinctBusinessIds } }).select('_id');
         const existingBusinessIds = new Set(existingBusinesses.map(b => b._id.toString()));
@@ -32,9 +30,7 @@ export async function POST() {
         }
 
         // 2. Orphaned Reservations (Missing User when clientId is set)
-        // Only check where clientId is NOT null
         const distinctClientIds = await Reservation.distinct('clientId', { clientId: { $ne: null } });
-        // Filter out any potential non-ObjectId strings causing errors, although schema type is ObjectId
         const validClientIds = distinctClientIds.filter(id => id);
 
         if (validClientIds.length > 0) {
@@ -55,10 +51,8 @@ export async function POST() {
         }
 
         // 3. Orphaned Conversations (Missing User/Business based on userType)
-        // NOTE: This can be complex depending on userType logic. Simplified check for now.
-        // Check conversations where userType is 'client' or 'user' and verify userId exists in User
         const userConversations = await Conversation.find({ userType: { $in: ['user', 'client'] }, userId: { $ne: null } }).select('userId');
-        const userConversationIds = [...new Set(userConversations.map(c => c.userId))].filter(Boolean); // deduplicate
+        const userConversationIds = [...new Set(userConversations.map(c => c.userId))].filter(Boolean);
 
         if (userConversationIds.length > 0) {
             try {
@@ -76,7 +70,6 @@ export async function POST() {
                 }
             } catch (err) {
                 console.error("Error checking conversation users:", err);
-                // Continue without crashing
             }
         }
 

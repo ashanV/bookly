@@ -43,17 +43,10 @@ export async function POST(request) {
             periodEnd,
             reservationsCount,
             notes,
-            status: 'completed' // Auto-complete for now, or 'pending' if manual transfer needed
+            status: 'completed'
         });
 
         // 2. Update Reservations
-        // We find all completed reservations for this business that are not paid yet, 
-        // and fall within the period (or just all pending ones if simpler).
-        // For robustness, let's mark ALL currently pending 'completed' reservations for this business as paid.
-        // This avoids edge cases where a reservation happened just now during the click.
-        // Or we can rely on proper date filtering from frontend. 
-        // Let's settle ALL unmatched completed reservations for this business to stay clean.
-
         await Reservation.updateMany(
             {
                 businessId: businessId,

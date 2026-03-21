@@ -26,7 +26,7 @@ const menuItems = [
         path: '/admin',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        permission: null // dostępne dla wszystkich
+        permission: null // available to all
     },
     {
         path: '/admin/users',

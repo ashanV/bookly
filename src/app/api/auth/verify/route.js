@@ -23,7 +23,7 @@ export async function GET() {
     let user = null;
     let role = decoded.role || 'client';
 
-    // Sprawdź w odpowiedniej kolekcji na podstawie roli w tokenie
+    // Check in the appropriate collection based on the role in the token
     if (role === 'business') {
       user = await Business.findById(decoded.id).select("-password");
       if (user) {
@@ -59,7 +59,7 @@ export async function GET() {
         });
       }
     } else {
-      // Domyślnie sprawdź w User (klienci)
+      // Default check in User (clients)
       user = await User.findById(decoded.id).select("-password");
 
       // Check token version for Users (including Admins)
@@ -79,13 +79,13 @@ export async function GET() {
             // Admin fields
             adminRole: user.adminRole || null,
             isAdminActive: user.isAdminActive || false,
-            // Dodaj inne pola jeśli potrzebne
+            // Add other fields if needed
           },
         });
       }
     }
 
-    // Jeśli nie znaleziono w żadnej kolekcji, zwróć błąd
+    // If not found in any collection, return an error
     return NextResponse.json({ error: "Użytkownik nie istnieje" }, { status: 404 });
   } catch (error) {
     return NextResponse.json({ error: "Nieprawidłowy token" }, { status: 401 });

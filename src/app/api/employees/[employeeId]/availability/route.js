@@ -4,7 +4,7 @@ import Reservation from "@/app/models/Reservation";
 import { NextResponse } from "next/server";
 import { format, addMinutes, getDay, startOfDay, parseISO, isBefore, isAfter, isWithinInterval } from "date-fns";
 
-// Mapowanie dni tygodnia (0 = niedziela, 1 = poniedziałek, ...)
+// Mapping of days of the week (0 = Sunday, 1 = Monday, ...)
 const dayMapping = {
   0: 'sunday',
   1: 'monday',
@@ -31,7 +31,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    // Pobranie biznesu i pracownika
+    // Retrieving business and employee
     const business = await Business.findById(businessId);
     if (!business) {
       return NextResponse.json({ error: "Biznes nie znaleziony" }, { status: 404 });
@@ -42,7 +42,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Pracownik nie znaleziony" }, { status: 404 });
     }
 
-    // Sprawdzenie dostępności pracownika
+    // Checking employee availability
     const selectedDate = parseISO(date);
     const dayOfWeek = getDay(selectedDate);
     const dayKey = dayMapping[dayOfWeek];
@@ -53,7 +53,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ availableSlots: [] }, { status: 200 });
     }
 
-    // Sprawdzenie urlopów
+    // Checking vacations
     const isOnVacation = employee.vacations?.some(vacation => {
       const startDate = parseISO(vacation.startDate);
       const endDate = parseISO(vacation.endDate);
@@ -64,7 +64,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ availableSlots: [] }, { status: 200 });
     }
 
-    // Generowanie dostępnych slotów czasowych
+    // Generating available time slots
     const openTime = dayAvailability.open || '09:00';
     const closeTime = dayAvailability.close || '17:00';
     
@@ -77,12 +77,12 @@ export async function GET(req, { params }) {
     const endTime = new Date(selectedDate);
     endTime.setHours(closeHour, closeMinute, 0, 0);
 
-    // Pobranie istniejących rezerwacji dla tego pracownika w tym dniu
+    // Retrieving existing reservations for this employee on this day
     const dayStart = startOfDay(selectedDate);
     const dayEnd = new Date(dayStart);
     dayEnd.setHours(23, 59, 59, 999);
 
-    // Sprawdź rezerwacje dla tego pracownika (employeeId może być string lub number)
+    // Checking reservations for this employee (employeeId can be string or number)
     const employeeIdStr = employeeId.toString();
     const employeeIdNum = parseInt(employeeId);
     
@@ -99,10 +99,10 @@ export async function GET(req, { params }) {
       ]
     }).lean();
 
-    // Sprawdzenie przerw pracownika w tym dniu
+    // Checking employee breaks on this day
     const breaksForDay = employee.breaks?.filter(br => br.day === dayKey) || [];
     
-    // Generowanie slotów (co 30 minut)
+    // Generating slots (every 30 minutes)
     const slots = [];
     let currentTime = new Date(startTime);
     const slotDuration = 30; // 30 minut
@@ -110,7 +110,7 @@ export async function GET(req, { params }) {
     while (currentTime < endTime) {
       const timeString = format(currentTime, 'HH:mm');
       
-      // Sprawdzenie, czy slot nie koliduje z przerwą
+      // Checking if the slot does not conflict with a break
       const isInBreak = breaksForDay.some(br => {
         const breakStart = parseISO(`${date}T${br.startTime}`);
         const breakEnd = parseISO(`${date}T${br.endTime}`);
@@ -121,7 +121,7 @@ export async function GET(req, { params }) {
       });
 
       if (!isInBreak) {
-        // Sprawdzenie, czy slot nie koliduje z istniejącą rezerwacją
+        // Checking if the slot does not conflict with an existing reservation
         const conflictsWithReservation = existingReservations.some(res => {
           const resTime = parseISO(`${format(new Date(res.date), 'yyyy-MM-dd')}T${res.time}`);
           const resEnd = addMinutes(resTime, res.duration || 60);

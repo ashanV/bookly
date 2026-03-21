@@ -1,57 +1,57 @@
 /**
- * Admin Permissions - definicje uprawnień dla ról administracyjnych
+ * Admin Permissions
  */
 
-// Role administracyjne
+// Admin roles
 export const ADMIN_ROLES = {
     ADMIN: 'admin',
     MODERATOR: 'moderator',
     DEVELOPER: 'developer',
 };
 
-// Wszystkie dostępne uprawnienia
+// All available permissions
 export const PERMISSIONS = {
-    // Użytkownicy
+    // Users
     USERS_VIEW: 'users:view',
     USERS_EDIT: 'users:edit',
     USERS_DELETE: 'users:delete',
     USERS_BAN: 'users:ban',
     USERS_TEMP_BAN: 'users:temp_ban',
 
-    // Biznesy
+    // Businesses
     BUSINESSES_VIEW: 'businesses:view',
     BUSINESSES_EDIT: 'businesses:edit',
     BUSINESSES_DELETE: 'businesses:delete',
     BUSINESSES_VERIFY: 'businesses:verify',
 
-    // Rezerwacje
+    // Reservations
     RESERVATIONS_VIEW: 'reservations:view',
     RESERVATIONS_CANCEL: 'reservations:cancel',
     RESERVATIONS_RESOLVE_DISPUTE: 'reservations:resolve_dispute',
 
-    // Zgłoszenia/Support
+    // Support
     SUPPORT_VIEW: 'support:view',
     SUPPORT_RESPOND: 'support:respond',
     SUPPORT_CLOSE: 'support:close',
     SUPPORT_ASSIGN: 'support:assign',
 
-    // Recenzje
+    // Reviews
     REVIEWS_VIEW: 'reviews:view',
     REVIEWS_DELETE: 'reviews:delete',
 
-    // Finanse
+    // Finance
     FINANCE_VIEW: 'finance:view',
     FINANCE_MANAGE: 'finance:manage',
 
-    // Ustawienia systemu
+    // Settings
     SETTINGS_VIEW: 'settings:view',
     SETTINGS_EDIT: 'settings:edit',
 
-    // Role
+    // Roles
     ROLES_VIEW: 'roles:view',
     ROLES_MANAGE: 'roles:manage',
 
-    // Logi
+    // Logs
     LOGS_VIEW: 'logs:view',
     LOGS_SYSTEM: 'logs:system',
 
@@ -62,9 +62,9 @@ export const PERMISSIONS = {
     DEV_HEALTH: 'dev:health',
 };
 
-// Mapowanie ról na uprawnienia
+// Role to permissions mapping
 export const ROLE_PERMISSIONS = {
-    [ADMIN_ROLES.ADMIN]: Object.values(PERMISSIONS), // Admin ma wszystkie uprawnienia
+    [ADMIN_ROLES.ADMIN]: Object.values(PERMISSIONS), // Admin has all permissions
 
     [ADMIN_ROLES.MODERATOR]: [
         PERMISSIONS.USERS_VIEW,
@@ -92,9 +92,9 @@ export const ROLE_PERMISSIONS = {
     ],
 };
 
-// Mapowanie sekcji na wymagane uprawnienia
+// Section to permissions mapping
 export const SECTION_PERMISSIONS = {
-    '/admin': [], // Dostępne dla wszystkich zalogowanych adminów
+    '/admin': [], // Available for all logged-in admins
     '/admin/users': [PERMISSIONS.USERS_VIEW],
     '/admin/businesses': [PERMISSIONS.BUSINESSES_VIEW],
     '/admin/reservations': [PERMISSIONS.RESERVATIONS_VIEW],
@@ -108,7 +108,7 @@ export const SECTION_PERMISSIONS = {
 };
 
 /**
- * Sprawdza czy rola ma dane uprawnienie
+ * Checks if role has given permission
  */
 export function hasPermission(role, permission) {
     if (!role) return false;
@@ -117,19 +117,19 @@ export function hasPermission(role, permission) {
 }
 
 /**
- * Sprawdza czy rola ma dostęp do danej sekcji
+ * Checks if role has access to given section
  */
 export function canAccessSection(role, section) {
     if (!role) return false;
     const requiredPermissions = SECTION_PERMISSIONS[section] || [];
-    if (requiredPermissions.length === 0) return true; // Brak wymagań = dostęp dla wszystkich
+    if (requiredPermissions.length === 0) return true; // No requirements = access for all
 
     const userPermissions = ROLE_PERMISSIONS[role] || [];
     return requiredPermissions.every(p => userPermissions.includes(p));
 }
 
 /**
- * Pobiera listę dostępnych sekcji dla danej roli
+ * Gets list of accessible sections for given role
  */
 export function getAccessibleSections(role) {
     if (!role) return [];
@@ -139,7 +139,7 @@ export function getAccessibleSections(role) {
 }
 
 /**
- * Generuje losowy PIN 6-cyfrowy
+ * Generates random 6-digit PIN
  */
 export function generatePin() {
     return Math.floor(100000 + Math.random() * 900000).toString();

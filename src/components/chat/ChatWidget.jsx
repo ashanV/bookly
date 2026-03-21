@@ -65,7 +65,7 @@ export default function ChatWidget() {
 
     const conversationId = conversation.id || conversation._id;
 
-    // Subskrybuj kanał konwersacji
+    // Subscribe to conversation channel
     const channel = socket.subscribe(`chat-${conversationId}`);
 
     if (channel) {
@@ -85,7 +85,7 @@ export default function ChatWidget() {
       channel.bind('typing', (data) => {
         if (data.role === 'admin') {
           setOtherUserTyping(true);
-          // Przedłużaj widoczność jeśli nadal pisze
+          // Extend visibility if still typing
           if (window.typingTimeout) clearTimeout(window.typingTimeout);
           window.typingTimeout = setTimeout(() => setOtherUserTyping(false), 3000);
         }
@@ -151,7 +151,7 @@ export default function ChatWidget() {
   const markAsRead = async () => {
     if (!conversation || isMinimized || !isOpen) return;
 
-    // Sprawdź czy są nieprzeczytane wiadomości od supportu
+    // Check for unread messages from support
     const hasUnread = messages.some(m => m.senderType === 'support' && !m.read);
     if (!hasUnread) return;
 
@@ -310,13 +310,13 @@ export default function ChatWidget() {
 
     setSending(true);
     try {
-      // 1. Pobierz sygnaturę
+      // 1. Get signature
       const sigResponse = await secureFetch('/api/upload/signature');
       const sigData = await sigResponse.json();
 
-      if (!sigResponse.ok) throw new Error('Nie udało się pobrać sygnatury');
+      if (!sigResponse.ok) throw new Error('Failed to get signature');
 
-      // 2. Wyślij do Cloudinary
+      // 2. Send to Cloudinary
       const formDataUpload = new FormData();
       formDataUpload.append('file', file);
       formDataUpload.append('signature', sigData.signature);
@@ -332,7 +332,7 @@ export default function ChatWidget() {
       const clData = await clResponse.json();
       if (!clResponse.ok) throw new Error('Błąd uploadu do Cloudinary');
 
-      // 3. Wyślij wiadomość z obrazkiem
+      // 3. Send message with image
       const response = await secureFetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

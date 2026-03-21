@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const UserSchema = new mongoose.Schema({
-  // Dane osobowe
+  // Personal data
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: {
@@ -24,8 +24,8 @@ const UserSchema = new mongoose.Schema({
     enum: ['admin', 'moderator', 'developer', null],
     default: null
   },
-  adminPin: { type: String }, // zahashowany PIN do panelu admin
-  adminPermissions: [{ type: String }], // dodatkowe uprawnienia specyficzne
+  adminPin: { type: String }, // hashed PIN for admin panel
+  adminPermissions: [{ type: String }], // additional specific permissions
   lastAdminLogin: { type: Date },
   isAdminActive: { type: Boolean, default: false },
 
@@ -38,7 +38,7 @@ const UserSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 
-  // Status użytkownika
+  // User status
   isActive: { type: Boolean, default: true },
   deletedAt: { type: Date, default: null },
   forcePasswordReset: { type: Boolean, default: false },
@@ -49,7 +49,7 @@ const UserSchema = new mongoose.Schema({
   validateBeforeSave: true
 });
 
-// Automatyczna aktualizacja updatedAt i hashowanie hasła
+// Automatic update of updatedAt and password hashing
 UserSchema.pre('save', async function (next) {
   this.updatedAt = Date.now();
 

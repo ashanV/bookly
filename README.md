@@ -19,15 +19,27 @@
 - **Widoki**: Dzień, 3 dni, Tydzień, Miesiąc.
 - **Filtrowanie**: Zaawansowane filtry pracowników i usług.
 
-### 💼 Zarządzanie Biznesem
+### 💼 Zarządzanie Biznesem i Subskrypcje
 - **Dashboard**: Panel analityczny z danymi o rezerwacjach i klientach.
+- **System Subskrypcji**: Pełna integracja ze **Stripe** (aktualnie w trybie **Sandbox**) do obsługi płatności cyklicznych.
 - **Pracownicy**: Zarządzanie zespołem, ich dostępnością oraz przypisywanie do konkretnych usług.
 - **Klienci**: Baza danych klientów z historią wizyt.
 
+### 🛠️ Panel Administracyjny (Admin/Support/Developer)
+Dedykowany dashboard `/admin` dla obsługi platformy:
+- **Zarządzanie systemem**: Kontrola nad biznesami, użytkownikami i rolami.
+- **Wsparcie (Support)**: System czatu na żywo, zgłoszenia problemów oraz odwołania od banów przy użyciu **Pusher**.
+- **Developer Tools**: Monitoring logów systemowych, ustawienia bezpieczeństwa i finansów.
+
 ### 🔐 Bezpieczeństwo i Infrastruktura
 - **Custom Auth**: System uwierzytelniania oparty na JWT (Jose) z middleware zabezpieczającym trasy.
-- **Real-time**: Powiadomienia i aktualizacje w czasie rzeczywistym dzięki integracji z **Pusher**.
-- **Rate Limiting**: Ochrona API przed nadużyciami przy użyciu Redis.
+- **Real-time**: Wsparcie na żywo (Chat), zgłoszenia i aktualizacje w czasie rzeczywistym dzięki **Pusher**.
+- **Rate Limiting & Cache**: Ochrona API przed nadużyciami oraz optymalizacja dzięki **Redis**.
+- **Media**: Szybkie i bezpieczne przesyłanie oraz przechowywanie zdjęć/plików przy użyciu **Cloudinary**.
+
+## [🔗 LIVE DEMO] https://bookly-app-kacper-k.vercel.app/
+- **Test account business**: [testbiz@gmail.com] / Test123# 
+- **Test account client**: [test@example.com] / Test123#
 
 ## 🛠 Stos Technologiczny
 
@@ -61,4 +73,4 @@
 - [ ] Pełne pokrycie testami E2E (Playwright).
 
 ---
-Autor: [Kacper](https://github.com/twoja-nazwa)
+Autor: [Kacper](https://github.com/ashanV)

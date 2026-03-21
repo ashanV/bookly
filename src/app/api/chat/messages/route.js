@@ -6,7 +6,7 @@ import Business from "@/app/models/Business";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
-// GET - Pobierz wiadomości z konwersacji
+// GET - Get messages from conversation
 export async function GET(req) {
   try {
     await connectDB();
@@ -20,12 +20,12 @@ export async function GET(req) {
       return NextResponse.json({ error: "Brak conversationId" }, { status: 400 });
     }
 
-    const role = searchParams.get('role'); // 'admin' lub 'user'
+    const role = searchParams.get('role'); // 'admin' or 'user'
     const token = role === 'admin'
       ? req.cookies.get('adminToken')?.value
       : req.cookies.get('token')?.value;
 
-    // Sprawdź uprawnienia
+    // Check permissions
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return NextResponse.json({ error: "Konwersacja nie znaleziona" }, { status: 404 });
@@ -39,7 +39,7 @@ export async function GET(req) {
             return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
           }
         } catch (error) {
-          // Anonimowy użytkownik - sprawdź czy to jego konwersacja (bez userId)
+          // Anonymous user - check if it's their conversation (without userId)
           if (conversation.userId) {
             return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
           }
@@ -51,7 +51,7 @@ export async function GET(req) {
 
     const query = { conversationId };
 
-    // Ukryj notatki wewnętrzne dla użytkowników
+    // Hide internal notes for users
     if (role !== 'admin') {
       query.type = { $ne: 'note' };
     }
@@ -62,7 +62,7 @@ export async function GET(req) {
       .skip(skip)
       .lean();
 
-    // Auto-przypisanie jeśli admin otwiera nieprzypisaną konwersację
+    // Auto-assign if admin opens unassigned conversation
     if (role === 'admin' && !conversation.supportId && token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -96,7 +96,7 @@ export async function GET(req) {
     }
 
     return NextResponse.json({
-      messages: messages.reverse() // Odwróć, aby najstarsze były pierwsze
+      messages: messages.reverse() // Reverse to show oldest first
     }, { status: 200 });
   } catch (error) {
     console.error("Błąd pobierania wiadomości:", error);
@@ -107,7 +107,7 @@ export async function GET(req) {
   }
 }
 
-// POST - Wyślij wiadomość
+// POST - Send message
 export async function POST(req) {
   try {
     await connectDB();
@@ -125,14 +125,14 @@ export async function POST(req) {
       gifUrl = null
     } = body;
 
-    // Walidacja: wymagane conversationId oraz treść LUB multimedia
+    // Validation: conversationId and content OR media required
     if (!conversationId || (!message && !fileUrl && !gifUrl)) {
       return NextResponse.json({ error: "Brak wymaganych pól" }, { status: 400 });
     }
 
-    const role = body.role || 'user'; // 'admin' lub 'user'
+    const role = body.role || 'user'; // 'admin' or 'user'
 
-    // Priorytet dla adminToken jeśli rola to admin
+    // Priority for adminToken if role is admin
     const token = role === 'admin'
       ? req.cookies.get('adminToken')?.value
       : req.cookies.get('token')?.value;
@@ -142,7 +142,7 @@ export async function POST(req) {
     let finalSenderName = senderName || 'Użytkownik nie zalogowany';
     let finalSenderEmail = senderEmail || null;
 
-    // Sprawdź autoryzację i ustaw dane nadawcy
+    // Check authorization and set sender data
     if (role === 'admin') {
       if (!token) {
         return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
@@ -155,7 +155,7 @@ export async function POST(req) {
         senderId = 'support';
         senderType = 'support';
 
-        // Spróbuj pobrać imię admina z bazy
+        // Try to get admin name from database
         const adminUser = await User.findById(decoded.id);
         finalSenderName = adminUser ? (adminUser.name || `${adminUser.firstName} ${adminUser.lastName}`) : (decoded.name || 'Support');
         finalSenderEmail = decoded.email || (adminUser?.email);
@@ -163,14 +163,14 @@ export async function POST(req) {
         return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
       }
     } else {
-      // Użytkownik
+      // User
       if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           senderId = decoded.id;
           senderType = decoded.role === 'client' ? 'client' : decoded.role === 'business' ? 'business' : 'user';
 
-          // Pobierz dane z bazy
+          // Get data from database
           let dbUser = null;
           if (senderType === 'business') {
             dbUser = await Business.findById(senderId);
@@ -183,18 +183,18 @@ export async function POST(req) {
             finalSenderEmail = dbUser.email || finalSenderEmail;
           }
         } catch (error) {
-          // Anonimowy użytkownik
+          // Anonymous user
         }
       }
     }
 
-    // Sprawdź czy konwersacja istnieje
+    // Check if conversation exists
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return NextResponse.json({ error: "Konwersacja nie znaleziona" }, { status: 404 });
     }
 
-    // Utwórz wiadomość
+    // Create message
     const chatMessage = new ChatMessage({
       conversationId,
       senderId,
@@ -207,12 +207,12 @@ export async function POST(req) {
       fileName,
       fileSize,
       gifUrl,
-      read: role === 'admin' ? false : true // Admin nie czyta automatycznie swoich wiadomości
+      read: role === 'admin' ? false : true // Admin does not automatically read his messages
     });
 
     await chatMessage.save();
 
-    // Zaktualizuj konwersację
+    // Update conversation
     conversation.messageCount += 1;
     conversation.lastMessageAt = new Date();
     conversation.lastMessageBy = senderId;
@@ -220,7 +220,7 @@ export async function POST(req) {
     if (role === 'admin') {
       conversation.status = conversation.status === 'open' ? 'in_progress' : conversation.status;
       if (!conversation.supportId) {
-        // Przypisz admina do konwersacji
+        // Assign admin to conversation
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           conversation.supportId = decoded.id;
@@ -247,21 +247,21 @@ export async function POST(req) {
     try {
       const { pusherServer } = await import("@/lib/pusher");
 
-      // Jeśli to notatka, wyślij tylko na kanał admina
+      // If it's a note, send only to admin channel
       if (type === 'note') {
         await pusherServer.trigger(`admin-chat-${conversationId}`, "new-message", {
           id: chatMessage._id.toString(),
           ...chatMessage.toObject()
         });
       } else {
-        // Normalna wiadomość - wyślij na publiczny kanał czatu
+        // Normal message - send to public chat channel
         await pusherServer.trigger(`chat-${conversationId}`, "new-message", {
           id: chatMessage._id.toString(),
           ...chatMessage.toObject()
         });
       }
 
-      // Powiadom listę admina (update licznika/statusu)
+      // Notify admin list (update counter/status)
       await pusherServer.trigger("admin-support", "message-received", {
         conversationId,
         lastMessageAt: conversation.lastMessageAt,

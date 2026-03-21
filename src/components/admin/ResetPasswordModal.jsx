@@ -18,9 +18,6 @@ export default function ResetPasswordModal({ isOpen, onClose, targetName, target
             } else if (response && response.success) {
                 onClose(); // Close if no result result (e.g. force reset)
             } else {
-                // If the callback returns data but not tempPassword, maybe we just show success state?
-                // For 'link' and 'force', we usually just want to close or show toast.
-                // Let's assume onConfirm handles toasts for success, but returns data for temp password.
                 if (action === 'temp') {
                     // Wait for result
                 } else {

@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const { secureFetch } = useCsrf();
 
-    // Weryfikacja sesji — wywoływana raz przy montowaniu providera
+    // Session verification — called once when provider mounts
     const refreshUser = useCallback(async () => {
         try {
             const response = await fetch('/api/auth/verify', { credentials: 'include' });
@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
-    // Inicjalizacja — jedno zapytanie dla całej aplikacji
+    // Initialization — one request for the entire application
     useEffect(() => {
         const initAuth = async () => {
             const cachedUser = localStorage.getItem('user');
@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
         initAuth();
     }, [refreshUser]);
 
-    // Wylogowanie (bez redirectTo — to obsługuje useAuth hook)
+    // Logout (without redirectTo — handled by useAuth hook)
     const logout = useCallback(async () => {
         try {
             await secureFetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
@@ -63,7 +63,7 @@ export function AuthProvider({ children }) {
         console.log('👋 Wylogowano');
     }, [secureFetch]);
 
-    // Rejestracja
+    // Registration
     const register = useCallback(async (userData) => {
         try {
             const response = await secureFetch('/api/auth/register', {
@@ -84,7 +84,7 @@ export function AuthProvider({ children }) {
         }
     }, [secureFetch]);
 
-    // Aktualizacja profilu
+    // Profile update
     const updateProfile = useCallback(async (newUserData) => {
         try {
             const response = await secureFetch('/api/auth/update-profile', {
@@ -108,12 +108,12 @@ export function AuthProvider({ children }) {
         }
     }, [secureFetch]);
 
-    // Sprawdzanie roli
+    // Check role
     const hasRole = useCallback((role) => {
         return user?.role === role;
     }, [user]);
 
-    // Sprawdzanie uprawnień
+    // Check permission
     const hasPermission = useCallback((permission) => {
         return user?.permissions?.includes(permission) || false;
     }, [user]);

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 export async function POST() {
   const cookieStore = await cookies();
   
-  // Usuń token sesji
+  // Remove session token
   cookieStore.set("token", "", {
     httpOnly: true,
     path: "/",

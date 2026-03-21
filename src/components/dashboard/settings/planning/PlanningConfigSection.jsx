@@ -96,16 +96,11 @@ export default function PlanningConfigSection({
                                     key={item.id}
                                     onClick={() => {
                                         if (item.type === 'internal' && item.action === 'hours') {
-                                            // This requires a way to switch main section back to 'hours'
-                                            // We can handle this by passing a prop or using a callback
-                                            // For now, let's assume we can pass a special 'navigate' function
                                             if (onUpdateBusiness && typeof onUpdateBusiness.navigate === 'function') {
                                                 onUpdateBusiness.navigate('hours');
                                             } else {
-                                                // Fallback or todo
                                                 console.log("Navigation to hours requested");
-                                                // Ideally we should have an onNavigate prop
-                                                if (onBack) onBack('hours'); // Hacky way to signal parent? Better to add specific prop
+                                                if (onBack) onBack('hours');
                                             }
                                         }
                                     }}

@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
         const sessions = await Session.find({ userId: id }).sort({ createdAt: -1 }).lean();
 
         const activeSessions = sessions.filter(s => s.isActive && new Date(s.expiresAt) > new Date());
-        const history = sessions; // Entire history including active, or filtered? Usually history implies list of all logins.
+        const history = sessions;
 
         return NextResponse.json({
             activeSessions,
@@ -34,13 +34,6 @@ export async function DELETE(request, { params }) {
     try {
         await connectDB();
         const { id } = await params; // userId (from URL)
-
-        // We need sessionId from body or query? URL is /users/[id]/sessions. 
-        // Standard REST would be /users/[id]/sessions/[sessionId].
-        // But Next.js App Router dynamic routes for nested IDs can be tricky if not set up as separate folder.
-        // Let's use Query Param or Body. 
-        // Wait, I can make a folder `[sessionId]` inside `sessions`?
-        // Or just `sessions` accepts body `{ sessionId }`. Let's do body.
 
         const body = await request.json();
         const { sessionId } = body;

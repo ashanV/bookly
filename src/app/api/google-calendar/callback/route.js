@@ -13,19 +13,19 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get('code');
-    const state = searchParams.get('state'); // ID biznesu
+    const state = searchParams.get('state'); // Business ID
 
     if (!code) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/business/calendar?error=auth_failed`);
     }
 
-    // Wymiana kodu na tokeny
+    // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
     await connectDB();
 
-    // Zapisanie tokenów w bazie danych
+    // Save tokens in database
     const business = await Business.findById(state);
     if (!business) {
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/business/calendar?error=business_not_found`);

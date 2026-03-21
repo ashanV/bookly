@@ -9,7 +9,6 @@ import { useAuth } from '../../../hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Dynamically import components that might use browser APIs
-// Dynamically import components that might use browser APIs
 const MapModal = dynamic(() => import('../../../components/Map'), {
   ssr: false,
   loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>
@@ -281,15 +280,15 @@ export default function ServicesPage() {
   };
 
   const handleBookingClick = (studio, service) => {
-    // Sprawdź czy użytkownik jest zalogowany
+    // Check if the user is logged in
     if (!isAuthenticated) {
-      // Przekieruj na stronę logowania z parametrem redirect
+      // Redirect to the login page with a redirect parameter
       const currentPath = window.location.pathname;
       router.push(`/client/auth?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
 
-    // Jeśli użytkownik jest zalogowany, otwórz modal rezerwacji
+    // If the user is logged in, open the booking modal
     setSelectedService(service || studio);
     setIsBookingOpen(true);
   };
@@ -386,7 +385,7 @@ export default function ServicesPage() {
                 Dla firmy
               </Link>
               {isAuthenticated ? (
-                // Dropdown menu użytkownika
+                // User dropdown menu
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onMouseEnter={() => setIsUserMenuOpen(true)}
@@ -436,7 +435,7 @@ export default function ServicesPage() {
                   </AnimatePresence>
                 </div>
               ) : (
-                // Przycisk logowania dla niezalogowanych
+                // Login button for non-logged in users
                 <button
                   onClick={() => {
                     const currentPath = window.location.pathname + window.location.search;

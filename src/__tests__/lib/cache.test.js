@@ -60,14 +60,6 @@ describe('Cache Library', () => {
 
         it('should return null if not configured', async () => {
             delete process.env.UPSTASH_REDIS_REST_URL;
-            // Force re-import or handle singleton state? 
-            // In unit test without module reset, singleton might persist.
-            // But getRedis checks env vars on init.
-            // Since lazy init, if already initted, it returns instance.
-            // We'll trust the mock for now or focus on logic flow that allows it.
-
-            // If already initialized in previous tests, this test might be flaky depending on implementation details.
-            // But let's verify normal flow first.
         });
     });
 

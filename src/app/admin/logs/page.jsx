@@ -54,7 +54,7 @@ export default function AdminLogsPage() {
 
 
     const getActionConfig = (action, type) => {
-        // Logika kategorii i ikon
+        // Category and icon logic
         if (action === 'admin_login')
             return { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: <Shield className="w-4 h-4" />, label: 'LOGOWANIE UDANE' };
         if (action === 'admin_login_failed')
@@ -150,7 +150,7 @@ export default function AdminLogsPage() {
     const renderDiff = (details) => {
         if (!details) return <span className="text-gray-500 italic">Brak szczegółów</span>;
 
-        // Jeśli details ma strukturę diff { old: ..., new: ... }
+        // If details has the structure diff { old: ..., new: ... }
         if (details.old !== undefined || details.new !== undefined) {
             return (
                 <div className="mt-3 bg-gray-950 rounded-lg border border-gray-800 p-4 font-mono text-xs overflow-x-auto">
@@ -172,7 +172,7 @@ export default function AdminLogsPage() {
             );
         }
 
-        // Fallback dla zwykłego tekstu lub obiektu
+        // Fallback for plain text or object
         return (
             <div className="mt-2 text-gray-400 bg-gray-950 p-3 rounded-lg border border-gray-800 font-mono text-xs whitespace-pre-wrap">
                 {typeof details === 'object' ? JSON.stringify(details, null, 2) : details}
@@ -201,7 +201,7 @@ export default function AdminLogsPage() {
                                 className="w-full pl-10 pr-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                             />
                         </div>
-                        {/* Placeholder na filtry - do implementacji w przyszłości */}
+                        {/* Placeholder for filters - to be implemented in the future */}
                     </div>
 
                     <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden ring-1 ring-white/5">

@@ -15,10 +15,6 @@ export default function QuickActionPopover({ isOpen, x, y, date, onClose, onActi
                 onClose();
             }
         };
-
-        // Add event listener with capture to ensure we catch clicks even if propagation stopped elsewhere
-        // But for portals, bubbled events work normally. Using standard click is usually fine.
-        // However, if the calendar stops propagation, we might need mousedown on document.
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen, onClose]);

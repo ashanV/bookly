@@ -12,14 +12,14 @@ const oauth2Client = new google.auth.OAuth2(
 
 export async function GET(req) {
   try {
-    // Pobranie tokenu z cookies
+    // Get token from cookies
     const token = req.cookies.get('token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
-    // Weryfikacja tokenu
+    // Verify token
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
     }
@@ -29,7 +29,7 @@ export async function GET(req) {
       return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
     }
 
-    // Generowanie URL autoryzacji
+    // Generate authorization URL
     const scopes = [
       'https://www.googleapis.com/auth/calendar',
       'https://www.googleapis.com/auth/calendar.events'
@@ -38,7 +38,7 @@ export async function GET(req) {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
-      state: decoded.id, // Przekazanie ID biznesu w state
+      state: decoded.id, // Pass business ID in state
       prompt: 'consent'
     });
 

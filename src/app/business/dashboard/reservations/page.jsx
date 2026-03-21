@@ -101,7 +101,7 @@ export default function ReservationsPage() {
         setAvailableServices(services);
         setAvailableEmployees(employees);
 
-        // Transformacja danych z API do formatu używanego w komponencie
+        // Transform data from API to the format used in the component
         const createdByName = user?.firstName && user?.lastName
           ? `${user.firstName} ${user.lastName}`
           : user?.name || 'System';
@@ -239,7 +239,7 @@ export default function ReservationsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Aktualizacja lokalnej listy rezerwacji
+        // Update local reservation list
         const reservationId = editingReservation.id || editingReservation._id;
         const index = reservations.findIndex(r => (r.id || r._id) === reservationId);
         if (index !== -1) {
@@ -247,7 +247,7 @@ export default function ReservationsPage() {
         }
         setEditingReservation(null);
         setEditForm({});
-        // Odświeżenie danych
+        // Refresh data
         fetchReservations();
       } else {
         alert('Błąd podczas zapisywania zmian: ' + (data.error || 'Nieznany błąd'));
@@ -270,14 +270,14 @@ export default function ReservationsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Usunięcie z lokalnej listy
+        // Remove from local list
         const reservationId = deletingReservation.id || deletingReservation._id;
         const index = reservations.findIndex(r => (r.id || r._id) === reservationId);
         if (index !== -1) {
           reservations.splice(index, 1);
         }
         setDeletingReservation(null);
-        // Odświeżenie danych
+        // Refresh data
         fetchReservations();
       } else {
         alert('Błąd podczas usuwania: ' + (data.error || 'Nieznany błąd'));

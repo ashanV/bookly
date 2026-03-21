@@ -81,7 +81,7 @@ export async function PUT(request, { params }) {
         const { id } = await params;
         const body = await request.json();
 
-        // Walidacja przez Zod
+        // Zod Validation
         const validation = validateInput(adminUserUpdateSchema, body);
         if (!validation.success) {
             return NextResponse.json({ error: validation.error }, { status: 400 });
@@ -295,8 +295,6 @@ export async function DELETE(request, { params }) {
         }
 
         // 1. Check Conflicts (Business, Reservations) - Basic safeguard
-        // If anonymizing or hard deleting, we must be careful.
-        // For soft delete, it's safer but still good to know.
         const activeBusiness = await Business.findOne({ email: user.email });
         const activeReservations = await Reservation.countDocuments({ clientId: user._id, status: 'confirmed' });
 

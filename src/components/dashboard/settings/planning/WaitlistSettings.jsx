@@ -259,9 +259,6 @@ export default function WaitlistSettings({ businessData, onUpdate }) {
                 </section>
 
                 {/* Warning Banner */}
-                {/* Warning displayed regardless of onlineActive state in the screenshot, but implies context. 
-                    I'll replicate it as a static warning for now or conditional if I knew the global setting.
-                    Given the screenshot shows it while editing, I'll include it. */}
                 <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 flex gap-3">
                     <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
                     <div>

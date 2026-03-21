@@ -18,14 +18,14 @@ export async function PUT(req) {
     }
     await connectDB();
 
-    // Pobranie tokenu z cookies
+    // Retrieving token from cookies
     const token = req.cookies.get('token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
-    // Weryfikacja tokenu
+    // Token verification
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (decoded.role !== 'business') {
@@ -39,14 +39,14 @@ export async function PUT(req) {
       return NextResponse.json({ error: "Brak ID rezerwacji" }, { status: 400 });
     }
 
-    // Pobranie rezerwacji
+    // Retrieving reservation
     const reservation = await Reservation.findById(reservationId);
 
     if (!reservation) {
       return NextResponse.json({ error: "Rezerwacja nie została znaleziona" }, { status: 404 });
     }
 
-    // Sprawdzenie, czy rezerwacja należy do biznesu
+    // Checking if reservation belongs to business
     if (reservation.businessId.toString() !== decoded.id) {
       return NextResponse.json({ error: "Brak uprawnień do tej rezerwacji" }, { status: 403 });
     }
@@ -86,7 +86,7 @@ export async function PUT(req) {
       }
     }
 
-    // Aktualizacja pól
+    // Updating fields
     if (service !== undefined) reservation.service = service;
     if (date !== undefined) reservation.date = new Date(date);
     if (time !== undefined) reservation.time = time;

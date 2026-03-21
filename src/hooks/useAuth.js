@@ -10,7 +10,7 @@ export const useAuth = (redirectTo = '/client/auth') => {
 
   const router = useRouter();
 
-  // Opakowujemy logout z kontekstu, dodając redirect specyficzny dla danej strony
+  // Wrap logout from context, adding redirect specific to the given page
   const logout = useCallback(async (shouldRedirect = true) => {
     await context.logout();
     if (shouldRedirect) {

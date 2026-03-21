@@ -9,12 +9,6 @@ export async function getSupportStats() {
     // 1. Try Redis first
     const cached = await redis.get(CACHE_KEY);
     if (cached) {
-        // Redis returns parsed JSON object automatically if using Upstash REST client depending on method, 
-        // but typically it returns the object/string. 
-        // If stored as JSON string, we might need to parse, but Upstash SDK usually handles it if passed as object to set.
-        // In previous step I stringified it. So here I suspect it comes back as string or object?
-        // Let's assume it might be a string if I did JSON.stringify.
-        // Actually Upstash redis `get` returns the value. If it was stringified, it returns string.
         try {
             return typeof cached === 'string' ? JSON.parse(cached) : cached;
         } catch (e) {

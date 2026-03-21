@@ -684,7 +684,7 @@ export default function AddClientPage() {
 
                                 <div className="border-t border-slate-200" />
 
-                                {/* Informacje dodatkowe Section */}
+                                {/* Additional Information Section */}
                                 <section className="scroll-mt-24">
                                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Informacje dodatkowe</h2>
                                     <p className="text-slate-500 mb-8">Zarządzaj danymi klienta.</p>

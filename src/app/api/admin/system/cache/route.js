@@ -11,16 +11,10 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const pattern = searchParams.get('pattern') || '*';
 
-        // Use scan for safer iteration over keys, but for admin visualization we might want "all"
-        // Upstash 'keys' command is fine for smaller datasets, but scan is better practice.
-        // However, standard Redis `keys` is often blocked or slow. 
-        // Upstash supports `keys` well enough for admin panels.
-
         let keys = [];
         let cursor = 0;
 
         // Simple implementation using `keys` command for simplicity in this admin context
-        // If the dataset is huge, this should be paginated.
         keys = await redis.keys(pattern);
 
         return NextResponse.json({ keys });

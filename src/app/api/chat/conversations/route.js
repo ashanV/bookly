@@ -6,13 +6,13 @@ import User from "@/app/models/User";
 import Business from "@/app/models/Business";
 import { NextResponse } from "next/server";
 
-// GET - Pobierz listę konwersacji
+// GET - Get list of conversations
 export async function GET(req) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const role = searchParams.get('role'); // 'admin' lub 'user'
+    const role = searchParams.get('role'); // 'admin' or 'user'
     const status = searchParams.get('status'); // 'open', 'closed', etc.
 
     const token = role === 'admin'
@@ -22,19 +22,19 @@ export async function GET(req) {
     let query = {};
 
     if (role === 'admin') {
-      // Admin widzi wszystkie konwersacje (również deleted), aby frontend mógł je filtrować
+      // Admin sees all conversations (including deleted) so the frontend can filter them
       if (status) {
         query.status = status;
       }
     } else if ((role === 'user' || role === 'business') && token) {
-      // Użytkownik/Biznes widzi tylko swoje konwersacje
+      // User/Business sees only their conversations
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded.id) throw new Error('Invalid token payload');
 
         query.userId = decoded.id;
 
-        // Jeśli to biznes, filtruj też po userType
+        // If it's a business, also filter by userType
         if (role === 'business') {
           query.userType = 'business';
         }
@@ -42,14 +42,14 @@ export async function GET(req) {
         if (status) {
           query.status = status;
         } else {
-          // Nie pokazuj usuniętych przez admina
+          // Don't show conversations deleted by admin
           query.status = { $ne: 'deleted' };
         }
       } catch (error) {
         return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
       }
     } else {
-      // Anonimowy użytkownik - brak konwersacji lub błędna rola
+      // Anonymous user - no conversations or wrong role
       return NextResponse.json({ conversations: [] }, { status: 200 });
     }
 
@@ -58,7 +58,7 @@ export async function GET(req) {
       .limit(role === 'admin' ? 200 : 50)
       .lean();
 
-    // Pobierz liczbę nieprzeczytanych wiadomości dla każdej konwersacji
+    // Get the number of unread messages for each conversation
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
         const unreadCount = await ChatMessage.countDocuments({
@@ -80,7 +80,7 @@ export async function GET(req) {
   }
 }
 
-// POST - Utwórz nową konwersację
+// POST - Create a new conversation
 export async function POST(req) {
   try {
     await connectDB();
@@ -98,14 +98,14 @@ export async function POST(req) {
     let finalUserEmail = userEmail || null;
     let finalUserAvatar = null;
 
-    // Jeśli użytkownik jest zalogowany, użyj danych z bazy danych
+    // If the user is logged in, use data from the database
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         finalUserId = decoded.id;
         finalUserType = decoded.role === 'client' ? 'client' : decoded.role === 'business' ? 'business' : 'user';
 
-        // Pobierz dane z bazy, bo token może ich nie zawierać
+        // Get data from database because the token may not contain it
         let dbUser = null;
         if (finalUserType === 'business') {
           dbUser = await Business.findById(finalUserId);
@@ -124,11 +124,11 @@ export async function POST(req) {
           finalUserEmail = dbUser.email || finalUserEmail;
         }
       } catch (error) {
-        // Token nieprawidłowy, kontynuuj jako anonimowy
+        // Invalid token, continue as anonymous
       }
     }
 
-    // Utwórz konwersację
+    // Create conversation
     const conversation = new Conversation({
       userId: finalUserId,
       userType: finalUserType,
@@ -145,7 +145,7 @@ export async function POST(req) {
 
     await conversation.save();
 
-    // Utwórz pierwszą wiadomość
+    // Create the first message
     if (message || fileUrl) {
       const firstMessage = new ChatMessage({
         conversationId: conversation._id,
@@ -163,7 +163,7 @@ export async function POST(req) {
 
       await firstMessage.save();
 
-      // Zaktualizuj statystyki konwersacji
+      // Update conversation statistics
       conversation.messageCount = 1;
       conversation.lastMessageAt = new Date();
       conversation.lastMessageBy = finalUserId || 'anonymous';

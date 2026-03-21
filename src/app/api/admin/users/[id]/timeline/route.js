@@ -16,7 +16,6 @@ export async function GET(request, { params }) {
         }
 
         // 2. Fetch Admin Logs (Profile Changes, etc.)
-        // We look for logs where targetId is the user ID and targetType is 'user'
         const logs = await AdminLog.find({
             targetType: 'user',
             targetId: id
@@ -98,7 +97,7 @@ export async function GET(request, { params }) {
 
             events.push({
                 id: res._id,
-                date: res.createdAt, // Or res.date if we want appt time? Usually "Activity Timeline" shows when it happened (booking made)
+                date: res.createdAt,
                 type: 'reservation',
                 title: title,
                 description: `Rezerwacja: ${res.service} (${res.time}, ${res.duration} min). Status: ${res.status}`,

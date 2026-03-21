@@ -55,15 +55,6 @@ export default function BusinessMessages() {
     // Real-time updates via Pusher
     useEffect(() => {
         if (!isConnected || !socket || !user) return;
-
-        // Listen to user-specific channel if applicable, but implementation plan suggested simple list refresh logic or specific channel
-        // Ideally, the backend should trigger events on a channel the user subscribes to.
-        // Based on AdminSupportPage, likely we just update local state if we are listening to specific convs, 
-        // BUT for the list itself, we might not have a global "user-conversations" channel yet.
-        // We will rely on manual refresh or individual conversation updates if they are in the list.
-
-        // However, let's try to update the selected conversation in real-time.
-        // The list update is less critical unless a NEW conversation is created by support (unlikely).
     }, [isConnected, socket, user]);
 
 

@@ -14,7 +14,7 @@ export async function POST(req) {
             return NextResponse.json({ error: "Brak ID do przetworzenia" }, { status: 400 });
         }
 
-        // Autoryzacja
+        // Authorization
         const token = req.cookies.get('adminToken')?.value || req.cookies.get('token')?.value;
         if (!token) {
             return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
@@ -52,10 +52,6 @@ export async function POST(req) {
                     { $set: updateQuery }
                 );
 
-                // Notify Pusher logic here (simplified loop for now or broadcast to list)
-                // For bulk, updating the list channel is most important.
-                // We'd ideally loop to update individual chat channels too if needed, but for now let's update admin list.
-                // To be robust, let's iterate to notify properly if count is low, or just generic update.
                 for (const id of ids) {
                     await pusherServer.trigger("admin-support", "conversation-updated", { id, status });
                     await pusherServer.trigger(`chat-${id}`, "conversation-updated", { id, status });
@@ -80,7 +76,7 @@ export async function POST(req) {
                 break;
 
             case 'delete_permanently':
-                // DANGER: Usuwanie wiadomości
+                // DANGER: Message deletion
                 await ChatMessage.deleteMany({ conversationId: { $in: ids } });
                 result = await Conversation.deleteMany({ _id: { $in: ids } });
 

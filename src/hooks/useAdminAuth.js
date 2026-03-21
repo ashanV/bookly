@@ -12,7 +12,7 @@ export const useAdminAuth = (redirectTo = '/admin/login') => {
     const router = useRouter();
     const { secureFetch } = useCsrf();
 
-    // Wylogowanie z panelu admin
+    // Admin logout
     const adminLogout = useCallback(async (shouldRedirect = true) => {
         try {
             await secureFetch('/api/admin/auth/logout', {
@@ -31,7 +31,7 @@ export const useAdminAuth = (redirectTo = '/admin/login') => {
         }
     }, [router, redirectTo, secureFetch]);
 
-    // Weryfikacja sesji admin
+    // Admin session verification
     const verifyAdminSession = useCallback(async () => {
         try {
             const response = await fetch('/api/admin/auth/verify', {
@@ -59,10 +59,10 @@ export const useAdminAuth = (redirectTo = '/admin/login') => {
         }
     }, []);
 
-    // Inicjalizacja
+    // Initialization
     useEffect(() => {
         const initAdminAuth = async () => {
-            // Sprawdź cached user
+            // Check cached user
             const cachedUser = localStorage.getItem('adminUser');
             if (cachedUser) {
                 try {
@@ -77,7 +77,7 @@ export const useAdminAuth = (redirectTo = '/admin/login') => {
         initAdminAuth();
     }, [verifyAdminSession]);
 
-    // Logowanie do panelu admin
+    // Admin login
     const adminLogin = useCallback(async (email, password, pin) => {
         try {
             const response = await secureFetch('/api/admin/auth/login', {
@@ -102,24 +102,24 @@ export const useAdminAuth = (redirectTo = '/admin/login') => {
         }
     }, [secureFetch]);
 
-    // Sprawdzenie roli
+    // Check role
     const hasRole = useCallback((role) => {
         return adminUser?.adminRole === role;
     }, [adminUser]);
 
-    // Sprawdzenie uprawnienia
+    // Check permission
     const hasPermission = useCallback((permission) => {
         if (!adminUser?.adminRole) return false;
         const permissions = ROLE_PERMISSIONS[adminUser.adminRole] || [];
         return permissions.includes(permission);
     }, [adminUser]);
 
-    // Sprawdzenie dostępu do sekcji
+    // Check section access
     const canAccess = useCallback((section) => {
         return canAccessSection(adminUser?.adminRole, section);
     }, [adminUser]);
 
-    // Pobierz wszystkie uprawnienia dla aktualnej roli
+    // Get all permissions for current role
     const getPermissions = useCallback(() => {
         if (!adminUser?.adminRole) return [];
         return ROLE_PERMISSIONS[adminUser.adminRole] || [];

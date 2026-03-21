@@ -28,7 +28,7 @@ export async function POST(req) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    // Pobranie danych z walidacji
+    // Get data from validation
     const {
       companyName,
       companyType,
@@ -52,10 +52,10 @@ export async function POST(req) {
       newsletter
     } = validation.data;
 
-    // Podłączenie do bazy danych
+    // Connect to database
     await connectDB();
 
-    // Sprawdzenie, czy użytkownik o podanym emailu już istnieje (w User lub Business)
+    // Check if user with the given email already exists (in User or Business)
     const existingUser = await User.findOne({ email });
     const existingBusiness = await Business.findOne({ email });
 
@@ -66,7 +66,7 @@ export async function POST(req) {
       );
     }
 
-    // Mapowanie usług (jeśli są stringami) na obiekty
+    // Map services (if they are strings) to objects
     const serviceDefaults = {
       'haircut': { name: 'Strzyżenie', duration: 60, price: 100 },
       'coloring': { name: 'Koloryzacja', duration: 120, price: 200 },
@@ -96,8 +96,8 @@ export async function POST(req) {
       return service; // Already an object
     });
 
-    // Stworzenie nowego biznesu w bazie danych
-    // Hasło zostanie zahashowane przez middleware w modelu Business
+    // Create new business in database
+    // Password will be hashed by middleware in Business model
     const newBusiness = new Business({
       companyName,
       companyType,
@@ -106,7 +106,7 @@ export async function POST(req) {
       firstName,
       lastName,
       email,
-      password, // Przekazujemy plain text, middleware zahashuje
+      password, // Pass plain text, middleware will hash it
       phone,
       city,
       address,
@@ -156,7 +156,7 @@ export async function POST(req) {
       // Don't fail the registration if logging fails
     }
 
-    // Wysłanie odpowiedzi o sukcesie
+    // Send success response
     return NextResponse.json(
       { message: "Rejestracja biznesu przebiegła pomyślnie!" },
       { status: 201 }
@@ -165,7 +165,7 @@ export async function POST(req) {
   } catch (error) {
     console.error("Błąd podczas rejestracji biznesu:", error);
 
-    // Obsługa błędów unikalności email
+    // Handle email uniqueness errors
     if (error.code === 11000 && error.keyPattern?.email) {
       return NextResponse.json(
         { error: "Użytkownik o tym adresie email już istnieje" },

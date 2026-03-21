@@ -10,7 +10,7 @@ import EmployeeSchema from "./schemas/EmployeeSchema";
 import LocationSchema from "./schemas/LocationSchema";
 
 const BusinessSchema = new mongoose.Schema({
-  // Dane kontaktowe właściciela
+  // Owner contact information
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: {
@@ -27,19 +27,19 @@ const BusinessSchema = new mongoose.Schema({
   },
   password: { type: String, required: true },
 
-  // Dane firmy
+  // Company information
   companyName: { type: String, required: true },
   companyType: { type: String, required: true },
   category: { type: String, required: true, index: true },
   description: { type: String, default: '' },
 
-  // Obrazy firmy (Cloudinary URLs)
+  // Company images (Cloudinary URLs)
   profileImage: { type: String, default: '' },
   bannerImage: { type: String, default: '' },
   portfolioImages: [{ type: String }],
   hiddenPortfolioImages: [{ type: String }],
 
-  // Lokalizacja
+  // Location
   city: { type: String, required: true, index: true },
   address: { type: String, required: true },
   postalCode: {
@@ -48,7 +48,7 @@ const BusinessSchema = new mongoose.Schema({
     match: [/^\d{2}-\d{3}$/, 'Invalid postal code format (XX-XXX).']
   },
 
-  // Usługi i działalność - using extracted schema
+  // Services and business - using extracted schema
   services: [ServiceSchema],
   categories: [{
     name: { type: String, required: true },
@@ -75,7 +75,7 @@ const BusinessSchema = new mongoose.Schema({
     showBlockTime: { type: Boolean, default: true },
     blockTypes: [{
       name: { type: String, required: true },
-      duration: { type: Number, default: 60 }, // w minutach
+      duration: { type: Number, default: 60 }, // in minutes
       isPaid: { type: Boolean, default: true },
       icon: { type: String, default: 'calendar' }
     }]
@@ -92,19 +92,19 @@ const BusinessSchema = new mongoose.Schema({
   pricing: { type: String, default: '' },
   teamSize: { type: String, default: '' },
 
-  // Pracownicy - using extracted schema
+  // Employees - using extracted schema
   employees: [EmployeeSchema],
 
-  // Opinie - using extracted schema
+  // Reviews - using extracted schema
   reviews: [ReviewSchema],
 
-  // Social Media i marketing
+  // Social Media and marketing
   website: { type: String, default: '' },
   instagram: { type: String, default: '' },
   facebook: { type: String, default: '' },
   newsletter: { type: Boolean, default: false },
 
-  // Status biznesu
+  // Business status
   isActive: { type: Boolean, default: true },
   isVerified: { type: Boolean, default: false },
   isBlocked: { type: Boolean, default: false },
@@ -115,7 +115,7 @@ const BusinessSchema = new mongoose.Schema({
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
 
-  // Integracja z Google Calendar
+  // Google Calendar integration
   googleCalendarTokens: {
     accessToken: { type: String, default: null, set: encrypt, get: decrypt },
     refreshToken: { type: String, default: null, set: encrypt, get: decrypt },
@@ -174,7 +174,7 @@ const validateDaySchedule = (daySchedule) => {
   return true;
 };
 
-// Walidacja godzin otwarcia przed walidacją modelu
+// Validate working hours before model validation
 BusinessSchema.pre('validate', function (next) {
   if (this.isModified('workingHours')) {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -187,7 +187,7 @@ BusinessSchema.pre('validate', function (next) {
   next();
 });
 
-// Hashowanie hasła przed zapisem (timestamps handled automatically)
+// Hash password before saving (timestamps handled automatically)
 BusinessSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();

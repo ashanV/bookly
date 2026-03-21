@@ -23,15 +23,11 @@ const SessionSchema = new mongoose.Schema({
 
     createdAt: { type: Date, default: Date.now }
 }, {
-    timestamps: true // adds createdAt, updatedAt
+    timestamps: true
 });
 
 SessionSchema.index({ userId: 1, isActive: 1 });
-SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Auto-delete expired? Maybe keep for history if requested. 
+SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// The prompt asks for "Login History", so we should NOT auto-delete expired sessions immediately if we want to show history.
-// However, JWTs last long? "expiresAt" is usually short.
-// Let's keep history. We won't use TTL index for now OR we use a long TTL (e.g. 90 days).
-// Requirement: "Lista ostatnich logowań z datą i IP".
 
 export default mongoose.models.Session || mongoose.model("Session", SessionSchema);

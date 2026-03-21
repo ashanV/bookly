@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Reservation from '@/app/models/Reservation';
 import SystemConfig from '@/app/models/SystemConfig';
-import Business from '@/app/models/Business'; // Ensure Business model is registered
-import User from '@/app/models/User'; // Ensure User model is registered
+import Business from '@/app/models/Business';
+import User from '@/app/models/User';
 
 export async function GET(request) {
     try {

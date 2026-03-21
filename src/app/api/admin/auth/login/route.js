@@ -25,7 +25,7 @@ export async function POST(req) {
     try {
         const body = await req.json();
 
-        // Walidacja przez Zod
+        // Validation by Zod    
         const validation = validateInput(adminLoginSchema, body);
         if (!validation.success) {
             return NextResponse.json({ error: validation.error }, { status: 400 });
@@ -35,11 +35,11 @@ export async function POST(req) {
 
         await connectDB();
 
-        // Pobranie konfiguracji systemu
+        // Get system configuration
         const config = await SystemConfig.getConfig();
         const timeoutMinutes = config.sessionTimeoutMinutes || 1440;
 
-        // Znajdź użytkownika z rolą admin
+        // Find user with admin role
         const user = await User.findOne({
             email,
             adminRole: { $in: ['admin', 'moderator', 'developer'] }
@@ -56,14 +56,14 @@ export async function POST(req) {
             return NextResponse.json({ error: "Konto administratora jest nieaktywne" }, { status: 403 });
         }
 
-        // Sprawdź hasło
+        // Check password
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
             await logAdminAction(user._id, email, 'admin_login_failed', 'auth', null, { reason: 'invalid_password' }, req);
             return NextResponse.json({ error: "Nieprawidłowe dane logowania" }, { status: 401 });
         }
 
-        // Sprawdź PIN
+        // Check PIN
         const isPinMatch = await bcrypt.compare(pin, user.adminPin);
         if (!isPinMatch) {
             await logAdminAction(user._id, email, 'admin_login_failed', 'auth', null, { reason: 'invalid_pin' }, req);
@@ -110,7 +110,7 @@ export async function POST(req) {
         response.cookies.set('adminToken', adminToken, {
             httpOnly: true,
             path: '/',
-            maxAge: timeoutMinutes * 60, // konwersja na sekundy
+            maxAge: timeoutMinutes * 60, // convert to seconds
             sameSite: 'strict', // Stricter for admin
             secure: process.env.NODE_ENV === 'production'
         });

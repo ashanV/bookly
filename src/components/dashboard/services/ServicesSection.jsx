@@ -132,7 +132,7 @@ export default function ServicesSection({
                 </div>
 
                 <div className="flex gap-3 relative" ref={optionsRef}>
-                    {/* Opcje Dropdown */}
+                    {/* Options Dropdown */}
                     <div className="relative">
                         <button
                             onClick={() => setShowOptions(!showOptions)}

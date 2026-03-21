@@ -4,8 +4,8 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_API_KEY, {
     apiVersion: '2024-12-18.acacia'
 });
 
-// Price IDs mapping - te ID należy uzupełnić po utworzeniu produktów w Stripe Dashboard
-// Przejdź do Products -> kliknij produkt -> skopiuj Price ID
+// Price IDs mapping - these IDs should be completed after creating products in Stripe Dashboard
+// Go to Products -> click on product -> copy Price ID
 export const PRICE_IDS = {
     starter: {
         monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || 'price_starter_monthly',

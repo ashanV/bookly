@@ -36,10 +36,10 @@ export async function POST(req) {
 
     const { firstName, lastName, email, password, phone, birthDate } = validation.data;
 
-    // Podłączenie do bazy danych
+    // Connect to database
     await connectDB();
 
-    // Sprawdzenie, czy użytkownik o podanym emailu już istnieje (w User lub Business)
+    // Check if user with the given email already exists (in User or Business)
     const existingUser = await User.findOne({ email });
     const existingBusiness = await Business.findOne({ email });
 
@@ -50,8 +50,8 @@ export async function POST(req) {
       );
     }
 
-    // Stworzenie nowego użytkownika w bazie danych
-    // Hasło zostanie zahashowane przez middleware w modelu User
+    // Create new user in database
+    // Password will be hashed by middleware in User model
     const newUser = new User({
       firstName,
       lastName,
@@ -88,7 +88,7 @@ export async function POST(req) {
       console.error("Failed to create admin log for user registration:", logError);
     }
 
-    // Wysłanie odpowiedzi o sukcesie
+    // Send success response
     return NextResponse.json(
       { message: "Rejestracja przebiegła pomyślnie!" },
       { status: 201 }

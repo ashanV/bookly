@@ -36,9 +36,6 @@ export async function GET(request) {
                 query.isBlocked = true;
             } else {
                 query.isActive = status === 'active';
-                // Optional: valid active businesses usually aren't blocked, but we can leave isBlocked undefined 
-                // or explicitly say query.isBlocked = { $ne: true } if we want strictly active non-blocked.
-                // Let's assume 'active' status filter refers to the isActive flag primarily.
             }
         }
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Check, Star, Zap, Crown, Users, Calendar, Clock, Shield, Phone, Mail, ArrowRight, ChevronDown, ChevronUp, Play, X, Building, TrendingUp, Heart, Award, Headphones, Globe, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-// --- Komponenty Podrzędne ---
+// --- Subcomponents ---
 
 const HeroSection = ({ billingCycle, setBillingCycle }) => (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
@@ -383,7 +383,7 @@ const PageFooter = () => (
 );
 
 
-// --- Główny Komponent Strony ---
+// --- Main Page Component ---
 
 export default function BooklyBusinessPricing() {
     const router = useRouter();
@@ -395,7 +395,7 @@ export default function BooklyBusinessPricing() {
     const [isLoading, setIsLoading] = useState(false);
     const [loadingPlan, setLoadingPlan] = useState(null);
 
-    // --- Dane ---
+    // --- Data ---
     const plans = [
         { id: 'starter', name: 'Starter', description: 'Idealny na start', icon: Calendar, color: 'from-blue-500 to-cyan-500', monthlyPrice: 49, yearlyPrice: 39, popular: false, features: ['Do 2 specjalistów', '100 rezerwacji/miesiąc', 'Kalendarz online', 'Powiadomienia SMS', 'Płatności online', 'Podstawowe raporty', 'Email support'], limits: { staff: '2 specjalistów', bookings: '100 rezerwacji', locations: '1 lokalizacja' }, },
         { id: 'professional', name: 'Professional', description: 'Najpopularniejszy wybór', icon: Zap, color: 'from-purple-500 to-pink-500', monthlyPrice: 99, yearlyPrice: 79, popular: true, features: ['Do 10 specjalistów', 'Nielimitowane rezerwacje', 'Zaawansowany kalendarz', 'SMS & Email marketing', 'Płatności + faktury', 'Zaawansowane raporty', 'Zarządzanie klientami CRM', 'Integracje (Google, Zoom)', 'Wsparcie priorytetowe'], limits: { staff: '10 specjalistów', bookings: 'Nielimitowane', locations: '3 lokalizacje' }, },
@@ -429,7 +429,7 @@ export default function BooklyBusinessPricing() {
         { category: 'Integracje', features: [{ name: 'Google Calendar', starter: true, professional: true, enterprise: true }, { name: 'Zoom/Teams', starter: false, professional: true, enterprise: true }, { name: 'API dostęp', starter: false, professional: 'Ograniczony', enterprise: 'Pełny' }, { name: 'Custom integracje', starter: false, professional: false, enterprise: true }] }
     ];
 
-    // --- Funkcje Pomocnicze ---
+    // --- Helper Functions ---
     const getPrice = (plan) => {
         return billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
     };
@@ -527,7 +527,7 @@ export default function BooklyBusinessPricing() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // --- Renderowanie Głównego Komponentu ---
+    // --- Main Component Rendering ---
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
             <HeroSection billingCycle={billingCycle} setBillingCycle={setBillingCycle} />

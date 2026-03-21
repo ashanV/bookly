@@ -24,7 +24,7 @@ export async function POST(req, { params }) {
             text,
             service,
             date: new Date(),
-            verified: false // Domyślnie niezweryfikowana, chyba że dodamy logikę weryfikacji
+            verified: false // Default not verified, unless we add verification logic
         };
 
         business.reviews.push(newReview);

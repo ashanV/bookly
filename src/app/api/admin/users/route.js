@@ -58,9 +58,7 @@ export async function GET(request) {
             if (dateTo) matchStage.createdAt.$lte = new Date(dateTo);
         }
 
-        // 5. Last Activity (Based on lastAdminLogin for now, or updatedAt as fallback?) 
-        // Using lastAdminLogin as per prompt "Ostatnie logowanie" context, or we could check updatedAt.
-        // Let's stick strictly to lastAdminLogin as "Activity".
+        // 5. Last Activity 
         if (lastActive) {
             const now = new Date();
             const getPastDate = (days) => new Date(now.setDate(now.getDate() - days));

@@ -41,8 +41,6 @@ export default function DayView({ date, employees = [], reservations = [], draft
                 // setActiveEmployeeId(null);
             }
         };
-        // document.addEventListener('mousedown', handleClickOutside);
-        // return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Generate time slots

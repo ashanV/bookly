@@ -38,10 +38,6 @@ describe('useAuth Hook', () => {
 
     it('should initialize with loading state', async () => {
         const { result } = renderHook(() => useAuth(), { wrapper });
-
-        // Initially loading should be true (or fast enough to be false if effect runs instantly in test env)
-        // strict mode might cause effect to run fast.
-        // await waitFor(() => expect(result.current.loading).toBe(false));
     });
 
     it('should fetch user on mount', async () => {

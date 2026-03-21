@@ -6,7 +6,7 @@ import {
 import { format, addMinutes, getDay, startOfDay, addDays, isSameDay, isToday, isBefore, startOfToday, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
-// Mapowanie dni tygodnia (0 = niedziela, 1 = poniedziałek, ...)
+// Mapping of days of the week (0 = Sunday, 1 = Monday, ...)
 const dayMapping = {
   0: 'sunday',
   1: 'monday',
@@ -18,7 +18,7 @@ const dayMapping = {
 };
 
 
-// --- GŁÓWNY KOMPONENT MODALU ---
+// --- MAIN MODAL COMPONENT ---
 
 const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], workingHours = {}, studioName = '' }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -43,7 +43,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
   const [bookingData, setBookingData] = useState(initialBookingData);
 
-  // Filtrowanie pracowników, którzy mają przypisaną wybraną usługę
+  // Filter employees who have the selected service assigned
   const availableStaff = useMemo(() => {
     if (!service || !employees || employees.length === 0) return [];
 
@@ -63,7 +63,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     }));
   }, [service, employees]);
 
-  // Pobieranie dostępnych terminów dla wybranego pracownika i dnia
+  // Fetch available slots for the selected employee and day
   useEffect(() => {
     const fetchAvailableSlots = async () => {
       if (!bookingData.date || !bookingData.staff || !businessId) {
@@ -92,7 +92,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
       }
     };
 
-    // Dodaj małe opóźnienie, aby uniknąć zbyt częstych wywołań
+    // Add a small delay to avoid too frequent calls
     const timeoutId = setTimeout(() => {
       fetchAvailableSlots();
     }, 100);
@@ -100,7 +100,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     return () => clearTimeout(timeoutId);
   }, [bookingData.date, bookingData.staff?.id, businessId]);
 
-  // --- NAWIGACJA I OBSŁUGA ---
+  // ---  NAVIGATION AND HANDLING ---
 
   const handleNext = () => setCurrentStep(prev => prev + 1);
   const handleBack = () => setCurrentStep(prev => prev - 1);
@@ -154,17 +154,17 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     }
   };
 
-  // --- KALENDARZ KOMPONENTY ---
+  // --- CALENDAR COMPONENTS ---
 
-  // Funkcja pomocnicza do sprawdzania czy dzień jest otwarty
+  // Helper function to check if a day is open
   const isDayOpen = (date) => {
-    if (!workingHours || Object.keys(workingHours).length === 0) return true; // Domyślnie otwarte jeśli brak danych
+    if (!workingHours || Object.keys(workingHours).length === 0) return true; // Default open if no data
 
     const dayOfWeek = getDay(date);
     const dayKey = dayMapping[dayOfWeek];
     const dayHours = workingHours[dayKey];
 
-    if (!dayHours) return true; // Domyślnie otwarte
+    if (!dayHours) return true; // Default open
     return !dayHours.closed && dayHours.open && dayHours.close;
   };
 
@@ -173,12 +173,12 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-    // Generujemy dni miesiąca z paddingiem
+    // Generate days of the month with padding
     const days = [];
     const startDate = new Date(monthStart);
-    startDate.setDate(startDate.getDate() - monthStart.getDay() + 1); // Rozpoczynamy od poniedziałku
+    startDate.setDate(startDate.getDate() - monthStart.getDay() + 1); // Start from Monday
 
-    for (let i = 0; i < 42; i++) { // 6 tygodni x 7 dni
+    for (let i = 0; i < 42; i++) { // 6 weeks x 7 days
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
       days.push(currentDate);
@@ -227,7 +227,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
 
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        {/* Header kalendarza */}
+        {/* Calendar header */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
@@ -248,7 +248,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
           </button>
         </div>
 
-        {/* Dni tygodnia */}
+        {/* Days of the week */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'].map(day => (
             <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500">
@@ -257,7 +257,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
           ))}
         </div>
 
-        {/* Dni miesiąca */}
+        {/* Days of the month */}
         <div className="grid grid-cols-7 gap-1">
           {days.map((date, index) => (
             <button
@@ -271,7 +271,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
           ))}
         </div>
 
-        {/* Legenda */}
+        {/* Legend */}
         <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-xs font-medium text-gray-500 mb-3">Dostępność terminów:</p>
           <div className="flex flex-wrap gap-4 text-xs">
@@ -293,7 +293,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     );
   };
 
-  // --- PODKOMPONENTY DLA CZYTELNOŚCI ---
+  // --- SUBCOMPONENTS FOR READABILITY ---
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -313,14 +313,14 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Kalendarz */}
+        {/* Calendar */}
         <div className="order-2 lg:order-1">
           <CustomCalendar />
         </div>
 
-        {/* Specjaliści i godziny */}
+        {/* Staff and hours */}
         <div className="space-y-6 order-1 lg:order-2">
-          {/* Wybór specjalisty */}
+          {/* Staff selection */}
           {availableStaff.length > 0 ? (
             <div className="bg-gray-50/50 rounded-2xl p-6">
               <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
@@ -369,7 +369,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
             </div>
           )}
 
-          {/* Wybór godziny */}
+          {/* Time selection */}
           {bookingData.date && bookingData.staff && (
             <div className="bg-gray-50/50 rounded-2xl p-6 animate-fade-in">
               <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
@@ -592,9 +592,9 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
     </div>
   );
 
-  // --- SPRAWDZANIE POPRAWNOŚCI DANYCH DLA KAŻDEGO KROKU ---
+  // --- VALIDATION CHECK FOR EACH STEP ---
 
-  // Jeśli są dostępni pracownicy, wymagaj wyboru; jeśli nie ma, można zarezerwować bez pracownika
+  // If staff are available, require selection; if not, booking can be made without staff
   const isStep1Valid = bookingData.date && bookingData.time && (availableStaff.length === 0 || bookingData.staff);
   const isStep2Valid = bookingData.customer.firstName && bookingData.customer.lastName &&
     bookingData.customer.email.includes('@') && bookingData.customer.phone;
@@ -704,7 +704,7 @@ const BookingModal = ({ isOpen, onClose, service, businessId, employees = [], wo
   );
 };
 
-// === KOMPONENT PROGRESS INDICATOR ===
+// === PROGRESS INDICATOR COMPONENT ===
 const ProgressIndicator = ({ currentStep }) => {
   const steps = [
     { number: 1, title: 'Termin' },

@@ -60,7 +60,7 @@ export function useCsrf() {
 
         const headers = new Headers(options.headers || {});
 
-        // Zawsze używamy małych liter dla spójności, choć fetch i tak je normalizuje
+        // Always use lowercase for consistency, although fetch normalizes them anyway
         const HEADER_NAME = 'x-csrf-token';
 
         if (tokenToUse) {

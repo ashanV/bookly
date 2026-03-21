@@ -70,7 +70,6 @@ export default function BusinessDetailsPage() {
 
     // Delete Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    // Delete Modal State
 
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
 
@@ -484,12 +483,6 @@ export default function BusinessDetailsPage() {
 
             if (response.ok) {
                 const updatedBusiness = await response.json();
-                // Ensure calculated fields are preserved if API returns raw object, 
-                // but usually we might want to refresh. 
-                // For simplicity, we merge the response with existing calculated fields 
-                // or assume response is just the DB object and we re-apply basic local updates if needed.
-                // Our PATCH returns the raw DB object usually. 
-                // Let's just update the specific field locally to avoid losing calculated stats if API doesn't return them.
                 setBusiness(prev => ({ ...prev, isActive: updatedBusiness.isActive }));
                 toast.success(newStatus ? 'Konto aktywowane' : 'Konto zablokowane');
             } else {

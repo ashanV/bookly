@@ -29,7 +29,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
 
   const [bookingData, setBookingData] = useState(initialBookingData);
 
-  // Pobieranie dostępnych terminów dla wybranego dnia
+  // Fetch available slots for the selected day
   useEffect(() => {
     const fetchAvailableSlots = async () => {
       if (!bookingData.date || !employee || !businessId) {
@@ -58,7 +58,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
       }
     };
 
-    // Dodaj małe opóźnienie, aby uniknąć zbyt częstych wywołań
+    // Add a small delay to avoid too frequent calls
     const timeoutId = setTimeout(() => {
       fetchAvailableSlots();
     }, 100);
@@ -66,7 +66,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
     return () => clearTimeout(timeoutId);
   }, [bookingData.date, employee?.id, businessId]);
 
-  // Filtrowanie usług przypisanych do pracownika
+  // Filter services assigned to the employee
   const employeeServices = useMemo(() => {
     if (!employee || !services) return [];
 
@@ -141,7 +141,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
     }
   };
 
-  // Kalendarz
+  // Calendar
   const CustomCalendar = () => {
     const today = startOfToday();
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -254,7 +254,7 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Wybór usługi */}
+        {/* Service selection */}
         <div className="space-y-6">
           <div className="bg-gray-50/50 rounded-2xl p-6">
             <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
@@ -294,11 +294,11 @@ const EmployeeBookingModal = ({ isOpen, onClose, employee, businessId, studioNam
           </div>
         </div>
 
-        {/* Kalendarz i godziny */}
+        {/* Calendar and hours */}
         <div className="space-y-6">
           <CustomCalendar />
 
-          {/* Wybór godziny */}
+          {/* Time selection */}
           {bookingData.date && bookingData.service && (
             <div className="bg-gray-50/50 rounded-2xl p-6 animate-fade-in">
               <h4 className="font-semibold text-gray-900 mb-4 flex items-center">

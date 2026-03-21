@@ -11,8 +11,8 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
         apartmentNumber: '',
         district: '',
         city: '',
-        region: '', // Okręg
-        province: '', // Województwo
+        region: '', // District
+        province: '', // Province
         postCode: '',
         country: 'Polska'
     });

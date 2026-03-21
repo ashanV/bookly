@@ -83,7 +83,7 @@ function StudioCard({ studio, onFavorite, isFavorite }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-        {/* Odznaki na zdjęciu */}
+        {/* Badges on the photo */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {studio.isPromoted && (
             <span className="bg-gradient-to-r from-pink-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
@@ -124,7 +124,7 @@ function StudioCard({ studio, onFavorite, isFavorite }) {
           </div>
         </div>
 
-        {/* Sekcja statystyk */}
+        {/* Statistics section */}
         <div className="flex items-center justify-around bg-gray-50/70 rounded-xl p-2.5 text-sm">
           <div className="flex flex-col items-center">
             <div className="flex items-center font-bold text-gray-800">
@@ -140,7 +140,7 @@ function StudioCard({ studio, onFavorite, isFavorite }) {
           </div>
         </div>
 
-        {/* Lista usług */}
+        {/* Services list */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-gray-900 text-sm">Usługi</h4>
@@ -168,7 +168,7 @@ function StudioCard({ studio, onFavorite, isFavorite }) {
           </div>
         </div>
 
-        {/* Cena i przycisk rezerwacji */}
+        {/* Price and booking button */}
         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
           <div>
             <div className="text-sm text-gray-500">

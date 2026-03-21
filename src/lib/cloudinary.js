@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Konfiguracja Cloudinary
+// Cloudinary configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -8,14 +8,14 @@ cloudinary.config({
 });
 
 /**
- * Upload obrazu do Cloudinary
- * @param {Buffer|string} file - Plik do uploadowania (base64 string lub buffer)
- * @param {Object} options - Opcje uploadu
- * @param {string} options.folder - Folder w Cloudinary (opcjonalne)
- * @param {string} options.public_id - Public ID (opcjonalne)
- * @param {string} options.resource_type - Typ zasobu ('image', 'video', 'auto') - domyślnie 'image'
- * @param {Array} options.transformation - Transformacje obrazu (opcjonalne)
- * @returns {Promise<Object>} - URL obrazu i metadane
+ * Upload image to Cloudinary
+ * @param {Buffer|string} file - File to upload (base64 string or buffer)
+ * @param {Object} options - Upload options
+ * @param {string} options.folder - Folder in Cloudinary (optional)
+ * @param {string} options.public_id - Public ID (optional)
+ * @param {string} options.resource_type - Resource type ('image', 'video', 'auto') - default 'image'
+ * @param {Array} options.transformation - Image transformations (optional)
+ * @returns {Promise<Object>} - Image URL and metadata
  */
 export async function uploadToCloudinary(file, options = {}) {
   try {
@@ -41,7 +41,7 @@ export async function uploadToCloudinary(file, options = {}) {
       uploadOptions.transformation = transformation;
     }
 
-    // Jeśli file jest string (base64), użyj upload z base64
+    // If file is a string (base64), use upload with base64
     if (typeof file === 'string') {
       const result = await cloudinary.uploader.upload(file, uploadOptions);
       return {
@@ -53,7 +53,7 @@ export async function uploadToCloudinary(file, options = {}) {
         bytes: result.bytes
       };
     } else if (Buffer.isBuffer(file)) {
-      // Jeśli file jest Buffer, użyj upload_stream
+      // If file is a Buffer, use upload_stream
       return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           uploadOptions,
@@ -72,8 +72,8 @@ export async function uploadToCloudinary(file, options = {}) {
         uploadStream.end(file);
       });
     } else {
-      // Dla innych typów, spróbuj przekonwertować na base64
-      throw new Error('Nieobsługiwany typ pliku. Oczekiwano string (base64) lub Buffer.');
+      // For other types, try to convert to base64
+      throw new Error('Unsupported file type. Expected string (base64) or Buffer.');
     }
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
@@ -82,8 +82,8 @@ export async function uploadToCloudinary(file, options = {}) {
 }
 
 /**
- * Usuń obraz z Cloudinary
- * @param {string} public_id - Public ID obrazu do usunięcia
+ * Delete image from Cloudinary
+ * @param {string} public_id - Public ID of the image to delete
  * @returns {Promise<Object>}
  */
 export async function deleteFromCloudinary(public_id) {
@@ -97,9 +97,9 @@ export async function deleteFromCloudinary(public_id) {
 }
 
 /**
- * Konwertuj plik na base64 string
- * @param {File} file - Plik do konwersji
- * @returns {Promise<string>} - Base64 string z prefixem data:image/...
+ * Convert file to base64 string
+ * @param {File} file - File to convert
+ * @returns {Promise<string>} - Base64 string with data:image/... prefix
  */
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Reservation from '@/app/models/Reservation';
 import SystemConfig from '@/app/models/SystemConfig';
-import Business from '@/app/models/Business'; // Needed for population if used, though we might just use aggregate
+import Business from '@/app/models/Business';
 
 export async function GET(request) {
     try {

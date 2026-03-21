@@ -4,7 +4,7 @@ import HeroSection from "@/components/home/HeroSection";
 import FeaturedServices from "@/components/home/FeaturedServices";
 import FeaturesSection from "@/components/home/FeaturesSection";
 
-// Główny komponent strony
+// Main page component
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">

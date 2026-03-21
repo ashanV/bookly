@@ -114,8 +114,6 @@ export default function WorkingHoursEditor({ value, onChange }) {
         if (newRanges.length > 1) {
             newRanges.splice(index, 1);
         } else {
-            // Don't remove the last range, maybe close the day instead or just reset?
-            // For now let's just keep one range
             return;
         }
 
@@ -135,7 +133,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
             if (day.key !== 'monday') {
                 newHours[day.key] = {
                     ...JSON.parse(JSON.stringify(source)), // Deep copy ranges
-                    closed: false // Open all days when copying? Or keep closed status? User usually wants to copy active hours.
+                    closed: false
                 };
             }
         });

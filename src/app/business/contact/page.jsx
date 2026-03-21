@@ -31,7 +31,7 @@ import {
     Award
 } from 'lucide-react';
 
-// Animacje
+// Animations
 const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } },
@@ -213,7 +213,7 @@ function ContactForm() {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     
-    // Usuń błąd dla tego pola jeśli użytkownik zaczyna pisać
+    // Remove error for this field if user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -261,7 +261,7 @@ function ContactForm() {
         setSubmitted(true);
         setStatus("✅ Wiadomość została wysłana pomyślnie!");
         
-        // Reset formularza
+        // Reset form
         setForm({
           name: "",
           email: "",
@@ -272,7 +272,7 @@ function ContactForm() {
           message: ""
         });
         
-        // Scroll do góry po sukcesie
+        // Scroll up after success
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
       } else {
@@ -284,7 +284,7 @@ function ContactForm() {
     } finally {
       setIsSubmitting(false);
       
-      // Automatycznie usuń status po 5 sekundach
+      // Automatically remove status after 5 seconds
       setTimeout(() => {
         setStatus("");
       }, 5000);

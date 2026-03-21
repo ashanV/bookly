@@ -4,7 +4,7 @@ import ChatMessage from "@/app/models/ChatMessage";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
-// PATCH - Aktualizuj konwersację (np. status)
+// PATCH - Update conversation (e.g. status)
 export async function PATCH(req, { params }) {
     try {
         const { id } = await params;
@@ -20,7 +20,7 @@ export async function PATCH(req, { params }) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             if (decoded.role !== 'admin') {
-                // Tylko admin może zamykać konwersacje
+                // Only admin can close conversations
                 return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
             }
         } catch (error) {
@@ -40,7 +40,7 @@ export async function PATCH(req, { params }) {
                 updateData.closedAt = null;
             }
 
-            // Czyścimy deletedAt jeśli przywracamy
+            // Clear deletedAt if restoring
             if (conversation.status === 'deleted' && status !== 'deleted') {
                 updateData.deletedAt = null;
             }
@@ -48,7 +48,7 @@ export async function PATCH(req, { params }) {
             await Conversation.findByIdAndUpdate(id, updateData);
         }
 
-        // Obsługa przypisywania supportu
+        // Handle support assignment
         if (body.supportId !== undefined) {
             await Conversation.findByIdAndUpdate(id, {
                 supportId: body.supportId,
@@ -59,12 +59,12 @@ export async function PATCH(req, { params }) {
         // Trigger Pusher events
         try {
             const { pusherServer } = await import("@/lib/pusher");
-            // Powiadom konkretny chat
+            // Notify specific chat
             await pusherServer.trigger(`chat-${id}`, "conversation-updated", {
                 id,
                 status: status
             });
-            // Powiadom listę admina
+            // Notify admin list
             await pusherServer.trigger("admin-support", "conversation-updated", {
                 id,
                 status: status,
@@ -82,7 +82,7 @@ export async function PATCH(req, { params }) {
     }
 }
 
-// DELETE - Usuń konwersację
+// DELETE - Delete conversation
 export async function DELETE(req, { params }) {
     try {
         const { id } = await params;
@@ -108,11 +108,11 @@ export async function DELETE(req, { params }) {
         }
 
         if (conversation.status === 'deleted') {
-            // Jeśli już jest w koszu - usuń trwale
+            // If already in trash - delete permanently
             await ChatMessage.deleteMany({ conversationId: id });
             await Conversation.findByIdAndDelete(id);
 
-            // Powiadom listę admina o trwałym usunięciu
+            // Notify admin list about permanent deletion
             try {
                 const { pusherServer } = await import("@/lib/pusher");
                 await pusherServer.trigger("admin-support", "conversation-deleted", { id });
@@ -120,13 +120,13 @@ export async function DELETE(req, { params }) {
 
             return NextResponse.json({ success: true, message: "Konwersacja usunięta trwale" }, { status: 200 });
         } else {
-            // Przenieś do kosza
+            // Move to trash
             await Conversation.findByIdAndUpdate(id, {
                 status: 'deleted',
                 deletedAt: new Date()
             });
 
-            // Powiadom Pushera o zmianie statusu na 'deleted'
+            // Notify Pusher about status change to 'deleted'
             try {
                 const { pusherServer } = await import("@/lib/pusher");
                 await pusherServer.trigger(`chat-${id}`, "conversation-updated", {

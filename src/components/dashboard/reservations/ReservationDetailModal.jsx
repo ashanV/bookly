@@ -36,7 +36,7 @@ export default function ReservationDetailModal({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Informacje o kliencie */}
+          {/* Client information */}
           <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -69,7 +69,7 @@ export default function ReservationDetailModal({
             </div>
           </div>
 
-          {/* Szczegóły rezerwacji */}
+          {/* Reservation details */}
           <div className="space-y-4">
             <h4 className="font-bold text-gray-900">Szczegóły wizyty</h4>
             <div className="grid grid-cols-2 gap-4">
@@ -119,7 +119,7 @@ export default function ReservationDetailModal({
             </div>
           </div>
 
-          {/* Notatki */}
+          {/* Notes */}
           {reservation.notes && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -132,7 +132,7 @@ export default function ReservationDetailModal({
             </div>
           )}
 
-          {/* Akcje */}
+          {/* Actions */}
           <div className="flex gap-3 pt-4">
             <button
               onClick={() => {

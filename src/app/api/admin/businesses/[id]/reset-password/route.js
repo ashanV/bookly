@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Business from '@/app/models/Business';
-import User from '@/app/models/User'; // For admin auth check
+import User from '@/app/models/User';
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import crypto from 'crypto';
@@ -73,10 +73,6 @@ export async function POST(req, { params }) {
 
         } else if (action === 'force') {
             business.forcePasswordReset = true;
-            // Business model doesn't have tokenVersion for manual invalidation in this schema version, 
-            // but usually we'd invalidate via auth middleware checking password change time.
-            // For now, setting the flag is enough to prompt change on next login.
-
             await business.save();
             responseData.message = "Business forced to reset password on next login";
 

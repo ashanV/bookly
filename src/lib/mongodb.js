@@ -2,9 +2,6 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Removed top-level throw to prevent build failures if env is missing temporarily
-
-
 // Global cache to prevent creating many connections in dev/hot-reload
 let globalWithMongoose = global;
 if (!globalWithMongoose._mongoose) {
@@ -27,7 +24,7 @@ const mongooseOptions = {
 
 export async function connectDB() {
   if (!MONGODB_URI) {
-    throw new Error("❌ Brak zmiennej MONGODB_URI w .env.local");
+    throw new Error("Brak zmiennej MONGODB_URI w .env.local");
   }
   const cached = globalWithMongoose._mongoose;
   if (cached.conn) {
@@ -45,27 +42,27 @@ export async function connectDB() {
     cached.promise = mongoose
       .connect(MONGODB_URI, mongooseOptions)
       .then((mongooseInstance) => {
-        console.log("✅ Połączono z MongoDB");
+        console.log("Połączono z MongoDB");
 
         // Handle connection events
         mongooseInstance.connection.on('error', (err) => {
-          console.error("❌ Błąd połączenia MongoDB:", err);
+          console.error("Błąd połączenia MongoDB:", err);
         });
 
         mongooseInstance.connection.on('disconnected', () => {
-          console.warn("⚠️ MongoDB rozłączone");
+          console.warn("MongoDB rozłączone");
           cached.conn = null;
           cached.promise = null;
         });
 
         mongooseInstance.connection.on('reconnected', () => {
-          console.log("✅ MongoDB ponownie połączone");
+          console.log("MongoDB ponownie połączone");
         });
 
         return mongooseInstance;
       })
       .catch((err) => {
-        console.error("❌ Błąd połączenia z MongoDB", err);
+        console.error("Błąd połączenia z MongoDB", err);
         cached.promise = null;
         throw err;
       });

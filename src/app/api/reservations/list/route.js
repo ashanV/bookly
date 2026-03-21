@@ -11,21 +11,21 @@ export async function GET(req) {
     }
     await connectDB();
 
-    // Pobranie tokenu z cookies
+    // Retrieving the token from cookies
     const token = req.cookies.get('token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
-    // Weryfikacja tokenu
+    // Token verification
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (decoded.role !== 'business') {
       return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
     }
 
-    // Pobranie parametrów z URL
+    // Retrieving parameters from URL
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
@@ -36,7 +36,7 @@ export async function GET(req) {
     const sortBy = searchParams.get('sortBy') || 'date';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-    // Budowanie zapytania
+    // Building a query 
     const query = { businessId: decoded.id };
 
     if (startDate && endDate) {
@@ -47,7 +47,7 @@ export async function GET(req) {
     }
 
     if (status) {
-      // Obsługa wielu statusów oddzielonych przecinkiem
+      // Handling multiple statuses separated by a comma
       if (status.includes(',')) {
         query.status = { $in: status.split(',').map(s => s.trim()) };
       } else {
@@ -55,27 +55,27 @@ export async function GET(req) {
       }
     }
 
-    // Wyszukiwanie tekstowe - przeszukuje nazwę klienta, email, telefon i numer referencyjny
+    // Text search - searches for the client's name, email, phone number and reference number
     if (search) {
       query.$or = [
         { clientName: { $regex: search, $options: 'i' } },
         { clientEmail: { $regex: search, $options: 'i' } },
         { clientPhone: { $regex: search, $options: 'i' } },
-        { referenceNumber: { $regex: search.replace('#', ''), $options: 'i' } } // Usuń # jeśli jest w wyszukiwarce
+        { referenceNumber: { $regex: search.replace('#', ''), $options: 'i' } } // Remove # if it is in the search
       ];
     }
 
-    // Filtrowanie po usłudze
+    // Filtering by service
     if (service) {
       query.service = { $regex: service, $options: 'i' };
     }
 
-    // Filtrowanie po pracowniku
+    // Filtering by employee
     if (employeeId) {
       query.employeeId = employeeId;
     }
 
-    // Budowanie sortowania
+    // Building sorting
     let sortOptions = {};
     switch (sortBy) {
       case 'price':
@@ -91,16 +91,16 @@ export async function GET(req) {
         break;
     }
 
-    // Pobranie rezerwacji
+    // Retrieving reservations
     const reservations = await Reservation.find(query)
       .sort(sortOptions)
       .lean();
 
-    // Pobranie danych biznesu, aby uzyskać informacje o pracownikach
+    // Retrieving business data to get employee information
     const business = await Business.findById(decoded.id).lean();
     const employees = business?.employees || [];
 
-    // Dodanie informacji o pracowniku do każdej rezerwacji
+    // Adding employee information to each reservation
     const reservationsWithEmployee = reservations.map(reservation => {
       const employeeInfo = reservation.employeeId
         ? employees.find(emp => 

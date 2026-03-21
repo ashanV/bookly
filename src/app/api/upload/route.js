@@ -22,7 +22,7 @@ export async function POST(req) {
       );
     }
 
-    // Sprawdź typ pliku
+    // Check file type
     if (!file.type || !file.type.startsWith("image/")) {
       return NextResponse.json(
         { error: "Plik musi być obrazem" },
@@ -30,7 +30,7 @@ export async function POST(req) {
       );
     }
 
-    // Określ folder w zależności od typu
+    // Determine folder based on type
     let uploadFolder = folder;
     if (type === "profile") {
       uploadFolder = `${folder}/profile`;
@@ -42,12 +42,12 @@ export async function POST(req) {
       uploadFolder = `${folder}/employees`;
     }
 
-    // Konwertuj plik (File/Blob) na Buffer, a następnie na base64 string
+    // Convert file (File/Blob) to Buffer, then to base64 string
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64String = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Upload do Cloudinary używając base64 string
+    // Upload to Cloudinary using base64 string
     const result = await uploadToCloudinary(base64String, {
       folder: uploadFolder,
       resource_type: "image",
@@ -82,7 +82,7 @@ export async function POST(req) {
   }
 }
 
-// Endpoint do usuwania zdjęć
+// Endpoint to delete photos
 export async function DELETE(req) {
   try {
     // CSRF validation

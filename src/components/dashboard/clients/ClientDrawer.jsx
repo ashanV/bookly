@@ -195,7 +195,7 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                                         </div>
                                     </div>
 
-                                    {/* Podsumowanie Card */}
+                                    {/* Card Summary */}
                                     <div className="mb-4">
                                         <h3 className="font-semibold text-slate-900 mb-2">Podsumowanie</h3>
                                         <div className="bg-white border border-slate-200 rounded-xl p-6 relative mb-4 hover:shadow-md transition-shadow cursor-default">

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const AdminLogSchema = new mongoose.Schema({
-    // Użytkownik wykonujący akcję
+    // User performing the action
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -10,30 +10,30 @@ const AdminLogSchema = new mongoose.Schema({
     userEmail: { type: String, required: true },
     userRole: { type: String, required: true },
 
-    // Akcja
+    // Action
     action: {
         type: String,
         required: true,
         enum: [
-            // Użytkownicy
+            // Users
             'user_viewed', 'user_edited', 'user_deleted', 'user_banned', 'user_unbanned', 'user_registered',
-            // Biznesy
+            // Businesses
             'business_created', 'business_viewed', 'business_edited', 'business_deleted', 'business_verified', 'business_rejected',
-            // Klienci
+            // Clients
             'client_created',
-            // Pracownicy
+            // Employees
             'employee_created', 'employee_deleted',
-            // Usługi
+            // Services
             'service_created', 'service_updated', 'service_deleted',
-            // Rezerwacje
+            // Reservations
             'reservation_viewed', 'reservation_cancelled', 'dispute_resolved',
             // Support
             'ticket_viewed', 'ticket_responded', 'ticket_closed', 'ticket_assigned',
-            // Recenzje
+            // Reviews
             'review_deleted',
-            // Finanse
+            // Finance
             'finance_viewed', 'payout_processed', 'payment_success', 'payment_failed', 'subscription_cancelled',
-            // Ustawienia
+            // Settings
             'settings_changed',
             // Role
             'role_granted', 'role_revoked',
@@ -45,17 +45,17 @@ const AdminLogSchema = new mongoose.Schema({
         ]
     },
 
-    // Cel akcji
+    // Target of the action
     targetType: {
         type: String,
         enum: ['user', 'business', 'client', 'employee', 'reservation', 'ticket', 'review', 'settings', 'feature_flag', 'cache', 'auth']
     },
     targetId: { type: mongoose.Schema.Types.ObjectId },
 
-    // Szczegóły
+    // Details
     details: { type: mongoose.Schema.Types.Mixed },
 
-    // Metadane
+    // Metadata
     ip: { type: String },
     userAgent: { type: String },
     timestamp: { type: Date, default: Date.now }
@@ -63,7 +63,7 @@ const AdminLogSchema = new mongoose.Schema({
     timestamps: false
 });
 
-// Indeksy dla szybkiego wyszukiwania
+// Indexes for fast searching
 AdminLogSchema.index({ userId: 1, timestamp: -1 });
 AdminLogSchema.index({ action: 1, timestamp: -1 });
 AdminLogSchema.index({ targetType: 1, targetId: 1 });

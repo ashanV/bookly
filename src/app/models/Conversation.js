@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 
 const ConversationSchema = new mongoose.Schema({
-  // Uczestnicy
+  // Participants
   userId: {
     type: String,
     default: null,
     index: true
-  }, // ID użytkownika (może być null dla anonimowych)
+  }, // User ID (can be null for anonymous)
   userType: {
     type: String,
     enum: ['user', 'client', 'business', 'anonymous'],
@@ -23,20 +23,20 @@ const ConversationSchema = new mongoose.Schema({
   userAvatar: {
     type: String,
     default: null
-  }, // URL do awatara lub loga
+  }, // URL to avatar or logo
 
   // Support
   supportId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
-  }, // ID admina/moderatora obsługującego
+  }, // Admin/moderator ID
   supportName: {
     type: String,
     default: null
   },
 
-  // Temat zgłoszenia
+  // Ticket subject
   subject: {
     type: String,
     default: 'Zgłoszenie'
@@ -47,7 +47,7 @@ const ConversationSchema = new mongoose.Schema({
     default: 'other'
   },
 
-  // Status konwersacji
+  // Conversation status
   status: {
     type: String,
     default: 'open',
@@ -59,7 +59,7 @@ const ConversationSchema = new mongoose.Schema({
     default: 'medium'
   },
 
-  // Statystyki
+  // Statistics
   messageCount: {
     type: Number,
     default: 0
@@ -100,32 +100,24 @@ const ConversationSchema = new mongoose.Schema({
   validateBeforeSave: true
 });
 
-// Automatyczna aktualizacja updatedAt
+// Automatic update of updatedAt
 ConversationSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-// Indeksy
+// Indexes
 ConversationSchema.index({ status: 1, createdAt: -1 });
 ConversationSchema.index({ userId: 1, status: 1 });
 ConversationSchema.index({ supportId: 1, status: 1 });
 ConversationSchema.index({ category: 1 }); // Stats optimization
-ConversationSchema.index({ deletedAt: 1 }, { expireAfterSeconds: 2592000 }); // Auto-usuwanie po 30 dniach
+ConversationSchema.index({ deletedAt: 1 }, { expireAfterSeconds: 2592000 }); // Auto-delete after 30 days
 
 // Trigger support stats update after save
 ConversationSchema.post('save', async function () {
   try {
     // Dynamic import to avoid circular dependency
     const { updateSupportStats } = await import('@/lib/supportStats');
-    // Fire and forget (don't await to block response, or await if consistency required)
-    // For admin dashboard, "eventual consistency" (ms latency) is fine.
-    // However, in serverless, "fire and forget" might be killed if function ends.
-    // Next.js (Vercel) usually waits for promises in `waitUntil` but here we are in a model hook.
-    // Best effort: await it. It should be fast (Redis set + Pusher trigger).
-    // The "heavy" calculation part is inside updateSupportStats. 
-    // If we want to make it fast for the user saving the ticket, we should optimistically return.
-    // But since we removed the polling, we need this to run.
     await updateSupportStats();
   } catch (err) {
     console.error('Failed to trigger support stats update:', err);

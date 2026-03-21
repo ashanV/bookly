@@ -23,7 +23,7 @@ import { useCsrf } from '@/hooks/useCsrf';
 const BooklyAuth = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { register, isAuthenticated, user, loading: authLoading } = useAuth(); // Używamy hooka
+  const { register, isAuthenticated, user, loading: authLoading } = useAuth(); // We use a hook
   const { secureFetch } = useCsrf();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -41,7 +41,7 @@ const BooklyAuth = () => {
     birthDate: "",
   });
 
-  // Sprawdź czy użytkownik jest już zalogowany jako business - przekieruj
+  // Check if the user is already logged in as business - redirect
   useEffect(() => {
     if (!authLoading && user && user.role === 'business') {
       router.push('/business/dashboard');
@@ -55,7 +55,7 @@ const BooklyAuth = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Wyczyść błąd przy zmianie danych
+    // Clear error when changing data
     if (error) setError("");
   };
 
@@ -66,7 +66,7 @@ const BooklyAuth = () => {
 
     try {
       if (isLogin) {
-        // LOGOWANIE - tylko dla klientów
+        // LOGIN - only for clients
         const response = await secureFetch('/api/auth/login-client', {
           method: 'POST',
           headers: {
@@ -79,10 +79,10 @@ const BooklyAuth = () => {
         const data = await response.json();
 
         if (response.ok) {
-          // Zapisz dane użytkownika
+          // Save user data
           localStorage.setItem('user', JSON.stringify(data.user));
 
-          // Przekieruj na dashboard klienta
+          // Redirect to client dashboard
           const redirectUrl = searchParams?.get('redirect') ||
             localStorage.getItem('redirectAfterLogin') ||
             '/client';
@@ -97,10 +97,10 @@ const BooklyAuth = () => {
           toast.error(errorMsg);
         }
       } else {
-        // REJESTRACJA
-        // Walidacja po stronie klienta
+        // REGISTRATION
+        // Client-side validation
         if (formData.password !== formData.confirmPassword) {
-          setError("Hasła nie są identyczne");
+          setError("Hasło nie pasuje");
           setIsLoading(false);
           return;
         }
@@ -110,13 +110,13 @@ const BooklyAuth = () => {
           return;
         }
 
-        // Używamy hooka do rejestracji
+        // We use a hook for registration
         const result = await register(formData);
 
         if (result.success) {
-          setError(""); // Wyczyść błędy
+          setError(""); // Clear errors
           toast.success("Rejestracja udana! Możesz się teraz zalogować.");
-          // Po rejestracji przełącz na tryb logowania
+          // After registration, switch to login mode
           setIsLogin(true);
           setFormData({
             email: formData.email,
@@ -143,7 +143,7 @@ const BooklyAuth = () => {
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
-    setError(""); // Wyczyść błędy
+    setError(""); // Clear errors
     setFormData({
       email: "",
       password: "",
@@ -155,7 +155,7 @@ const BooklyAuth = () => {
     });
   };
 
-  // Pokaż loader podczas sprawdzania autoryzacji
+  // Show loader while checking authorization
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
@@ -171,7 +171,7 @@ const BooklyAuth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
-      {/* Dekoracyjne elementy tła */}
+      {/* Decorative background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-72 h-72 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
@@ -199,7 +199,7 @@ const BooklyAuth = () => {
           </div>
         </div>
 
-        {/* Formularz */}
+        {/* Form */}
         <div className="backdrop-blur-lg bg-white/80 border border-white/50 rounded-2xl shadow-xl p-8">
           {/* Toggle buttons */}
           <div className="flex mb-8 p-1 bg-gray-100 rounded-xl">
@@ -227,7 +227,7 @@ const BooklyAuth = () => {
             </button>
           </div>
 
-          {/* Komunikat błędu */}
+          {/* Error message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
               {error}
@@ -235,7 +235,7 @@ const BooklyAuth = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Pola dla rejestracji */}
+            {/* Fields for registration */}
             <div
               className={`transition-all duration-700 ease-in-out transform ${!isLogin
                 ? "max-h-screen opacity-100 translate-y-0"
@@ -332,7 +332,7 @@ const BooklyAuth = () => {
               />
             </div>
 
-            {/* Hasło */}
+            {/* Password */}
             <div className="relative">
               <Lock
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black transition-all duration-300"
@@ -358,7 +358,7 @@ const BooklyAuth = () => {
               </button>
             </div>
 
-            {/* Potwierdzenie hasła - tylko przy rejestracji */}
+            {/* Confirm password - only for registration */}
             <div
               className={`relative transition-all duration-700 ease-in-out transform ${!isLogin
                 ? "max-h-screen opacity-100 translate-y-0"
@@ -397,7 +397,7 @@ const BooklyAuth = () => {
               )}
             </div>
 
-            {/* Checkbox dla rejestracji */}
+            {/* Checkbox for registration */}
             <div
               className={`transition-all duration-700 ease-in-out transform ${!isLogin
                 ? "max-h-screen opacity-100 translate-y-0"
@@ -430,7 +430,7 @@ const BooklyAuth = () => {
               )}
             </div>
 
-            {/* Przycisk submit */}
+            {/* Submit button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -456,7 +456,7 @@ const BooklyAuth = () => {
               </span>
             </button>
 
-            {/* Link "Zapomniałeś hasła?" - tylko przy logowaniu */}
+            {/* Link "Forgot password?" - only for login */}
             <div
               className={`text-center transition-all duration-700 ease-in-out transform ${isLogin
                 ? "max-h-screen opacity-100 translate-y-0"
@@ -480,7 +480,7 @@ const BooklyAuth = () => {
             <div className="flex-1 border-t border-gray-200 transition-all duration-500"></div>
           </div>
 
-          {/* Logowanie przez social media */}
+          {/* Social media login */}
           <div className="space-y-3">
             <button
               type="button"

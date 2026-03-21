@@ -10,27 +10,27 @@ export async function GET(req) {
     }
     await connectDB();
 
-    // Pobranie tokenu z cookies
+    // Get token from cookies
     const token = req.cookies.get('token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
-    // Weryfikacja tokenu
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (decoded.role !== 'business') {
       return NextResponse.json({ error: "Brak uprawnień" }, { status: 403 });
     }
 
-    // Pobranie parametrów z URL
+    // Get parameters from URL
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const status = searchParams.get('status');
 
-    // Budowanie zapytania
+    // Build query
     const query = { businessId: decoded.id };
 
     if (startDate && endDate) {
@@ -44,7 +44,7 @@ export async function GET(req) {
       query.status = status;
     }
 
-    // Pobranie rezerwacji
+    // Get reservations
     const reservations = await Reservation.find(query)
       .sort({ date: 1, time: 1 })
       .lean();

@@ -37,11 +37,11 @@ export async function POST(req) {
     const { email, password } = validation.data;
     await connectDB();
 
-    // Pobranie konfiguracji systemu
+    // Get system configuration
     const config = await SystemConfig.getConfig();
     const timeoutMinutes = config.sessionTimeoutMinutes || 1440;
 
-    // Tylko sprawdź w kolekcji User (klienci)
+    // Only check in User collection (clients)
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json({ error: "Nieprawidłowy email lub konto biznesowe" }, { status: 400 });
@@ -105,11 +105,11 @@ export async function POST(req) {
       }
     });
 
-    // Ustaw cookie używając NextResponse
+    // Set cookie using NextResponse
     response.cookies.set('token', token, {
       httpOnly: true,
       path: '/',
-      maxAge: timeoutMinutes * 60, // konwersja na sekundy
+      maxAge: timeoutMinutes * 60, // convert to seconds
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production'
     });

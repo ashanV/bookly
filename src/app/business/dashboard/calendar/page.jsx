@@ -447,16 +447,6 @@ function CalendarContent() {
               onClick={() => {
                 if (viewType === 'Miesiąc') {
                   setSelectedDate(subDays(selectedDate, 30)); // Rough month jump, or use subMonths if available. 
-                  // Ideally use subMonths from date-fns but need to import it. 
-                  // Let's check imports. Just subDays(30) is risky. 
-                  // Actually, I can use addWeeks(..., -4) or improved logic.
-                  // Wait, I should import addMonths/subMonths.
-                  // For now let's reuse subDays if I don't want to re-import.
-                  // But date-fns is powerful.
-                  // Let's stick to subDays(28) or similar? No.
-                  // I'll update the imports first in next step if needed. 
-                  // Or I assume subDays logic is temporary.
-                  // Actually, let's use the native setMonth.
                   const d = new Date(selectedDate);
                   d.setMonth(d.getMonth() - 1);
                   setSelectedDate(d);

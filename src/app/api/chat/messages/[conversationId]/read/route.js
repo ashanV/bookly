@@ -4,7 +4,7 @@ import Conversation from "@/app/models/Conversation";
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
-// POST - Oznacz wiadomości jako przeczytane
+// POST - Mark messages as read
 export async function POST(req, { params }) {
   try {
     await connectDB();
@@ -20,7 +20,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
-    // Sprawdź uprawnienia
+    // Check permissions
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       return NextResponse.json({ error: "Konwersacja nie znaleziona" }, { status: 404 });
@@ -48,7 +48,7 @@ export async function POST(req, { params }) {
       }
     }
 
-    // Oznacz wiadomości jako przeczytane
+    // Mark messages as read
     const senderTypeFilter = role === 'admin' ? { $ne: 'support' } : { $ne: 'user' };
 
     await ChatMessage.updateMany(
@@ -65,7 +65,7 @@ export async function POST(req, { params }) {
       }
     );
 
-    // Zaktualizuj licznik nieprzeczytanych
+    // Update unread count
     if (role === 'admin') {
       conversation.unreadCount = 0;
     } else {

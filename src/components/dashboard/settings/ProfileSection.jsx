@@ -27,7 +27,7 @@ export default function ProfileSection({
     onSave
 }) {
     const handlePostalCodeChange = (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Usuń wszystko oprócz cyfr
+        let value = e.target.value.replace(/\D/g, ''); // Remove everything except digits
         if (value.length > 2) {
             value = value.slice(0, 2) + '-' + value.slice(2, 5);
         }

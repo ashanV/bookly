@@ -1,7 +1,7 @@
 /**
- * Generuje unikalny 8-cyfrowy numer referencyjny dla rezerwacji
- * Format: 8 cyfr (np. 86622830)
- */
+* Generates a unique 8-digit reference number for the reservation
+* Format: 8 digits (e.g., 86622830)
+*/
 export async function generateReferenceNumber(Reservation) {
   let referenceNumber;
   let isUnique = false;
@@ -9,15 +9,15 @@ export async function generateReferenceNumber(Reservation) {
   const maxAttempts = 10;
 
   while (!isUnique && attempts < maxAttempts) {
-    // Generuj 8-cyfrowy numer: kombinacja timestamp i losowych cyfr
+    // Generate 8-digit number: combination of timestamp and random digits
     const timestamp = Date.now().toString();
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     
-    // Użyj ostatnich 4 cyfr timestamp + 4 losowe cyfry
+    // Use last 4 digits of timestamp + 4 random digits
     const numStr = (timestamp.slice(-4) + random).slice(0, 8);
     referenceNumber = numStr.padStart(8, '0');
 
-    // Sprawdź, czy numer jest unikalny
+    // Check if the number is unique
     const existing = await Reservation.findOne({ referenceNumber });
     if (!existing) {
       isUnique = true;

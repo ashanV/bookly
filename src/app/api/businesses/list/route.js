@@ -5,7 +5,7 @@ import { getCache, setCache, generateCacheKey, CACHE_TTL } from "@/lib/cache";
 
 export async function GET(req) {
   try {
-    // Pobranie parametrów z URL
+    // Get parameters from URL
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const location = searchParams.get('location') || '';
@@ -22,7 +22,7 @@ export async function GET(req) {
 
     await connectDB();
 
-    // Budowanie zapytania -        // Base query
+    // Building query -        // Base query
     const query = {
       isActive: true,
       isBlocked: { $ne: true }
@@ -38,28 +38,28 @@ export async function GET(req) {
       ];
     }
 
-    // Wyszukiwanie po lokalizacji (miasto)
+    // Search by location (city)
     if (location) {
       query.city = { $regex: location, $options: 'i' };
     }
 
-    // Filtrowanie po kategorii
+    // Filter by category
     if (category && category !== 'Wszystkie') {
       query.category = { $regex: category, $options: 'i' };
     }
 
-    // Pobranie biznesów
+    // Get businesses
     const businesses = await Business.find(query)
       .select('-password -__v')
       .sort({ createdAt: -1 })
       .lean();
 
-    // Transformacja danych do formatu używanego w frontendzie
+    // Transform data to frontend format
     const transformedBusinesses = businesses.map((business, index) => {
-      // Utworzenie usług z cennika (jeśli pricing jest stringiem z danymi)
+      // Create services from pricing (if pricing is a string with data)
       let services = [];
       if (business.services && business.services.length > 0) {
-        // Obsługa zarówno tablicy stringów jak i obiektów
+        // Handle both array of strings and objects
         services = business.services.map((serviceItem, idx) => {
           const isObject = typeof serviceItem === 'object' && serviceItem !== null;
           return {
@@ -73,25 +73,25 @@ export async function GET(req) {
         });
       }
 
-      // Utworzenie kategorii
+      // Create categories
       const categories = business.category ? [business.category] : [];
 
-      // Obliczenie współrzędnych (tymczasowo - w przyszłości można dodać do modelu)
-      const lat = 52.2297 + (index * 0.01); // Tymczasowe współrzędne
+      // Calculate coordinates (temporary - can be added to model in the future)
+      const lat = 52.2297 + (index * 0.01); // Temporary coordinates
       const lng = 21.0122 + (index * 0.01);
 
       return {
         id: business._id.toString(),
         name: business.companyName,
         description: business.description || `${business.companyType} w ${business.city}`,
-        rating: 4.5 + (index % 5) * 0.1, // Tymczasowa ocena
-        reviews: 50 + (index * 10), // Tymczasowa liczba opinii
-        likes: 30 + (index * 5), // Tymczasowa liczba polubień
+        rating: 4.5 + (index % 5) * 0.1, // Temporary rating
+        reviews: 50 + (index * 10), // Temporary number of reviews
+        likes: 30 + (index * 5), // Temporary number of likes
         location: `${business.city}, ${business.address}`,
-        distance: `${(index + 1) * 0.5} km`, // Tymczasowa odległość
+        distance: `${(index + 1) * 0.5} km`, // Temporary distance
         image: `https://images.unsplash.com/photo-${1562004760 + index}?w=400&h=300&fit=crop`,
         nextAvailable: "Dziś 14:30",
-        isPromoted: index % 3 === 0, // Co trzeci biznes jest promowany
+        isPromoted: index % 3 === 0, // Every third business is promoted
         discount: index % 3 === 0 ? 20 : 0,
         lat,
         lng,

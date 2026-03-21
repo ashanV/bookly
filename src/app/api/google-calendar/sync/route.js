@@ -26,7 +26,7 @@ async function getAuthenticatedClient(businessId) {
     expiry_date: business.googleCalendarTokens.expiryDate?.getTime()
   });
 
-  // Sprawdzenie czy token wygasł i odświeżenie jeśli potrzeba
+  // Check if token has expired and refresh if needed
   if (business.googleCalendarTokens.expiryDate && new Date() >= business.googleCalendarTokens.expiryDate) {
     const { credentials } = await oauth2Client.refreshAccessToken();
 
@@ -48,14 +48,14 @@ export async function POST(req) {
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not defined');
     }
-    // Pobranie tokenu z cookies
+    // Get token from cookies
     const token = req.cookies.get('token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 });
     }
 
-    // Weryfikacja tokenu
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (decoded.role !== 'business') {
@@ -64,17 +64,17 @@ export async function POST(req) {
 
     await connectDB();
 
-    // Pobranie autoryzowanego klienta
+    // Get authenticated client
     const auth = await getAuthenticatedClient(decoded.id);
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // Pobranie biznesu
+    // Get business
     const business = await Business.findById(decoded.id);
     if (!business) {
       return NextResponse.json({ error: "Biznes nie znaleziony" }, { status: 404 });
     }
 
-    // Pobranie rezerwacji, które nie są jeszcze zsynchronizowane
+    // Get reservations that are not yet synchronized
     const reservations = await Reservation.find({
       businessId: decoded.id,
       status: { $in: ['pending', 'confirmed'] },
@@ -104,8 +104,8 @@ export async function POST(req) {
           reminders: {
             useDefault: false,
             overrides: [
-              { method: 'email', minutes: 24 * 60 }, // 24 godziny wcześniej
-              { method: 'popup', minutes: 60 }, // 1 godzina wcześniej
+              { method: 'email', minutes: 24 * 60 }, // 24 hours earlier
+              { method: 'popup', minutes: 60 }, // 1 hour earlier
             ],
           },
         };
@@ -115,7 +115,7 @@ export async function POST(req) {
           requestBody: event,
         });
 
-        // Zapisanie ID wydarzenia w rezerwacji
+        // Save event ID in reservation
         reservation.googleCalendarEventId = response.data.id;
         reservation.googleCalendarSynced = true;
         reservation.googleCalendarSyncedAt = new Date();

@@ -106,8 +106,6 @@ describe('Client API', () => {
             const req = { json: async () => clientData };
 
             // Note: in previous step we had issues with mocking 'new Client()' directly in the first block
-            // but fixed it in the override below.
-            // For cleaner code, we ensure the Client default export is a mock class here/
         });
     });
 });

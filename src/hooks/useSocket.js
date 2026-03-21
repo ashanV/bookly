@@ -29,10 +29,6 @@ export function useSocket() {
     pusherInstance.connection.bind('connected', handleConnected);
     pusherInstance.connection.bind('disconnected', handleDisconnected);
 
-    // No strict disconnect on unmount to keep connection alive across navigations
-    // or implement a ref counting mechanism if needed. 
-    // For now, keeping it alive is better for SPA.
-
     return () => {
       pusherInstance.connection.unbind('connected', handleConnected);
       pusherInstance.connection.unbind('disconnected', handleDisconnected);

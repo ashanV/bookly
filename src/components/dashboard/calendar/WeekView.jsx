@@ -27,8 +27,6 @@ export default function WeekView({ date, employees = [], reservations = [], draf
                 // Handled by Popover
             }
         };
-        // document.addEventListener('mousedown', handleClickOutside);
-        // return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Generate 7 days starting from Monday of the selected week
@@ -319,7 +317,7 @@ export default function WeekView({ date, employees = [], reservations = [], draf
                                                     backgroundImage: 'repeating-linear-gradient(-45deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.08) 8px, rgba(59, 130, 246, 0.15) 8px, rgba(59, 130, 246, 0.15) 16px)',
                                                     top: `${(new Date(draftVisit.date).getHours() * 60 + new Date(draftVisit.date).getMinutes() - (START_HOUR * 60)) * PIXELS_PER_MINUTE}px`,
                                                     height: `${(draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION) * PIXELS_PER_MINUTE}px`,
-                                                    borderLeftColor: '#6366f1' // Indigo border from screenshot
+                                                    borderLeftColor: '#6366f1' 
                                                 }}
                                             >
                                                 <div className="font-medium flex items-center justify-between opacity-90 truncate leading-tight">

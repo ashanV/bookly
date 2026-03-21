@@ -18,8 +18,6 @@ export default function EmployeeMenuPopover({
 
         const handleClickOutside = (event) => {
             if (popoverRef.current && !popoverRef.current.contains(event.target)) {
-                // Check if click was on the trigger (optional, usually handled by parent toggle)
-                // But for safety, we close. Parent should handle re-opening if clicked again.
                 onClose();
             }
         };
@@ -44,9 +42,6 @@ export default function EmployeeMenuPopover({
             left = window.innerWidth - width - 10;
         }
         if (left < 10) left = 10;
-
-        // If bottom overflows, flip to top?
-        // We'll keep it simple for now, portal usually sits on top well.
     }
 
     const style = {

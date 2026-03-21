@@ -31,11 +31,11 @@ export default function ReservationsTable({
   };
 
   const getReferenceNumber = (referenceNumber, id) => {
-    // Użyj zapisanego numeru referencyjnego z bazy, jeśli istnieje
+    // Use saved reference number from database if it exists
     if (referenceNumber) {
       return `#${referenceNumber}`;
     }
-    // Fallback dla starych rezerwacji bez numeru referencyjnego
+    // Fallback for old reservations without reference number
     if (id) {
       const str = id.toString();
       return `#${str.slice(-8).toUpperCase()}`;

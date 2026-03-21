@@ -1,25 +1,25 @@
 import mongoose from "mongoose";
 
 const ReservationSchema = new mongoose.Schema({
-  // ID biznesu
+  // Business ID
   businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
 
-  // Dane klienta
+  // Client data
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   clientName: { type: String, required: true },
   clientEmail: { type: String, required: true },
   clientPhone: { type: String, required: true },
 
-  // Pracownik
-  employeeId: { type: String, default: null }, // ID pracownika z employees array
+  // Employee
+  employeeId: { type: String, default: null }, // Employee ID from employees array
 
-  // Szczegóły usługi
+  // Service details
   service: { type: String, required: true },
-  serviceId: { type: String, default: null }, // ID usługi z services array
+  serviceId: { type: String, default: null }, // Service ID from services array
   date: { type: Date, required: true },
   time: { type: String, required: true },
-  duration: { type: Number, required: true }, // w minutach
-  // Płatność
+  duration: { type: Number, required: true }, // in minutes
+  // Payment
   price: { type: Number, required: true },
   paymentMethod: {
     type: String,
@@ -34,23 +34,23 @@ const ReservationSchema = new mongoose.Schema({
     default: 'pending'
   },
 
-  // Notatki
+  // Notes
   notes: { type: String, default: '' },
 
-  // Numer referencyjny rezerwacji
+  // Reservation reference number
   referenceNumber: {
     type: String,
     unique: true,
-    sparse: true, // Pozwala na null dla starych rezerwacji
-    index: true // Indeks dla szybkiego wyszukiwania
+    sparse: true, // Allows null for old reservations
+    index: true // Index for fast searching
   },
 
-  // Integracja z Google Calendar
+  // Google Calendar integration
   googleCalendarEventId: { type: String, default: null },
   googleCalendarSynced: { type: Boolean, default: false },
   googleCalendarSyncedAt: { type: Date, default: null },
 
-  // Rozliczenia
+  // Payouts
   payoutId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Payout',
@@ -66,7 +66,7 @@ const ReservationSchema = new mongoose.Schema({
   validateBeforeSave: true
 });
 
-// Automatyczna aktualizacja updatedAt
+// Automatic update of updatedAt
 ReservationSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();

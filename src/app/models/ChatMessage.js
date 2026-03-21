@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const ChatMessageSchema = new mongoose.Schema({
-  // Konwersacja
+  // Conversation
   conversationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Conversation',
@@ -9,11 +9,11 @@ const ChatMessageSchema = new mongoose.Schema({
     index: true
   },
 
-  // Nadawca
+  // Sender
   senderId: {
     type: String,
     required: true
-  }, // ID użytkownika lub 'support' dla admina
+  }, // User ID or 'support' for admin
   senderType: {
     type: String,
     enum: ['user', 'client', 'business', 'support', 'anonymous'],
@@ -28,7 +28,7 @@ const ChatMessageSchema = new mongoose.Schema({
     default: null
   },
 
-  // Treść wiadomości
+  // Message content
   message: {
     type: String,
     required: false,
@@ -41,7 +41,7 @@ const ChatMessageSchema = new mongoose.Schema({
   fileSize: { type: Number, default: null },
   gifUrl: { type: String, default: null },
 
-  // Typ wiadomości
+  // Message type
   type: {
     type: String,
     enum: ['message', 'system', 'file', 'image', 'gif', 'note'],
@@ -69,7 +69,7 @@ const ChatMessageSchema = new mongoose.Schema({
   validateBeforeSave: true
 });
 
-// Indeksy dla szybkiego wyszukiwania
+// Indexes for fast searching
 ChatMessageSchema.index({ conversationId: 1, createdAt: -1 });
 ChatMessageSchema.index({ senderId: 1, createdAt: -1 });
 

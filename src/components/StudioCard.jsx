@@ -111,7 +111,7 @@ export default function StudioCard({ studio, onFavorite, isFavorite, onBookingCl
           </div>
         </div>
 
-        {/* Sekcja usług */}
+        {/* Services section */}
         <div className="border-t border-gray-50 pt-3 flex-grow">
           <div className="space-y-2">
             <AnimatePresence initial={false}>
