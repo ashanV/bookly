@@ -18,7 +18,6 @@ export default function LocationsSection({
     onBack,
     onSidebarClick,
     onAddClick,
-    onAddClick,
     activeTab = 'locations'
 }) {
     const t = useTranslations('BusinessLocationsSection');
