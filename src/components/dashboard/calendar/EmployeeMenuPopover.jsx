@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { createPortal } from 'react-dom';
 import { LayoutList, CalendarDays, CalendarRange, Calendar as CalendarIcon, X } from 'lucide-react';
 
@@ -10,6 +11,7 @@ export default function EmployeeMenuPopover({
     onViewChange,
     onEmployeeFilter
 }) {
+    const t = useTranslations('BusinessEmployeeMenu');
     const popoverRef = useRef(null);
 
     // Close on outside click
@@ -60,52 +62,52 @@ export default function EmployeeMenuPopover({
         >
             <div className="p-1">
                 <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider flex justify-between items-center">
-                    <span>Widok</span>
+                    <span>{t('view')}</span>
                 </div>
                 <button
-                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('Dzień'); onClose(); }}
+                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('day'); onClose(); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
-                    <LayoutList size={16} /> Widok dnia
+                    <LayoutList size={16} /> {t('dayView')}
                 </button>
                 <button
-                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('3 dni'); onClose(); }}
+                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('3days'); onClose(); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
-                    <CalendarDays size={16} /> Widok 3-dniowy
+                    <CalendarDays size={16} /> {t('threeDayView')}
                 </button>
                 <button
-                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('Tydzień'); onClose(); }}
+                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('week'); onClose(); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
-                    <CalendarRange size={16} /> Widok tygodnia
+                    <CalendarRange size={16} /> {t('weekView')}
                 </button>
                 <button
-                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('Miesiąc'); onClose(); }}
+                    onClick={() => { onEmployeeFilter(employeeId); onViewChange('month'); onClose(); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
-                    <CalendarIcon size={16} /> Widok miesiąca
+                    <CalendarIcon size={16} /> {t('monthView')}
                 </button>
             </div>
 
             <div className="h-[1px] bg-gray-100 my-1"></div>
 
             <div className="p-1">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Opcje</div>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('options')}</div>
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                    Dodaj wizytę
+                    {t('addVisit')}
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                    Dodaj blokadę czasu
+                    {t('addTimeBlock')}
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                    Edytuj zmianę
+                    {t('editShift')}
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                    Dodaj urlop
+                    {t('addVacation')}
                 </button>
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                    Wyświetl pracownika
+                    {t('viewEmployee')}
                 </button>
             </div>
         </div>

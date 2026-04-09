@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import {
     Search,
@@ -17,6 +18,7 @@ import HeroPhoneMockup from "@/components/HeroComponents/HeroPhoneMockup";
 
 export default function HeroSection() {
     const router = useRouter();
+    const t = useTranslations('HeroSection');
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -78,13 +80,13 @@ export default function HeroSection() {
                         <AnimatedContent delay={0.1}>
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-8 animate-fade-in-up">
                                 <Sparkles className="w-4 h-4 text-yellow-300" />
-                                <span className="text-sm font-medium text-white/90">Nowy wymiar rezerwacji</span>
+                                <span className="text-sm font-medium text-white/90">{t('badge')}</span>
                             </div>
                             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
-                                Znajdź swój idealny <br />
+                                {t('title1')}<br />
                                 <span className="hero-gradient-text relative">
                                     <TypeText
-                                        text={["termin", "styl", "relaks", "moment"]}
+                                        text={[t('typewriter_termin'), t('typewriter_styl'), t('typewriter_relaks'), t('typewriter_moment')]}
                                         typingSpeed={80}
                                         pauseDuration={2500}
                                         deletingSpeed={40}
@@ -99,8 +101,8 @@ export default function HeroSection() {
 
                         <AnimatedContent delay={0.2}>
                             <p className="text-lg md:text-xl text-slate-300 max-w-xl mb-10 leading-relaxed font-light">
-                                Odkryj najlepszych specjalistów w Twojej okolicy.
-                                <span className="block mt-2 text-slate-400">Szybka i prosta rezerwacja wizyt online 24/7.</span>
+                                {t('subtitle1')}
+                                <span className="block mt-2 text-slate-400">{t('subtitle2')}</span>
                             </p>
                         </AnimatedContent>
 
@@ -129,7 +131,7 @@ export default function HeroSection() {
                                                             handleSearchSubmit();
                                                         }
                                                     }}
-                                                    placeholder="Czego szukasz? (np. fryzjer)"
+                                                    placeholder={t('searchPlaceholder')}
                                                     className="search-input w-full py-4 bg-transparent placeholder-slate-400 text-white focus:outline-none text-lg font-medium border-0 focus:ring-0"
                                                 />
                                             </div>
@@ -138,7 +140,7 @@ export default function HeroSection() {
                                                 className="cursor-pointer bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-6 py-3 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-fuchsia-500/30 transform hover:scale-105 transition-all duration-300 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                                 disabled={!searchQuery.trim()}
                                             >
-                                                Szukaj
+                                                {t('searchButton')}
                                             </button>
                                         </div>
                                     </div>
@@ -158,7 +160,7 @@ export default function HeroSection() {
 
                                                 <div className="text-xs uppercase tracking-wider text-slate-500 mb-4 font-semibold flex items-center">
                                                     <Sparkles className="w-3 h-3 mr-2 text-violet-500" />
-                                                    Popularne wyszukiwania
+                                                    {t('popularSearch')}
                                                 </div>
                                                 <div className="flex flex-wrap gap-3 mb-6">
                                                     {[
@@ -198,12 +200,12 @@ export default function HeroSection() {
                                 }}
                             >
                                 <span className="text-slate-400 font-medium mr-2 text-sm uppercase tracking-wide">
-                                    Szybki wybór:
+                                    {t('quickPick')}
                                 </span>
                                 {[
-                                    { name: "Fryzjer", icon: "✂️" },
-                                    { name: "Barber", icon: "💈" },
-                                    { name: "Paznokcie", icon: "💅" },
+                                    { name: t('services.hairdresser'), icon: "✂️" },
+                                    { name: t('services.barber'), icon: "💈" },
+                                    { name: t('services.nails'), icon: "💅" },
                                 ].map((service) => (
                                     <button
                                         key={service.name}
@@ -250,7 +252,7 @@ export default function HeroSection() {
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className="flex flex-col items-center gap-2 group"
                 >
-                    <span className="text-xs text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Odkryj więcej</span>
+                    <span className="text-xs text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">{t('discoverMore')}</span>
                     <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white/60 group-hover:bg-white/10 transition-all duration-300">
                         <ChevronDown className="w-5 h-5 text-slate-300 group-hover:text-white" />
                     </div>

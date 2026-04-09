@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { Link, useRouter, usePathname } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { Menu, X, User, LogOut, Building2, ChevronRight } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Navigation() {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('Navigation');
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -66,6 +68,7 @@ export default function Navigation() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
+            <LanguageSwitcher />
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -135,7 +138,7 @@ export default function Navigation() {
                 href="/client/auth"
                 className="px-6 py-2.5 rounded-full bg-white text-slate-900 font-semibold text-sm hover:bg-slate-100 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"
               >
-                Zaloguj się
+                {t('login')}
               </Link>
             )}
           </div>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const LANGUAGES = [
     { code: 'ar', name: 'العربية', englishName: 'Saudi Arabia' },
@@ -32,6 +33,7 @@ const LANGUAGES = [
 ];
 
 export default function LanguageSelectionModal({ isOpen, onClose, onSelect, selectedLanguage }) {
+    const t = useTranslations('BusinessLanguageSelection');
     return (
         <AnimatePresence>
             {isOpen && (
@@ -60,7 +62,7 @@ export default function LanguageSelectionModal({ isOpen, onClose, onSelect, sele
                             {/* Header */}
                             <div className="p-6 pb-2">
                                 <div className="flex items-start justify-between mb-2">
-                                    <h2 className="text-xl font-bold text-slate-900">Zmień język</h2>
+                                    <h2 className="text-xl font-bold text-slate-900">{t('title')}</h2>
                                     <button
                                         onClick={onClose}
                                         className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -68,7 +70,7 @@ export default function LanguageSelectionModal({ isOpen, onClose, onSelect, sele
                                         <X size={20} />
                                     </button>
                                 </div>
-                                <p className="text-sm font-medium text-slate-900 mb-4">Dostępne języki</p>
+                                <p className="text-sm font-medium text-slate-900 mb-4">{t('availableLanguages')}</p>
                             </div>
 
                             {/* Language Grid */}

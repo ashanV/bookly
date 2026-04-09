@@ -4,7 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, addWeeks, startOfWeek } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useTranslations, useLocale } from 'next-intl';
+import { enUS, pl } from 'date-fns/locale';
 import { toast, Toaster } from 'react-hot-toast';
 import DailyCalendar from '@/components/dashboard/calendar/DailyCalendar';
 import AddVisitSidebar from '@/components/dashboard/calendar/AddVisitSidebar';
@@ -32,6 +33,9 @@ import 'react-day-picker/dist/style.css';
 function CalendarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('BusinessCalendar');
+  const locale = useLocale();
+  const dateLocale = locale === 'pl' ? pl : enUS;
   const { user, loading, isAuthenticated } = useAuth('/business/auth');
 
   // State
@@ -44,7 +48,7 @@ function CalendarContent() {
   const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
-  const [viewType, setViewType] = useState('Dzień');
+  const [viewType, setViewType] = useState('day');
   const [services, setServices] = useState([]);
   const [clients, setClients] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -166,7 +170,7 @@ function CalendarContent() {
 
   const handleResetView = () => {
     setSelectedDate(new Date());
-    setViewType('Dzień');
+    setViewType('day');
     // Optional: Reset other filters if needed
   };
 
@@ -178,15 +182,15 @@ function CalendarContent() {
   const handleSaveVisit = async (overrideVisit) => {
     const visitToSave = overrideVisit || draftVisit;
     if (!visitToSave.services || visitToSave.services.length === 0) {
-        alert("Dodaj przynajmniej jedną usługę");
+        alert(t('errorAddService'));
         return;
     }
     
     // Fallback if no client selected
     const clientData = visitToSave.client || {
-        firstName: "Klient",
-        lastName: "Gość",
-        email: "brak@danych.pl",
+        firstName: t('client'),
+        lastName: t('guest'),
+        email: t('noEmail'),
         phone: "000000000"
     };
 
@@ -211,7 +215,7 @@ function CalendarContent() {
                 })
             });
             if (!res.ok) {
-                let errorMessage = "Błąd podczas aktualizacji rezerwacji";
+                let errorMessage = t('errorUpdatingRes');
                 try {
                     const errPayload = await res.json();
                     errorMessage = errPayload.error || errorMessage;
@@ -238,14 +242,14 @@ function CalendarContent() {
                         time: format(currentStartTime, 'HH:mm'),
                         duration: service.totalDuration || service.duration,
                         price: service.price,
-                        clientName: `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || 'Klient Gość',
-                        clientEmail: clientData.email || 'brak@danych.pl',
+                        clientName: `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || `${t('client')} ${t('guest')}`,
+                        clientEmail: clientData.email || t('noEmail'),
                         clientPhone: clientData.phone || '000000000'
                     })
                 });
                 
                 if (!res.ok) {
-                    let errorMessage = "Błąd podczas zapisywania nowej wizyty";
+                    let errorMessage = t('errorSavingVisit');
                     try {
                         const errPayload = await res.json();
                         errorMessage = errPayload.error || errorMessage;
@@ -261,12 +265,12 @@ function CalendarContent() {
             }
         }
         
-        toast.success(visitToSave._id ? "Wizyta została zaktualizowana!" : "Nowa wizyta została zapisana!");
+        toast.success(visitToSave._id ? t('visitUpdated') : t('visitSaved'));
         handleRefresh();
         setIsAddVisitSidebarOpen(false);
     } catch (error) {
         console.error("Błąd zapisu wizyty:", error);
-        toast.error(error.message || "Wystąpił nieznany błąd podczas zapisywania wizyty");
+        toast.error(error.message || t('errorUnknownVisit'));
     } finally {
         setIsLoading(false);
     }
@@ -303,7 +307,7 @@ function CalendarContent() {
             })
         });
         if (!res.ok) {
-            let errorMessage = "Błąd podczas zmiany czasu trwania";
+            let errorMessage = t('errorChangingDuration');
             try {
                 const errPayload = await res.json();
                 errorMessage = errPayload.error || errorMessage;
@@ -313,11 +317,11 @@ function CalendarContent() {
             toast.error(errorMessage);
             return;
         }
-        toast.success(`Czas trwania zmieniony na ${newDuration} min`);
+        toast.success(t('durationChanged', { duration: newDuration }));
     } catch (error) {
         // Revert optimistic update
         setReservations(prev => prev.map(r => r._id === reservationId ? { ...r, duration: reservation.duration } : r));
-        toast.error("Błąd połączenia z serwerem");
+        toast.error(t('errorConnection'));
     }
   };
 
@@ -343,7 +347,7 @@ function CalendarContent() {
             })
         });
         if (!res.ok) {
-            let errorMessage = "Błąd podczas przenoszenia rezerwacji";
+            let errorMessage = t('errorMovingRes');
             try {
                 const errPayload = await res.json();
                 errorMessage = errPayload.error || errorMessage;
@@ -358,7 +362,7 @@ function CalendarContent() {
             return;
         }
         const empName = employees.find(e => e._id === newEmployeeId)?.name;
-        toast.success(`Przeniesiono na ${newTime}${empName ? ` → ${empName}` : ''}`);
+        toast.success(t('resMovedTo', { time: newTime, employee: empName ? ` → ${empName}` : '' }));
     } catch (error) {
         // Revert
         setReservations(prev => prev.map(r =>
@@ -366,7 +370,7 @@ function CalendarContent() {
                 ? { ...r, time: reservation.time, employeeId: reservation.employeeId }
                 : r
         ));
-        toast.error("Błąd połączenia z serwerem");
+        toast.error(t('errorConnection'));
     }
   };
 
@@ -393,7 +397,7 @@ function CalendarContent() {
         });
         
         if (!res.ok) {
-            let errorMessage = "Błąd podczas zmiany statusu";
+            let errorMessage = t('errorChangingStatus');
             try {
                 const errPayload = await res.json();
                 errorMessage = errPayload.error || errorMessage;
@@ -408,7 +412,7 @@ function CalendarContent() {
             toast.error(errorMessage);
             return;
         }
-        toast.success("Zmieniono status rezerwacji");
+        toast.success(t('statusChanged'));
     } catch (error) {
         // Revert
         setReservations(prev => prev.map(r => 
@@ -417,11 +421,11 @@ function CalendarContent() {
         if (selectedReservation?._id === reservationId) {
             setSelectedReservation(prev => ({ ...prev, status: reservation.status }));
         }
-        toast.error("Błąd połączenia z serwerem");
+        toast.error(t('errorConnection'));
     }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50">{t('loading')}</div>;
   if (!isAuthenticated) return null;
 
   const todayReservations = reservations.filter(r => isSameDay(new Date(r.date), selectedDate));
@@ -439,13 +443,13 @@ function CalendarContent() {
             onClick={() => setSelectedDate(new Date())}
             className="px-4 py-1.5 bg-white border border-gray-300 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
           >
-            Dzisiaj
+            {t('today')}
           </button>
 
           <div className="flex items-center bg-white border border-gray-300 rounded-full px-1 py-1 shadow-sm relative">
             <button
               onClick={() => {
-                if (viewType === 'Miesiąc') {
+                if (viewType === 'month') {
                   setSelectedDate(subDays(selectedDate, 30)); // Rough month jump, or use subMonths if available. 
                   const d = new Date(selectedDate);
                   d.setMonth(d.getMonth() - 1);
@@ -453,8 +457,8 @@ function CalendarContent() {
                   return;
                 }
                 let diff = 1;
-                if (viewType === '3 dni') diff = 3;
-                if (viewType === 'Tydzień') diff = 7;
+                if (viewType === '3days') diff = 3;
+                if (viewType === 'week') diff = 7;
                 setSelectedDate(subDays(selectedDate, diff));
               }}
               className="p-1 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -469,32 +473,32 @@ function CalendarContent() {
               className="px-3 text-sm font-semibold text-gray-900 min-w-[120px] text-center hover:bg-gray-50 rounded-md transition-colors"
             >
               {(() => {
-                if (viewType === '3 dni') {
-                  return `${format(selectedDate, 'd MMM', { locale: pl })} - ${format(addDays(selectedDate, 2), 'd MMM, yyyy', { locale: pl })}`;
+                if (viewType === '3days') {
+                  return `${format(selectedDate, 'd MMM', { locale: dateLocale })} - ${format(addDays(selectedDate, 2), 'd MMM, yyyy', { locale: dateLocale })}`;
                 }
-                if (viewType === 'Tydzień') {
+                if (viewType === 'week') {
                   const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
-                  return `${format(start, 'd MMM', { locale: pl })} - ${format(addDays(start, 6), 'd MMM, yyyy', { locale: pl })}`;
+                  return `${format(start, 'd MMM', { locale: dateLocale })} - ${format(addDays(start, 6), 'd MMM, yyyy', { locale: dateLocale })}`;
                 }
-                if (viewType === 'Miesiąc') {
-                  return format(selectedDate, 'MMMM yyyy', { locale: pl });
+                if (viewType === 'month') {
+                  return format(selectedDate, 'MMMM yyyy', { locale: dateLocale });
                 }
-                return format(selectedDate, 'EEE, d MMM', { locale: pl });
+                return format(selectedDate, 'EEE, d MMM', { locale: dateLocale });
               })()}
             </button>
 
             <div className="h-4 w-[1px] bg-gray-300 mx-1"></div>
             <button
               onClick={() => {
-                if (viewType === 'Miesiąc') {
+                if (viewType === 'month') {
                   const d = new Date(selectedDate);
                   d.setMonth(d.getMonth() + 1);
                   setSelectedDate(d);
                   return;
                 }
                 let diff = 1;
-                if (viewType === '3 dni') diff = 3;
-                if (viewType === 'Tydzień') diff = 7;
+                if (viewType === '3days') diff = 3;
+                if (viewType === 'week') diff = 7;
                 setSelectedDate(addDays(selectedDate, diff));
               }}
               className="p-1 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -518,7 +522,7 @@ function CalendarContent() {
                   onMonthChange={setCurrentMonth}
                   numberOfMonths={2}
                   pagedNavigation
-                  locale={pl}
+                  locale={dateLocale}
                   className="custom-fresha-picker"
                   classNames={{
                     months: "flex gap-12",
@@ -548,11 +552,11 @@ function CalendarContent() {
                       onClick={() => jumpTo(week)}
                       className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all"
                     >
-                      Za {week} {week === 1 ? 'tydzień' : week < 5 ? 'tygodnie' : 'tygodni'}
+                      {t('inWeeks', { count: week })}
                     </button>
                   ))}
                   <button className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center gap-2">
-                    Więcej <ChevronDown size={14} />
+                    {t('more')} <ChevronDown size={14} />
                   </button>
                 </div>
               </div>
@@ -566,7 +570,7 @@ function CalendarContent() {
               className={`flex items-center gap-2 px-4 py-1.5 bg-white border ${isTeamDropdownOpen ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-300'} rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm`}
             >
               {selectedEmployeeIds.length === employees.length ? (
-                <>Cały zespół <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} /></>
+                <>{t('wholeTeam')} <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} /></>
               ) : selectedEmployeeIds.length === 1 ? (
                 (() => {
                   const emp = employees.find(e => e._id === selectedEmployeeIds[0]);
@@ -585,7 +589,7 @@ function CalendarContent() {
                   );
                 })()
               ) : (
-                <>{selectedEmployeeIds.length} pracowników <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} /></>
+                <>{t('employeesCount', { count: selectedEmployeeIds.length })} <ChevronDown size={14} className={`transition-transform ${isTeamDropdownOpen ? 'rotate-180' : ''}`} /></>
               )}
             </button>
 
@@ -593,26 +597,26 @@ function CalendarContent() {
               <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="p-2 space-y-1">
                   <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                    <UserIcon size={16} /> Pracownicy na zmianie
+                    <UserIcon size={16} /> {t('employeesOnShift')}
                   </button>
                   <button
                     onClick={selectAll}
                     className={`w-full text-left px-3 py-2 text-sm rounded-md flex items-center gap-3 ${selectedEmployeeIds.length === employees.length ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                   >
-                    <UserIcon size={16} /> Cały zespół
+                    <UserIcon size={16} /> {t('wholeTeam')}
                   </button>
                   <div className="flex items-center gap-3 px-3 py-2 mt-2">
                     <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">
                       {user?.firstName?.[0] || 'T'}{user?.lastName?.[0] || 'Y'}
                     </div>
-                    <span className="text-sm font-medium">{user?.firstName || 'Ty'} (Ty)</span>
+                    <span className="text-sm font-medium">{user?.firstName || t('you')}{t('youParenthesis')}</span>
                   </div>
                 </div>
 
                 <div className="border-t border-gray-100 p-2">
                   <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-sm font-bold text-gray-900">Pracownicy</span>
-                    <button onClick={clearAll} className="text-xs font-semibold text-purple-600 hover:text-purple-700">Wyczyść wszystko</button>
+                    <span className="text-sm font-bold text-gray-900">{t('employees')}</span>
+                    <button onClick={clearAll} className="text-xs font-semibold text-purple-600 hover:text-purple-700">{t('clearAll')}</button>
                   </div>
                   <div className="space-y-1 mt-1 max-h-60 overflow-y-auto">
                     {employees.map(emp => (
@@ -666,7 +670,7 @@ function CalendarContent() {
             <button
               onClick={handleResetView}
               className="p-2 hover:bg-gray-50 rounded-l-full border-r border-gray-300 text-gray-600 transition-colors"
-              title="Resetuj widok"
+              title={t('resetView')}
             >
               <RotateCcw size={18} />
             </button>
@@ -676,23 +680,23 @@ function CalendarContent() {
                 onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
                 className="flex items-center gap-2 px-4 py-1.5 hover:bg-gray-50 rounded-r-full text-sm font-semibold text-gray-700 transition-colors min-w-[90px] justify-between"
               >
-                {viewType} <ChevronDown size={14} className={`transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`} />
+                {viewType === 'day' ? t('viewDay') : viewType === '3days' ? t('view3Days') : viewType === 'week' ? t('viewWeek') : t('viewMonth')} <ChevronDown size={14} className={`transition-transform ${isViewDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isViewDropdownOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-1">
-                    <button onClick={() => handleViewChange('Dzień')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                      <LayoutList size={16} /> Dzień
+                    <button onClick={() => handleViewChange('day')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <LayoutList size={16} /> {t('viewDay')}
                     </button>
-                    <button onClick={() => handleViewChange('3 dni')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                      <CalendarDays size={16} /> 3 dni
+                    <button onClick={() => handleViewChange('3days')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <CalendarDays size={16} /> {t('view3Days')}
                     </button>
-                    <button onClick={() => handleViewChange('Tydzień')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                      <CalendarRange size={16} /> Tydzień
+                    <button onClick={() => handleViewChange('week')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <CalendarRange size={16} /> {t('viewWeek')}
                     </button>
-                    <button onClick={() => handleViewChange('Miesiąc')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
-                      <Calendar size={16} /> Miesiąc
+                    <button onClick={() => handleViewChange('month')} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3">
+                      <Calendar size={16} /> {t('viewMonth')}
                     </button>
                   </div>
                 </div>
@@ -701,7 +705,7 @@ function CalendarContent() {
           </div>
 
           <button className="flex items-center gap-2 px-5 py-2 bg-black text-white rounded-full text-sm font-semibold hover:bg-gray-800 transition-colors shadow-sm ml-2">
-            Dodaj <ChevronDown size={14} />
+            {t('add')} <ChevronDown size={14} />
           </button>
         </div>
       </header>

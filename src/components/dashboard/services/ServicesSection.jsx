@@ -10,6 +10,7 @@ import ServiceCategorySidebar from '@/components/dashboard/services/ServiceCateg
 import ServiceList from '@/components/dashboard/services/ServiceList';
 import ServiceModal from '@/components/dashboard/services/ServiceModal';
 import CategoryModal from '@/components/dashboard/services/CategoryModal';
+import { useTranslations } from 'next-intl';
 
 export default function ServicesSection({
     services,
@@ -32,6 +33,7 @@ export default function ServicesSection({
     editingCategory,
     onCloseCategoryModal
 }) {
+    const t = useTranslations('BusinessServicesSection');
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -62,7 +64,7 @@ export default function ServicesSection({
     const categories = useMemo(() => {
         const counts = {};
         services.forEach(service => {
-            const cat = service.category || 'Ogólne';
+            const cat = service.category || t('generalCategory');
             counts[cat] = (counts[cat] || 0) + 1;
         });
 
@@ -124,10 +126,10 @@ export default function ServicesSection({
             {/* Header Area */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Menu usług</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">{t('menuTitle')}</h1>
                     <p className="text-gray-500 mt-1">
-                        Wyświetl usługi oferowane przez Twoją firmę i zarządzaj nimi. {' '}
-                        <a href="#" className="text-purple-600 hover:underline">Dowiedz się więcej</a>
+                        {t('menuDescription')}
+                        <a href="#" className="text-purple-600 hover:underline">{t('learnMore')}</a>
                     </p>
                 </div>
 
@@ -138,7 +140,7 @@ export default function ServicesSection({
                             onClick={() => setShowOptions(!showOptions)}
                             className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-full font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
                         >
-                            Opcje
+                            {t('options')}
                             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showOptions ? 'rotate-180' : ''}`} />
                         </button>
 
@@ -147,37 +149,37 @@ export default function ServicesSection({
                                 <div className="py-1">
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <LinkIcon className="w-4 h-4 text-gray-500" />
-                                        Szybki link do rezerwacji
+                                        {t('quickBookingLink')}
                                     </button>
                                 </div>
                                 <div className="border-t border-gray-100 my-1"></div>
                                 <div className="py-1">
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <ArrowUpDown className="w-4 h-4 text-gray-500" />
-                                        Ustaw kolejność menu
+                                        {t('setMenuOrder')}
                                     </button>
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <ArrowUpDown className="w-4 h-4 text-gray-500" />
-                                        Ustaw kolejność rezerwacji
+                                        {t('setBookingOrder')}
                                     </button>
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <Settings className="w-4 h-4 text-gray-500" />
-                                        Ustawienia
+                                        {t('settings')}
                                     </button>
                                 </div>
                                 <div className="border-t border-gray-100 my-1"></div>
                                 <div className="py-1">
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <FileText className="w-4 h-4 text-gray-500" />
-                                        Pobierz PDF
+                                        {t('downloadPDF')}
                                     </button>
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <FileText className="w-4 h-4 text-gray-500" />
-                                        Pobierz Excel
+                                        {t('downloadExcel')}
                                     </button>
                                     <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                         <FileText className="w-4 h-4 text-gray-500" />
-                                        Pobierz CSV
+                                        {t('downloadCSV')}
                                     </button>
                                 </div>
                             </div>
@@ -188,7 +190,7 @@ export default function ServicesSection({
                         href="/business/dashboard/services/new"
                         className="bg-black text-white px-6 py-2 rounded-full font-semibold hover:bg-gray-800 transition-all flex items-center gap-2"
                     >
-                        Dodaj
+                        {t('add')}
                         <Plus className="w-4 h-4" />
                     </Link>
                 </div>
@@ -201,7 +203,7 @@ export default function ServicesSection({
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                             type="text"
-                            placeholder="Wyszukaj nazwę usługi"
+                            placeholder={t('searchPlaceholder')}
                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -210,7 +212,7 @@ export default function ServicesSection({
                 </div>
                 <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 font-medium text-gray-700">
                     <ArrowUpDown className="w-4 h-4" />
-                    Ustaw kolejność
+                    {t('setOrder')}
                 </button>
             </div>
 

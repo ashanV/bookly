@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { toast } from '@/components/Toast';
+import { useTranslations } from 'next-intl';
 
 export default function SettingsCardGrid({ cards, activeCategory, onCardClick }) {
+    const t = useTranslations('BusinessSettingsGrid');
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
             {cards[activeCategory]?.map((card) => {
@@ -13,7 +15,7 @@ export default function SettingsCardGrid({ cards, activeCategory, onCardClick })
                         key={card.id}
                         onClick={() => {
                             if (card.comingSoon) {
-                                toast.info("Ta funkcja będzie dostępna wkrótce.");
+                                toast.info(t('comingSoonToast'));
                             } else if (card.route || card.component || card.id) {
                                 onCardClick(card.component || card.id);
                             }
@@ -37,7 +39,7 @@ export default function SettingsCardGrid({ cards, activeCategory, onCardClick })
                         </p>
                         {card.comingSoon && (
                             <span className="inline-block mt-3 text-xs font-bold px-2 py-1 bg-gray-100 text-gray-500 rounded-md">
-                                Wkrótce
+                                {t('comingSoonBadge')}
                             </span>
                         )}
                     </button>

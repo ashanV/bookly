@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/Toast";
 import {
@@ -23,8 +25,9 @@ import { useCsrf } from '@/hooks/useCsrf';
 const BooklyAuth = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { register, isAuthenticated, user, loading: authLoading } = useAuth(); // We use a hook
+  const { register, isAuthenticated, user, loading: authLoading, refreshUser } = useAuth(); // We use a hook
   const { secureFetch } = useCsrf();
+  const t = useTranslations('AuthClient');
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -81,6 +84,7 @@ const BooklyAuth = () => {
         if (response.ok) {
           // Save user data
           localStorage.setItem('user', JSON.stringify(data.user));
+          if (refreshUser) await refreshUser();
 
           // Redirect to client dashboard
           const redirectUrl = searchParams?.get('redirect') ||
@@ -195,7 +199,7 @@ const BooklyAuth = () => {
             Bookly
           </h1>
           <div className="text-gray-600 mt-2 transition-all duration-500">
-            {isLogin ? "Witaj ponownie!" : "Stwórz swoje konto"}
+            {isLogin ? t('welcomeBack') : t('createAccount')}
           </div>
         </div>
 
@@ -212,7 +216,7 @@ const BooklyAuth = () => {
                 } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <LogIn size={18} />
-              <span>Logowanie</span>
+              <span>{t('login')}</span>
             </button>
             <button
               onClick={() => setIsLogin(false)}
@@ -223,7 +227,7 @@ const BooklyAuth = () => {
                 } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <UserPlus size={18} />
-              <span>Rejestracja</span>
+              <span>{t('register')}</span>
             </button>
           </div>
 
@@ -253,7 +257,7 @@ const BooklyAuth = () => {
                       <input
                         type="text"
                         name="firstName"
-                        placeholder="Imię"
+                        placeholder={t('firstName')}
                         value={formData.firstName}
                         onChange={handleInputChange}
                         disabled={isLoading}
@@ -269,7 +273,7 @@ const BooklyAuth = () => {
                       <input
                         type="text"
                         name="lastName"
-                        placeholder="Nazwisko"
+                        placeholder={t('lastName')}
                         value={formData.lastName}
                         onChange={handleInputChange}
                         disabled={isLoading}
@@ -287,7 +291,7 @@ const BooklyAuth = () => {
                     <input
                       type="tel"
                       name="phone"
-                      placeholder="Numer telefonu"
+                      placeholder={t('phone')}
                       value={formData.phone}
                       onChange={handleInputChange}
                       disabled={isLoading}
@@ -303,7 +307,7 @@ const BooklyAuth = () => {
                     <input
                       type="date"
                       name="birthDate"
-                      placeholder="Data urodzenia"
+                      placeholder={t('birthDate')}
                       value={formData.birthDate}
                       onChange={handleInputChange}
                       disabled={isLoading}
@@ -323,7 +327,7 @@ const BooklyAuth = () => {
               <input
                 type="email"
                 name="email"
-                placeholder="Adres email"
+                placeholder={t('email')}
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -341,7 +345,7 @@ const BooklyAuth = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Hasło"
+                placeholder={t('password')}
                 value={formData.password}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -374,7 +378,7 @@ const BooklyAuth = () => {
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
-                    placeholder="Potwierdź hasło"
+                    placeholder={t('confirmPassword')}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -417,13 +421,13 @@ const BooklyAuth = () => {
                     htmlFor="terms"
                     className="text-sm text-gray-600 cursor-pointer"
                   >
-                    Akceptuję{" "}
+                    {t('termsAccept')}
                     <span className="text-indigo-600 hover:underline cursor-pointer transition-all duration-300">
-                      regulamin
-                    </span>{" "}
-                    i{" "}
+                      {t('terms')}
+                    </span>
+                    {t('and')}
                     <span className="text-indigo-600 hover:underline cursor-pointer transition-all duration-300">
-                      politykę prywatności
+                      {t('privacy')}
                     </span>
                   </label>
                 </div>
@@ -448,11 +452,11 @@ const BooklyAuth = () => {
               <span className="transition-all duration-300">
                 {isLoading
                   ? isLogin
-                    ? "Logowanie..."
-                    : "Rejestracja..."
+                    ? t('loggingIn')
+                    : t('registering')
                   : isLogin
-                    ? "Zaloguj się"
-                    : "Utwórz konto"}
+                    ? t('submitLogin')
+                    : t('submitRegister')}
               </span>
             </button>
 
@@ -465,7 +469,7 @@ const BooklyAuth = () => {
             >
               {isLogin && (
                 <span className="text-indigo-600 hover:underline text-sm cursor-pointer transition-all duration-300 hover:text-indigo-700">
-                  Zapomniałeś hasła?
+                  {t('forgotPassword')}
                 </span>
               )}
             </div>
@@ -475,7 +479,7 @@ const BooklyAuth = () => {
           <div className="my-6 flex items-center">
             <div className="flex-1 border-t border-gray-200 transition-all duration-500"></div>
             <span className="px-4 text-gray-500 text-sm transition-all duration-500">
-              lub
+              {t('or')}
             </span>
             <div className="flex-1 border-t border-gray-200 transition-all duration-500"></div>
           </div>
@@ -491,7 +495,7 @@ const BooklyAuth = () => {
                 <span className="text-white text-xs font-bold">G</span>
               </div>
               <span className="text-gray-700 font-medium transition-all duration-300">
-                Kontynuuj z Google
+                {t('continueGoogle')}
               </span>
             </button>
             <button
@@ -501,7 +505,7 @@ const BooklyAuth = () => {
             >
               <Facebook size={24} color="#0300a8" />
               <span className="text-gray-700 font-medium transition-all duration-300">
-                Kontynuuj z Facebook
+                {t('continueFacebook')}
               </span>
             </button>
           </div>
@@ -510,26 +514,26 @@ const BooklyAuth = () => {
           <div className="mt-6 text-center text-sm text-gray-600 transition-all duration-500">
             {isLogin ? (
               <>
-                Nie masz konta?{" "}
+                {t('noAccount')}
                 <button
                   type="button"
                   onClick={toggleMode}
                   disabled={isLoading}
                   className="text-indigo-600 hover:underline cursor-pointer font-medium transition-all duration-300 hover:text-indigo-700 disabled:opacity-50"
                 >
-                  Zarejestruj się
+                  {t('register')}
                 </button>
               </>
             ) : (
               <>
-                Masz już konto?{" "}
+                {t('hasAccount')}
                 <button
                   type="button"
                   onClick={toggleMode}
                   disabled={isLoading}
                   className="text-indigo-600 hover:underline font-medium transition-all duration-300 hover:text-indigo-700 disabled:opacity-50"
                 >
-                  Zaloguj się
+                  {t('login')}
                 </button>
               </>
             )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { format, addMinutes, isSameDay, addDays, isSunday, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import * as locales from 'date-fns/locale';
 import { Clock, Plus, LayoutList, CalendarDays, CalendarRange, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import QuickActionPopover from './QuickActionPopover';
 import EmployeeMenuPopover from './EmployeeMenuPopover';
@@ -11,6 +12,10 @@ const END_HOUR = 20;
 const PIXELS_PER_MINUTE = 2.5; // Controls height of time slots (roughly 150px per hour)
 
 export default function ThreeDayView({ date, employees = [], reservations = [], draftVisit = null, onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter }) {
+    const t = useTranslations('BusinessDayView');
+    const localeString = useLocale();
+    const currentLocale = localeString === 'pl' ? locales.pl : locales.enUS;
+
     const containerRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeEmployeeId, setActiveEmployeeId] = useState(null);
@@ -181,12 +186,12 @@ export default function ThreeDayView({ date, employees = [], reservations = [], 
                                         <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold
                                             ${isToday ? 'bg-purple-600 text-white' : isBeforeToday ? 'text-gray-300' : 'text-gray-900'}
                                         `}>
-                                            {format(day, 'd', { locale: pl })}
+                                            {format(day, 'd', { locale: currentLocale })}
                                         </div>
                                         <div className={`text-sm font-bold capitalize
                                             ${isToday ? 'text-purple-600' : isBeforeToday ? 'text-gray-300' : 'text-gray-900'}
                                         `}>
-                                            {format(day, 'EEEE', { locale: pl })}
+                                            {format(day, 'EEEE', { locale: currentLocale })}
                                         </div>
                                     </div>
                                 </div>
@@ -321,8 +326,8 @@ export default function ThreeDayView({ date, employees = [], reservations = [], 
                                             >
                                                 <div className="font-medium flex items-center justify-between opacity-90 truncate leading-tight">
                                                     <span>
-                                                        {format(new Date(draftVisit.date), 'HH:mm')} - {format(addMinutes(new Date(draftVisit.date), draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION), 'HH:mm')} 
-                                                        {' '} {draftVisit.client ? `${draftVisit.client.firstName} ${draftVisit.client.lastName}` : 'Bez rezerwacji'}
+                                                        {format(new Date(draftVisit.date), 'HH:mm')} - {format(addMinutes(new Date(draftVisit.date), draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION), 'HH:mm')}
+                                                        {' '} {draftVisit.client ? `${draftVisit.client.firstName} ${draftVisit.client.lastName}` : t('noReservation')}
                                                     </span>
                                                 </div>
                                                 {draftVisit.services.length > 0 && (
@@ -386,12 +391,12 @@ export default function ThreeDayView({ date, employees = [], reservations = [], 
                                     <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold
                                         ${isToday ? 'bg-purple-600 text-white' : isBeforeToday ? 'text-gray-300' : 'text-gray-900'}
                                     `}>
-                                        {format(day, 'd', { locale: pl })}
+                                        {format(day, 'd', { locale: currentLocale })}
                                     </div>
                                     <div className={`text-sm font-bold capitalize
                                         ${isToday ? 'text-purple-600' : isBeforeToday ? 'text-gray-300' : 'text-gray-900'}
                                     `}>
-                                        {format(day, 'EEEE', { locale: pl })}
+                                        {format(day, 'EEEE', { locale: currentLocale })}
                                     </div>
                                 </div>
                             </div>

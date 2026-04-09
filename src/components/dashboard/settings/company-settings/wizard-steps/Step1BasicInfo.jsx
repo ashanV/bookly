@@ -1,16 +1,18 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function Step1BasicInfo({ formData, handleChange, errors }) {
+    const t = useTranslations('BusinessLocationWizard');
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 p-8 animate-fade-in">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Informacje podstawowe</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-6">{t('step1Title')}</h3>
 
             <div className="space-y-6">
                 {/* Location Name */}
                 <div>
                     <div className="flex justify-between items-center mb-2">
-                        <label className="text-sm font-bold text-gray-900">Nazwa lokalizacji</label>
+                        <label className="text-sm font-bold text-gray-900">{t('step1Name')}</label>
                         <span className="text-xs text-gray-400">{formData.name.length}/60</span>
                     </div>
                     <input
@@ -25,7 +27,7 @@ export default function Step1BasicInfo({ formData, handleChange, errors }) {
 
                 {/* Phone */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">Numer kontaktowy lokalizacji</label>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('step1Phone')}</label>
                     <div className="flex gap-3">
                         <div className="relative w-24 flex-shrink-0">
                             <select
@@ -53,7 +55,7 @@ export default function Step1BasicInfo({ formData, handleChange, errors }) {
 
                 {/* Email */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">Adres e-mail lokalizacji</label>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('step1Email')}</label>
                     <input
                         type="email"
                         value={formData.email}

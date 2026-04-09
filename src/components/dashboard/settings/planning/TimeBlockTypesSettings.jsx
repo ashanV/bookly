@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { toast } from '@/components/Toast';
+import { useTranslations } from 'next-intl';
 import {
     Plus,
     MoreHorizontal,
@@ -18,6 +19,7 @@ import {
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
+    const t = useTranslations('BusinessTimeBlockTypes');
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBlock, setEditingBlock] = useState(null);
@@ -76,7 +78,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
     };
 
     const handleDelete = async (blockId) => {
-        if (!confirm('Czy na pewno chcesz usunąć ten typ blokady?')) return;
+        if (!confirm(t('confirmDelete'))) return;
 
         setLoading(true);
         try {
@@ -88,9 +90,9 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                     blockTypes: updatedBlockTypes
                 }
             });
-            toast.success("Typ blokady został usunięty");
+            toast.success(t('successDelete'));
         } catch (error) {
-            toast.error("Błąd usuwania typu blokady");
+            toast.error(t('errDelete'));
             console.error(error);
         } finally {
             setLoading(false);
@@ -120,11 +122,11 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                 }
             });
 
-            toast.success(editingBlock ? "Zaktualizowano typ blokady" : "Dodano nowy typ blokady");
+            toast.success(editingBlock ? t('successUpdate') : t('successAdd'));
             setIsModalOpen(false);
             resetForm();
         } catch (error) {
-            toast.error("Błąd zapisu");
+            toast.error(t('errSave'));
             console.error(error);
         } finally {
             setLoading(false);
@@ -140,9 +142,9 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
         <div className="space-y-6">
             <div className="flex justify-between items-start mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Typy blokad czasu w kalendarzu</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('title')}</h1>
                     <p className="text-gray-500 max-w-2xl">
-                        Twórz i dostosowuj zablokowane godziny, które można zaplanować w kalendarzu. <span className="text-purple-600 hover:underline cursor-pointer">Dowiedz się więcej</span>.
+                        {t('descTitle')} <span className="text-purple-600 hover:underline cursor-pointer">{t('learnMore')}</span>
                     </p>
                 </div>
                 <button
@@ -150,7 +152,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                     className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
                 >
                     <Plus size={16} />
-                    Dodaj
+                    {t('btnAdd')}
                 </button>
             </div>
 
@@ -160,13 +162,13 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
                             <Clock className="w-6 h-6 text-gray-400" />
                         </div>
-                        <h3 className="text-gray-900 font-medium mb-1">Brak zdefiniowanych blokad</h3>
-                        <p className="text-gray-500 text-sm mb-4">Dodaj pierwszy typ blokady, np. Przerwę obiadową</p>
+                        <h3 className="text-gray-900 font-medium mb-1">{t('noBlocksTitle')}</h3>
+                        <p className="text-gray-500 text-sm mb-4">{t('noBlocksDesc')}</p>
                         <button
                             onClick={() => handleOpenModal()}
                             className="text-purple-600 hover:text-purple-700 font-medium text-sm"
                         >
-                            Dodaj typ blokady
+                            {t('btnAddBlock')}
                         </button>
                     </div>
                 ) : (
@@ -179,9 +181,9 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                                 <div>
                                     <h3 className="font-bold text-gray-900">{block.name}</h3>
                                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <span>{block.duration} min</span>
+                                        <span>{block.duration} {t('min')}</span>
                                         <span>•</span>
-                                        <span>{block.isPaid ? 'Opłacono' : 'Nieopłacona'}</span>
+                                        <span>{block.isPaid ? t('paid') : t('unpaid')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -190,7 +192,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                                     onClick={() => setOpenMenuId(openMenuId === block._id ? null : block._id)}
                                     className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors"
                                 >
-                                    Opcje
+                                    {t('options')}
                                     <MoreHorizontal size={16} />
                                 </button>
 
@@ -206,14 +208,14 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                             >
                                                 <Pencil size={14} />
-                                                Edytuj
+                                                {t('btnEdit')}
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(block._id)}
                                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                             >
                                                 <Trash2 size={14} />
-                                                Usuń
+                                                {t('btnDelete')}
                                             </button>
                                         </div>
                                     </>
@@ -230,7 +232,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-scale-in overflow-visible">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-gray-900">
-                                {editingBlock ? 'Edytuj typ blokady' : 'Dodaj typ blokady'}
+                                {editingBlock ? t('modalEditTitle') : t('modalAddTitle')}
                             </h3>
                             <button
                                 onClick={() => setIsModalOpen(false)}
@@ -244,7 +246,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                             <div className="flex gap-4">
                                 {/* Emoji Picker */}
                                 <div className="relative" ref={emojiPickerRef}>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ikona</label>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('iconLabel')}</label>
                                     <button
                                         type="button"
                                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -258,7 +260,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                                                 onEmojiClick={onEmojiClick}
                                                 width={300}
                                                 height={400}
-                                                searchPlaceholder="Wyszukaj..."
+                                                searchPlaceholder={t('searchPlaceholder')}
                                                 previewConfig={{ showPreview: false }}
                                             />
                                         </div>
@@ -267,13 +269,13 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
 
                                 {/* Name */}
                                 <div className="flex-1">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nazwa</label>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('nameLabel')}</label>
                                     <input
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black outline-none transition-all"
-                                        placeholder="np. Przerwa obiadowa"
+                                        placeholder={t('namePlaceholder')}
                                         required
                                     />
                                 </div>
@@ -281,7 +283,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
 
                             {/* Duration */}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Czas trwania (minuty)</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('durationLabel')}</label>
                                 <input
                                     type="number"
                                     value={formData.duration}
@@ -306,7 +308,7 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                                         onChange={(e) => setFormData({ ...formData, isPaid: e.target.checked })}
                                         className="hidden"
                                     />
-                                    <span className="text-sm font-medium text-gray-900">Czas płatny (wliczany do czasu pracy)</span>
+                                    <span className="text-sm font-medium text-gray-900">{t('isPaidLabel')}</span>
                                 </label>
                             </div>
 
@@ -316,14 +318,14 @@ export default function TimeBlockTypesSettings({ businessData, onUpdate }) {
                                     onClick={() => setIsModalOpen(false)}
                                     className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                                 >
-                                    Anuluj
+                                    {t('btnCancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
                                     className="flex-1 px-4 py-2.5 bg-black text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
                                 >
-                                    {loading ? 'Zapisywanie...' : (editingBlock ? 'Zapisz zmiany' : 'Dodaj')}
+                                    {loading ? t('btnSaving') : (editingBlock ? t('btnSaveChanges') : t('btnAdd'))}
                                 </button>
                             </div>
                         </form>

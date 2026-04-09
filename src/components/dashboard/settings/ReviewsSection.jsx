@@ -2,28 +2,30 @@
 
 import React from 'react';
 import { Star, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ReviewsSection({
     reviews,
     avgRating,
     onRefresh
 }) {
+    const t = useTranslations('BusinessSettingsReviews');
     const reviewsArray = Array.isArray(reviews) ? reviews : [];
 
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <div className="mb-8 flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Opinie Klientów</h2>
-                    <p className="text-sm text-gray-500 mt-1">Przegląd opinii i ocen</p>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+                    <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
                 </div>
                 <button
                     onClick={onRefresh}
                     className="flex items-center gap-2 px-4 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg transition-colors text-sm font-medium"
-                    title="Odśwież opinie"
+                    title={t('refreshBtnTitle')}
                 >
                     <RefreshCw className="w-4 h-4" />
-                    Odśwież
+                    {t('refreshBtn')}
                 </button>
             </div>
 
@@ -40,7 +42,7 @@ export default function ReviewsSection({
                                 />
                             ))}
                         </div>
-                        <p className="text-sm text-gray-600">{reviewsArray.length} opinii</p>
+                        <p className="text-sm text-gray-600">{t('reviewsCount', { count: reviewsArray.length })}</p>
                     </div>
                 </div>
             </div>
@@ -48,7 +50,7 @@ export default function ReviewsSection({
             <div className="space-y-6">
                 {reviewsArray.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
-                        Brak opinii.
+                        {t('noReviews')}
                     </div>
                 ) : (
                     reviewsArray.map((review, index) => (
@@ -59,13 +61,13 @@ export default function ReviewsSection({
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-bold text-gray-900">{review.author || 'Anonimowy użytkownik'}</h3>
+                                        <h3 className="font-bold text-gray-900">{review.author || t('anonymousUser')}</h3>
                                         <span className="text-sm text-gray-500">
                                             {review.date ? new Date(review.date).toLocaleDateString('pl-PL', { 
                                                 year: 'numeric', 
                                                 month: 'long', 
                                                 day: 'numeric' 
-                                            }) : 'Brak daty'}
+                                            }) : t('noDate')}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1 mb-3">
@@ -79,7 +81,7 @@ export default function ReviewsSection({
                                     </div>
                                     <p className="text-gray-700">{review.text || review.comment}</p>
                                     {review.service && (
-                                        <p className="text-xs text-purple-600 mt-2 font-medium">Usługa: {review.service}</p>
+                                        <p className="text-xs text-purple-600 mt-2 font-medium">{t('serviceLabel', { service: review.service })}</p>
                                     )}
                                 </div>
                             </div>

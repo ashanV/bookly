@@ -20,35 +20,36 @@ import {
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { PERMISSIONS } from '@/lib/adminPermissions';
+import { useTranslations } from 'next-intl';
 
-const menuItems = [
+const getMenuItems = () => [
     {
         path: '/admin',
-        label: 'Dashboard',
+        labelKey: 'menuDashboard',
         icon: LayoutDashboard,
         permission: null // available to all
     },
     {
         path: '/admin/users',
-        label: 'Użytkownicy',
+        labelKey: 'menuUsers',
         icon: Users,
         permission: PERMISSIONS.USERS_VIEW
     },
     {
         path: '/admin/businesses',
-        label: 'Biznesy',
+        labelKey: 'menuBusinesses',
         icon: Building2,
         permission: PERMISSIONS.BUSINESSES_VIEW
     },
     {
         path: '/admin/reservations',
-        label: 'Rezerwacje',
+        labelKey: 'menuReservations',
         icon: Calendar,
         permission: PERMISSIONS.RESERVATIONS_VIEW
     },
     {
         path: '/admin/support',
-        label: 'Zgłoszenia',
+        labelKey: 'menuSupport',
         icon: MessageSquare,
         permission: PERMISSIONS.SUPPORT_VIEW
     },
@@ -57,19 +58,19 @@ const menuItems = [
     },
     {
         path: '/admin/finance',
-        label: 'Finanse',
+        labelKey: 'menuFinance',
         icon: DollarSign,
         permission: PERMISSIONS.FINANCE_VIEW
     },
     {
         path: '/admin/settings',
-        label: 'Ustawienia',
+        labelKey: 'menuSettings',
         icon: Settings,
         permission: PERMISSIONS.SETTINGS_VIEW
     },
     {
         path: '/admin/roles',
-        label: 'Role',
+        labelKey: 'menuRoles',
         icon: Shield,
         permission: PERMISSIONS.ROLES_VIEW
     },
@@ -78,19 +79,19 @@ const menuItems = [
     },
     {
         path: '/admin/developer',
-        label: 'Developer',
+        labelKey: 'menuDeveloper',
         icon: Code,
         permission: PERMISSIONS.DEV_API_MONITOR
     },
     {
         path: '/admin/security',
-        label: 'Bezpieczeństwo',
+        labelKey: 'menuSecurity',
         icon: Shield,
         permission: PERMISSIONS.LOGS_VIEW
     },
     {
         path: '/admin/logs',
-        label: 'Logi',
+        labelKey: 'menuLogs',
         icon: FileText,
         permission: PERMISSIONS.LOGS_VIEW
     },
@@ -100,6 +101,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
     const pathname = usePathname();
     const router = useRouter();
     const { adminUser, hasPermission, adminLogout } = useAdminAuth();
+    const t = useTranslations('AdminUI');
+    const menuItems = getMenuItems();
 
     const handleLogout = async () => {
         await adminLogout();
@@ -115,7 +118,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
             case 'developer':
                 return { text: 'Developer', color: 'bg-green-500/20 text-green-400 border-green-500/30' };
             default:
-                return { text: 'Unknown', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
+                return { text: t('roleUnknown'), color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' };
         }
     };
 
@@ -154,7 +157,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                     </div>
                     {!collapsed && (
                         <div className="overflow-hidden">
-                            <h1 className="font-bold text-white truncate">Admin Panel</h1>
+                            <h1 className="font-bold text-white truncate">{t('adminPanel')}</h1>
                             <span className={`text-xs px-2 py-0.5 rounded-full border ${roleBadge.color}`}>
                                 {roleBadge.text}
                             </span>
@@ -188,12 +191,12 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                                         ? 'bg-purple-600/20 text-purple-400'
                                         : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                         }`}
-                                    title={collapsed ? item.label : undefined}
+                                    title={collapsed ? t(item.labelKey) : undefined}
                                 >
                                     <Icon className="w-5 h-5 flex-shrink-0" />
                                     {!collapsed && (
                                         <span className="truncate flex-1 flex items-center justify-between">
-                                            {item.label}
+                                            {t(item.labelKey)}
                                             {isSupport && unreadTickets > 0 && (
                                                 <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
                                                     {unreadTickets}
@@ -227,10 +230,10 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                 <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all"
-                    title={collapsed ? 'Wyloguj' : undefined}
+                    title={collapsed ? t('logoutShort') : undefined}
                 >
                     <LogOut className="w-5 h-5 flex-shrink-0" />
-                    {!collapsed && <span>Wyloguj</span>}
+                    {!collapsed && <span>{t('logoutShort')}</span>}
                 </button>
 
                 {/* Collapse toggle */}
@@ -243,7 +246,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                     ) : (
                         <>
                             <ChevronLeft className="w-5 h-5" />
-                            <span className="text-sm">Zwiń</span>
+                            <span className="text-sm">{t('collapse')}</span>
                         </>
                     )}
                 </button>

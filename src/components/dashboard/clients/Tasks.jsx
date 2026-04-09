@@ -15,8 +15,10 @@ import {
     Flag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 export default function Tasks() {
+    const t = useTranslations('BusinessTasks');
     const [tasks, setTasks] = useState([
         { id: 1, title: 'Potwierdzić wizyty na jutro', dueDate: '2023-11-16', dueTime: '18:00', assignee: 'Recepcja', priority: 'high', status: 'todo', description: 'Zadzwonić do wszystkich klientów z wizytami na jutro.' },
         { id: 2, title: 'Zamówić farby L\'Oreal', dueDate: '2023-11-17', dueTime: '12:00', assignee: 'Marta W.', priority: 'medium', status: 'todo', description: 'Sprawdzić braki w magazynie i złożyć zamówienie.' },
@@ -47,9 +49,9 @@ export default function Tasks() {
     });
 
     const [columns, setColumns] = useState([
-        { id: 'todo', title: 'Do zrobienia', color: 'bg-slate-100', icon: Circle },
-        { id: 'in-progress', title: 'W trakcie', color: 'bg-blue-50', icon: Clock },
-        { id: 'done', title: 'Zrobione', color: 'bg-green-50', icon: CheckCircle },
+        { id: 'todo', titleKey: 'colTodo', color: 'bg-slate-100', icon: Circle },
+        { id: 'in-progress', titleKey: 'colInProgress', color: 'bg-blue-50', icon: Clock },
+        { id: 'done', titleKey: 'colDone', color: 'bg-green-50', icon: CheckCircle },
     ]);
 
     const getPriorityColor = (priority) => {
@@ -198,7 +200,7 @@ export default function Tasks() {
 
     const handleColumnTitleSave = (columnId) => {
         setColumns(columns.map(c =>
-            c.id === columnId ? { ...c, title: editColumnTitle } : c
+            c.id === columnId ? { ...c, customTitle: editColumnTitle } : c
         ));
         setEditingColumn(null);
         setEditColumnTitle('');
@@ -209,15 +211,15 @@ export default function Tasks() {
             {/* Header */}
             <div className="p-6 border-b border-slate-200 flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Tablica zadań</h2>
-                    <p className="text-slate-500 text-sm mt-1">Przeciągaj zadania między kolumnami</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('boardTitle')}</h2>
+                    <p className="text-slate-500 text-sm mt-1">{t('boardDesc')}</p>
                 </div>
                 <button
                     onClick={handleAddTask}
                     className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors shadow-sm shadow-violet-200"
                 >
                     <Plus size={18} />
-                    <span className="font-medium">Nowe zadanie</span>
+                    <span className="font-medium">{t('newTask')}</span>
                 </button>
             </div>
 
@@ -237,6 +239,7 @@ export default function Tasks() {
                                     <column.icon size={18} className="text-slate-500" />
                                     {editingColumn === column.id ? (
                                         <input
+
                                             type="text"
                                             value={editColumnTitle}
                                             onChange={(e) => setEditColumnTitle(e.target.value)}
@@ -252,7 +255,7 @@ export default function Tasks() {
                                             autoFocus
                                         />
                                     ) : (
-                                        <h3 className="font-semibold text-slate-900">{column.title}</h3>
+                                        <h3 className="font-semibold text-slate-900">{column.customTitle || t(column.titleKey)}</h3>
                                     )}
                                     <span className="bg-white px-2 py-0.5 rounded-full text-xs font-medium text-slate-500 border border-slate-200">
                                         {tasks.filter(t => t.status === column.id).length}
@@ -282,13 +285,13 @@ export default function Tasks() {
                                         >
                                             <div className="flex items-start justify-between mb-2">
                                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${getPriorityColor(task.priority)}`}>
-                                                    {task.priority === 'high' ? 'Pilne' : task.priority === 'medium' ? 'Średnie' : 'Niskie'}
+                                                    {task.priority === 'high' ? t('priorityHigh') : task.priority === 'medium' ? t('priorityMedium') : t('priorityLow')}
                                                 </span>
                                                 <div className="flex items-center gap-1">
                                                     <button
                                                         onClick={() => cyclePriority(task.id)}
                                                         className="text-slate-300 hover:text-amber-500 transition-colors p-1 rounded hover:bg-slate-50"
-                                                        title="Zmień priorytet"
+                                                        title={t('changePriority')}
                                                     >
                                                         <Flag size={14} className={task.priority === 'high' ? 'fill-red-500 text-red-500' : task.priority === 'medium' ? 'fill-amber-500 text-amber-500' : ''} />
                                                     </button>
@@ -325,7 +328,7 @@ export default function Tasks() {
                                 </AnimatePresence>
                                 {tasks.filter(t => t.status === column.id).length === 0 && (
                                     <div className="h-24 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-400 text-sm">
-                                        Pusto
+                                        {t('empty')}
                                     </div>
                                 )}
                             </div>
@@ -365,7 +368,7 @@ export default function Tasks() {
                                 className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                             >
                                 <Square size={16} />
-                                Edytuj
+                                {t('edit')}
                             </button>
                             <div className="border-t border-slate-100 my-1" />
                             <button
@@ -373,7 +376,7 @@ export default function Tasks() {
                                 className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
                             >
                                 <AlertCircle size={16} />
-                                Usuń
+                                {t('deleteAction')}
                             </button>
                             <div className="border-t border-slate-100 my-1" />
                             <div
@@ -385,7 +388,7 @@ export default function Tasks() {
                                     <svg className="w-4 h-4 text-slate-400 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                     </svg>
-                                    <span className="flex-1">Nadaj priorytet</span>
+                                    <span className="flex-1">{t('setPriority')}</span>
                                     <Flag size={16} />
                                 </div>
 
@@ -404,21 +407,21 @@ export default function Tasks() {
                                                 className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
                                             >
                                                 <Flag size={16} className="fill-red-500" />
-                                                Pilne
+                                                {t('priorityHigh')}
                                             </button>
                                             <button
                                                 onClick={() => handleSetPriority(openMenu, 'medium')}
                                                 className="w-full px-4 py-2.5 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-3 transition-colors font-medium"
                                             >
                                                 <Flag size={16} className="fill-amber-500" />
-                                                Średnie
+                                                {t('priorityMedium')}
                                             </button>
                                             <button
                                                 onClick={() => handleSetPriority(openMenu, 'low')}
                                                 className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors font-medium"
                                             >
                                                 <Flag size={16} className="fill-blue-500" />
-                                                Niskie
+                                                {t('priorityLow')}
                                             </button>
                                         </motion.div>
                                     )}
@@ -452,23 +455,23 @@ export default function Tasks() {
                                         <div className="p-3 bg-red-100 rounded-full">
                                             <AlertCircle size={24} />
                                         </div>
-                                        <h3 className="text-xl font-bold text-slate-900">Usuń zadanie</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">{t('deleteTaskTitle')}</h3>
                                     </div>
                                     <p className="text-slate-600 mb-6">
-                                        Czy na pewno chcesz usunąć zadanie <span className="font-semibold text-slate-900">"{currentTask?.title}"</span>? Tej operacji nie można cofnąć.
+                                        {t('deleteTaskDesc', { title: currentTask?.title })}
                                     </p>
                                     <div className="flex justify-end gap-3">
                                         <button
                                             onClick={() => setIsModalOpen(false)}
                                             className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
                                         >
-                                            Anuluj
+                                            {t('cancel')}
                                         </button>
                                         <button
                                             onClick={confirmDelete}
                                             className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium transition-colors"
                                         >
-                                            Usuń
+                                            {t('deleteBtn')}
                                         </button>
                                     </div>
                                 </div>
@@ -476,7 +479,7 @@ export default function Tasks() {
                                 <form onSubmit={handleSaveTask} className="flex flex-col max-h-[90vh]">
                                     <div className="p-6 border-b border-slate-200 flex items-center justify-between">
                                         <h3 className="text-xl font-bold text-slate-900">
-                                            {modalMode === 'add' ? 'Nowe zadanie' : 'Edytuj zadanie'}
+                                            {modalMode === 'add' ? t('addTaskTitle') : t('editTaskTitle')}
                                         </h3>
                                         <button
                                             type="button"
@@ -489,20 +492,20 @@ export default function Tasks() {
 
                                     <div className="p-6 space-y-4 overflow-y-auto">
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Tytuł</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('titleLabel')}</label>
                                             <input
                                                 type="text"
                                                 required
                                                 value={taskForm.title}
                                                 onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
                                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                                                placeholder="Wpisz tytuł zadania..."
+                                                placeholder={t('titlePlaceholder')}
                                             />
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Przypisane do</label>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('assigneeLabel')}</label>
                                                 <div className="relative">
                                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                                     <input
@@ -510,27 +513,27 @@ export default function Tasks() {
                                                         value={taskForm.assignee}
                                                         onChange={e => setTaskForm({ ...taskForm, assignee: e.target.value })}
                                                         className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                                                        placeholder="Np. Jan K."
+                                                        placeholder={t('assigneePlaceholder')}
                                                     />
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Priorytet</label>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('priorityLabel')}</label>
                                                 <select
                                                     value={taskForm.priority}
                                                     onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })}
                                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white"
                                                 >
-                                                    <option value="low">Niski</option>
-                                                    <option value="medium">Średni</option>
-                                                    <option value="high">Wysoki</option>
+                                                    <option value="low">{t('priorityLowOption')}</option>
+                                                    <option value="medium">{t('priorityMediumOption')}</option>
+                                                    <option value="high">{t('priorityHighOption')}</option>
                                                 </select>
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('dateLabel')}</label>
                                                 <div className="relative">
                                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                                     <input
@@ -542,7 +545,7 @@ export default function Tasks() {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Godzina</label>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('timeLabel')}</label>
                                                 <div className="relative">
                                                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                                     <input
@@ -556,13 +559,13 @@ export default function Tasks() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Opis</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('descriptionLabel')}</label>
                                             <textarea
                                                 rows="3"
                                                 value={taskForm.description}
                                                 onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
                                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
-                                                placeholder="Dodaj szczegóły zadania..."
+                                                placeholder={t('descriptionPlaceholder')}
                                             />
                                         </div>
                                     </div>
@@ -573,13 +576,13 @@ export default function Tasks() {
                                             onClick={() => setIsModalOpen(false)}
                                             className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
                                         >
-                                            Anuluj
+                                            {t('cancel')}
                                         </button>
                                         <button
                                             type="submit"
                                             className="px-4 py-2 bg-violet-600 text-white hover:bg-violet-700 rounded-lg font-medium transition-colors shadow-sm shadow-violet-200"
                                         >
-                                            {modalMode === 'add' ? 'Dodaj zadanie' : 'Zapisz zmiany'}
+                                            {modalMode === 'add' ? t('addBtn') : t('saveBtn')}
                                         </button>
                                     </div>
                                 </form>

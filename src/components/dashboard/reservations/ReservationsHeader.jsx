@@ -2,16 +2,18 @@
 
 import React from 'react';
 import { ArrowLeft, Download, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ReservationsHeader({ onBack, onExport }) {
+  const t = useTranslations('BusinessReservationsHeader');
   return (
     <div className="mb-6">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Wizyty</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
             <p className="text-sm text-gray-600">
-              Wyświetlaj, filtruj i eksportuj wizyty zarezerwowane przez klientów.
+              {t('description')}
             </p>
           </div>
         </div>
@@ -20,7 +22,7 @@ export default function ReservationsHeader({ onBack, onExport }) {
             onClick={onExport}
             className="flex items-center gap-2 px-6 py-2.5 border border-gray-200 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-700 font-medium shadow-sm"
           >
-            <span>Eksportuj</span>
+            <span>{t('export')}</span>
             <ChevronDown size={16} />
           </button>
         </div>

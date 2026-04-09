@@ -2,18 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const COLORS = [
-    { name: 'Niebieski', value: '#3b82f6', bg: 'bg-blue-500' },
-    { name: 'Fioletowy', value: '#8b5cf6', bg: 'bg-violet-500' },
-    { name: 'Zielony', value: '#22c55e', bg: 'bg-green-500' },
-    { name: 'Czerwony', value: '#ef4444', bg: 'bg-red-500' },
-    { name: 'Pomarańczowy', value: '#f97316', bg: 'bg-orange-500' },
-    { name: 'Różowy', value: '#ec4899', bg: 'bg-pink-500' },
-    { name: 'Szary', value: '#6b7280', bg: 'bg-gray-500' },
+    { nameKey: 'colorBlue', value: '#3b82f6', bg: 'bg-blue-500' },
+    { nameKey: 'colorViolet', value: '#8b5cf6', bg: 'bg-violet-500' },
+    { nameKey: 'colorGreen', value: '#22c55e', bg: 'bg-green-500' },
+    { nameKey: 'colorRed', value: '#ef4444', bg: 'bg-red-500' },
+    { nameKey: 'colorOrange', value: '#f97316', bg: 'bg-orange-500' },
+    { nameKey: 'colorPink', value: '#ec4899', bg: 'bg-pink-500' },
+    { nameKey: 'colorGray', value: '#6b7280', bg: 'bg-gray-500' },
 ];
 
 export default function CategoryModal({ isOpen, onClose, onSave, initialData }) {
+    const t = useTranslations('BusinessCategoryModal');
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [selectedColor, setSelectedColor] = useState(COLORS[0]);
@@ -51,7 +53,7 @@ export default function CategoryModal({ isOpen, onClose, onSave, initialData }) 
                 <div className="p-8">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">
-                            {initialData ? 'Edytuj kategorię' : 'Dodaj kategorię'}
+                            {initialData ? t('editCategory') : t('addCategory')}
                         </h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                             <X className="w-6 h-6" />
@@ -61,19 +63,19 @@ export default function CategoryModal({ isOpen, onClose, onSave, initialData }) 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-900 mb-2">Nazwa kategorii</label>
+                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('categoryName')}</label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all placeholder:text-gray-300"
-                                    placeholder="np. usługi fryzjerskie"
+                                    placeholder={t('categoryNamePlaceholder')}
                                     required
                                 />
                             </div>
 
                             <div className="relative">
-                                <label className="block text-sm font-bold text-gray-900 mb-2">Kolor rezerwacji</label>
+                                <label className="block text-sm font-bold text-gray-900 mb-2">{t('bookingColor')}</label>
                                 <button
                                     type="button"
                                     onClick={() => setShowColorDropdown(!showColorDropdown)}
@@ -81,7 +83,7 @@ export default function CategoryModal({ isOpen, onClose, onSave, initialData }) 
                                 >
                                     <div className="flex items-center gap-3">
                                         <span className={`w-4 h-4 rounded-full ${selectedColor.bg}`}></span>
-                                        {selectedColor.name}
+                                        {t(selectedColor.nameKey)}
                                     </div>
                                     <ChevronDown className="w-5 h-5 text-gray-400" />
                                 </button>
@@ -99,7 +101,7 @@ export default function CategoryModal({ isOpen, onClose, onSave, initialData }) 
                                                 className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
                                             >
                                                 <span className={`w-4 h-4 rounded-full ${color.bg}`}></span>
-                                                <span className="text-gray-700">{color.name}</span>
+                                                <span className="text-gray-700">{t(color.nameKey)}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -109,7 +111,7 @@ export default function CategoryModal({ isOpen, onClose, onSave, initialData }) 
 
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <label className="block text-sm font-bold text-gray-900">Opis</label>
+                                <label className="block text-sm font-bold text-gray-900">{t('description')}</label>
                                 <span className="text-xs text-gray-400">{description.length}/255</span>
                             </div>
                             <textarea
@@ -127,13 +129,13 @@ export default function CategoryModal({ isOpen, onClose, onSave, initialData }) 
                                 onClick={onClose}
                                 className="px-8 py-3 rounded-full border border-gray-200 text-gray-900 font-bold hover:bg-gray-50 transition-all"
                             >
-                                Anuluj
+                                {t('cancel')}
                             </button>
                             <button
                                 type="submit"
                                 className="px-8 py-3 rounded-full bg-black text-white font-bold hover:bg-gray-800 transition-all"
                             >
-                                {initialData ? 'Zapisz' : 'Dodaj'}
+                                {initialData ? t('save') : t('add')}
                             </button>
                         </div>
                     </form>

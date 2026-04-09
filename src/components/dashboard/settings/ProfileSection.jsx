@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Camera, Save, Building2, Facebook, Instagram, Globe, MapPin, Image as ImageIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ProfileSection({
     profileImage,
@@ -26,6 +27,7 @@ export default function ProfileSection({
     onPostalCodeChange,
     onSave
 }) {
+    const t = useTranslations('BusinessSettingsProfile');
     const handlePostalCodeChange = (e) => {
         let value = e.target.value.replace(/\D/g, ''); // Remove everything except digits
         if (value.length > 2) {
@@ -38,14 +40,14 @@ export default function ProfileSection({
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Edycja Profilu</h2>
-                    <p className="text-sm text-gray-500 mt-1">Dostosuj informacje o swojej firmie</p>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+                    <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
                 </div>
             </div>
 
             {/* Banner Image */}
             <div className="mb-8">
-                <label className="block text-gray-900 mb-4 font-semibold text-lg">Baner</label>
+                <label className="block text-gray-900 mb-4 font-semibold text-lg">{t('bannerLabel')}</label>
                 <div className="relative group">
                     <div className="w-full h-48 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center overflow-hidden border-2 border-gray-200 shadow-lg">
                         {bannerImage ? (
@@ -53,7 +55,7 @@ export default function ProfileSection({
                         ) : (
                             <div className="flex flex-col items-center gap-2">
                                 <ImageIcon className="w-16 h-16 text-purple-400" />
-                                <p className="text-gray-500">Dodaj baner</p>
+                                <p className="text-gray-500">{t('addBanner')}</p>
                             </div>
                         )}
                     </div>
@@ -63,14 +65,14 @@ export default function ProfileSection({
                     </label>
                 </div>
                 <div className="mt-2">
-                    <p className="text-sm text-gray-600 mb-1">Zalecany rozmiar: 1920x400px</p>
-                    <p className="text-xs text-gray-500">Formaty: JPG, PNG (max 5MB)</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('bannerRecSize')}</p>
+                    <p className="text-xs text-gray-500">{t('bannerFormat')}</p>
                 </div>
             </div>
 
             {/* Profile Image */}
             <div className="mb-8">
-                <label className="block text-gray-900 mb-4 font-semibold text-lg">Zdjęcie Profilowe</label>
+                <label className="block text-gray-900 mb-4 font-semibold text-lg">{t('profileLabel')}</label>
                 <div className="flex items-center gap-6">
                     <div className="relative group">
                         <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
@@ -86,42 +88,42 @@ export default function ProfileSection({
                         </label>
                     </div>
                     <div>
-                        <p className="text-sm text-gray-600 mb-2">Zalecany rozmiar: 400x400px</p>
-                        <p className="text-xs text-gray-500">Formaty: JPG, PNG (max 2MB)</p>
+                        <p className="text-sm text-gray-600 mb-2">{t('profileRecSize')}</p>
+                        <p className="text-xs text-gray-500">{t('profileFormat')}</p>
                     </div>
                 </div>
             </div>
 
             {/* Business Name */}
             <div className="mb-6">
-                <label className="block text-gray-900 mb-3 font-semibold">Nazwa Firmy</label>
+                <label className="block text-gray-900 mb-3 font-semibold">{t('businessNameLabel')}</label>
                 <input
                     type="text"
                     value={businessName}
                     onChange={(e) => onBusinessNameChange(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="Wpisz nazwę firmy..."
+                    placeholder={t('businessNamePlaceholder')}
                 />
             </div>
 
             {/* Description */}
             <div className="mb-8">
-                <label className="block text-gray-900 mb-3 font-semibold">Opis Firmy</label>
+                <label className="block text-gray-900 mb-3 font-semibold">{t('descriptionLabel')}</label>
                 <textarea
                     value={description}
                     onChange={(e) => onDescriptionChange(e.target.value)}
                     rows="5"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="Opisz swoją firmę, usługi i to co wyróżnia Cię na rynku..."
+                    placeholder={t('descriptionPlaceholder')}
                 />
-                <p className="text-xs text-gray-500 mt-2">Pozostało znaków: {500 - description.length}/500</p>
+                <p className="text-xs text-gray-500 mt-2">{t('charsRemaining', { count: 500 - description.length })}</p>
             </div>
 
             {/* Social Media */}
             <div className="space-y-6 mb-8 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <Globe className="text-purple-600" size={24} />
-                    Media Społecznościowe
+                    {t('socialMediaLabel')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -133,7 +135,7 @@ export default function ProfileSection({
                             type="text"
                             value={facebook}
                             onChange={(e) => onFacebookChange(e.target.value)}
-                            placeholder="facebook.com/twojafirma"
+                            placeholder={t('facebookPlaceholder')}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                     </div>
@@ -146,20 +148,20 @@ export default function ProfileSection({
                             type="text"
                             value={instagram}
                             onChange={(e) => onInstagramChange(e.target.value)}
-                            placeholder="instagram.com/twojafirma"
+                            placeholder={t('instagramPlaceholder')}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                         />
                     </div>
                     <div>
                         <label className="block text-gray-700 mb-2 font-medium flex items-center gap-2">
                             <Globe size={18} className="text-green-600" />
-                            Strona WWW
+                            {t('websiteLabel')}
                         </label>
                         <input
                             type="text"
                             value={website}
                             onChange={(e) => onWebsiteChange(e.target.value)}
-                            placeholder="www.twojafirma.pl"
+                            placeholder={t('websitePlaceholder')}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                         />
                     </div>
@@ -170,53 +172,53 @@ export default function ProfileSection({
             <div className="space-y-6 mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <MapPin className="text-blue-600" size={24} />
-                    Lokalizacja
+                    {t('locationLabel')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-gray-700 mb-2 font-medium">
-                            Miasto
+                            {t('cityLabel')}
                         </label>
                         <input
                             type="text"
                             value={city}
                             onChange={(e) => onCityChange(e.target.value)}
-                            placeholder="Warszawa"
+                            placeholder={t('cityPlaceholder')}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                     </div>
                     <div>
                         <label className="block text-gray-700 mb-2 font-medium">
-                            Ulica i numer
+                            {t('addressLabel')}
                         </label>
                         <input
                             type="text"
                             value={address}
                             onChange={(e) => onAddressChange(e.target.value)}
-                            placeholder="ul. Przykładowa 123"
+                            placeholder={t('addressPlaceholder')}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                     </div>
                     <div>
                         <label className="block text-gray-700 mb-2 font-medium">
-                            Kod pocztowy
+                            {t('postalCodeLabel')}
                         </label>
                         <input
                             type="text"
                             value={postalCode}
                             onChange={handlePostalCodeChange}
-                            placeholder="00-000"
+                            placeholder={t('postalCodePlaceholder')}
                             maxLength={6}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Format: 00-000</p>
+                        <p className="text-xs text-gray-500 mt-1">{t('postalCodeFormat')}</p>
                     </div>
                 </div>
                 {(city || address || postalCode) && (
                     <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
                         <p className="text-sm text-gray-600">
                             <MapPin className="inline w-4 h-4 mr-1 text-blue-600" />
-                            <strong>Pełny adres:</strong> {address ? `${address}, ` : ''}{postalCode ? `${postalCode} ` : ''}{city || ''}
+                            <strong>{t('fullAddressLabel')}</strong> {address ? `${address}, ` : ''}{postalCode ? `${postalCode} ` : ''}{city || ''}
                         </p>
                     </div>
                 )}
@@ -227,7 +229,7 @@ export default function ProfileSection({
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
             >
                 <Save className="w-5 h-5" />
-                Zapisz Zmiany
+                {t('saveBtn')}
             </button>
         </div>
     );

@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker from 'emoji-picker-react';
+import { useTranslations } from 'next-intl';
 
 export default function BusinessChatWindow({ conversation, onClose, onUpdate }) {
+    const t = useTranslations('BusinessChatWindow');
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -258,7 +260,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
         try {
             const sigResponse = await secureFetch('/api/upload/signature');
             const sigData = await sigResponse.json();
-            if (!sigResponse.ok) throw new Error('Nie udało się pobrać sygnatury');
+            if (!sigResponse.ok) throw new Error(t('signatureError'));
 
             const formDataUpload = new FormData();
             formDataUpload.append('file', file);
@@ -273,7 +275,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
             });
             console.log(clResponse);
             const clData = await clResponse.json();
-            if (!clResponse.ok) throw new Error('Błąd uploadu do Cloudinary');
+            if (!clResponse.ok) throw new Error(t('uploadError'));
 
             const response = await secureFetch('/api/chat/messages', {
                 method: 'POST',
@@ -299,7 +301,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
             }
         } catch (error) {
             console.error('Błąd uploadu obrazka:', error);
-            alert('Nie udało się wysłać obrazka.');
+            alert(t('imageUploadError'));
         } finally {
             setSending(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -323,8 +325,8 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
                                     conversation.status === 'in_progress' ? 'bg-amber-100 text-amber-600' :
                                         'bg-gray-100 text-gray-500'
                                 }`}>
-                                {conversation.status === 'open' ? 'Otwarte' :
-                                    conversation.status === 'in_progress' ? 'W toku' : 'Zamknięte'}
+                                {conversation.status === 'open' ? t('statusOpen') :
+                                    conversation.status === 'in_progress' ? t('statusInProgress') : t('statusClosed')}
                             </span>
                             <span className="text-xs text-gray-400">ID: #{conversation.id?.slice(-4) || conversation._id?.slice(-4)}</span>
                         </div>
@@ -340,11 +342,11 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full gap-3">
                         <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-sm font-medium text-gray-500">Ładowanie wiadomości...</p>
+                        <p className="text-sm font-medium text-gray-500">{t('loadingMessages')}</p>
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-400 font-medium">Rozpocznij konwersację</p>
+                        <p className="text-gray-400 font-medium">{t('startConversation')}</p>
                     </div>
                 ) : (
                     messages.map((msg, index) => {
@@ -359,7 +361,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
                                 <div className={`max-w-[75%] group relative ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
 
                                     {!isMe && (
-                                        <span className="text-[10px] text-gray-400 font-bold mb-1 ml-1 uppercase tracking-wider">Support</span>
+                                        <span className="text-[10px] text-gray-400 font-bold mb-1 ml-1 uppercase tracking-wider">{t('support')}</span>
                                     )}
 
                                     <div className={`
@@ -408,7 +410,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
                 <div className="p-4 bg-gray-50 border-t border-gray-100 text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-gray-500 text-sm font-medium">
                         <Lock size={16} />
-                        Ta konwersacja została zakończona
+                        {t('conversationClosed')}
                     </div>
                 </div>
             ) : (
@@ -439,7 +441,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
                                     type="text"
                                     value={giphySearch}
                                     onChange={(e) => setGiphySearch(e.target.value)}
-                                    placeholder="Szukaj GIFów..."
+                                    placeholder={t('searchGifs')}
                                     className="w-full px-3 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-purple-500 mb-2 text-sm"
                                     autoFocus
                                 />
@@ -492,7 +494,7 @@ export default function BusinessChatWindow({ conversation, onClose, onUpdate }) 
                                 setNewMessage(e.target.value);
                                 handleTyping();
                             }}
-                            placeholder="Napisz wiadomość..."
+                            placeholder={t('writeMessage')}
                             className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all font-medium text-gray-900 placeholder:text-gray-400"
                             disabled={sending || !isConnected}
                         />

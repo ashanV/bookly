@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from "next-intl";
 import { Calendar, Clock, MapPin, Star, Heart, User, Settings, Bell, CreditCard, Gift, ChevronRight, Phone, Mail, Camera, Edit2, Trash2, MessageCircle } from 'lucide-react';
 
 // Mock data
@@ -88,6 +89,7 @@ const mockFavorites = [
 ];
 
 export default function ClientDashboard() {
+  const t = useTranslations('ClientDashboard');
   const [activeTab, setActiveTab] = useState('overview');
   const [user] = useState(mockUser);
   const [bookings] = useState(mockBookings);
@@ -141,7 +143,7 @@ export default function ClientDashboard() {
               <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
                 Bookly
               </h1>
-              <p className="text-xs text-gray-500 font-medium">Dashboard</p>
+              <p className="text-xs text-gray-500 font-medium">{t('dashboard')}</p>
             </div>
             <div className="flex items-center space-x-4">
               <button className="relative p-3 text-gray-400 hover:text-violet-600 transition-colors">
@@ -174,12 +176,12 @@ export default function ClientDashboard() {
                 <div className="flex items-center justify-center space-x-4 mt-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-violet-600">{user.totalBookings}</div>
-                    <div className="text-xs text-gray-500">Rezerwacji</div>
+                    <div className="text-xs text-gray-500">{t('bookings')}</div>
                   </div>
                   <div className="w-px h-8 bg-gray-200"></div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-pink-600">{user.points}</div>
-                    <div className="text-xs text-gray-500">Punktów</div>
+                    <div className="text-xs text-gray-500">{t('points')}</div>
                   </div>
                 </div>
               </div>
@@ -187,35 +189,35 @@ export default function ClientDashboard() {
               <nav className="space-y-2">
                 <TabButton
                   id="overview"
-                  label="Przegląd"
+                  label={t('overview')}
                   icon={User}
                   isActive={activeTab === 'overview'}
                   onClick={setActiveTab}
                 />
                 <TabButton
                   id="bookings"
-                  label="Rezerwacje"
+                  label={t('bookings')}
                   icon={Calendar}
                   isActive={activeTab === 'bookings'}
                   onClick={setActiveTab}
                 />
                 <TabButton
                   id="favorites"
-                  label="Ulubione"
+                  label={t('favorites')}
                   icon={Heart}
                   isActive={activeTab === 'favorites'}
                   onClick={setActiveTab}
                 />
                 <TabButton
                   id="profile"
-                  label="Profil"
+                  label={t('profile')}
                   icon={Settings}
                   isActive={activeTab === 'profile'}
                   onClick={setActiveTab}
                 />
                 <TabButton
                   id="rewards"
-                  label="Nagrody"
+                  label={t('rewards')}
                   icon={Gift}
                   isActive={activeTab === 'rewards'}
                   onClick={setActiveTab}
@@ -233,7 +235,7 @@ export default function ClientDashboard() {
                   <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-violet-100 text-sm">Nadchodzące</p>
+                        <p className="text-violet-100 text-sm">{t('upcoming')}</p>
                         <p className="text-3xl font-bold">{upcomingBookings.length}</p>
                       </div>
                       <Calendar className="w-8 h-8 text-violet-200" />
@@ -242,7 +244,7 @@ export default function ClientDashboard() {
                   <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-pink-100 text-sm">Ulubione</p>
+                        <p className="text-pink-100 text-sm">{t('favorites')}</p>
                         <p className="text-3xl font-bold">{favorites.length}</p>
                       </div>
                       <Heart className="w-8 h-8 text-pink-200 fill-current" />
@@ -251,7 +253,7 @@ export default function ClientDashboard() {
                   <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-blue-100 text-sm">Punkty</p>
+                        <p className="text-blue-100 text-sm">{t('points')}</p>
                         <p className="text-3xl font-bold">{user.points}</p>
                       </div>
                       <Gift className="w-8 h-8 text-blue-200" />
@@ -262,12 +264,12 @@ export default function ClientDashboard() {
                 {/* Upcoming Bookings */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Nadchodzące rezerwacje</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('upcomingBookings')}</h2>
                     <button
                       onClick={() => setActiveTab('bookings')}
                       className="text-violet-600 hover:text-violet-700 font-medium flex items-center space-x-1"
                     >
-                      <span>Zobacz wszystkie</span>
+                      <span>{t('seeAll')}</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -301,12 +303,12 @@ export default function ClientDashboard() {
                 {/* Recent Favorites */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Ulubione miejsca</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('favoritePlaces')}</h2>
                     <button
                       onClick={() => setActiveTab('favorites')}
                       className="text-violet-600 hover:text-violet-700 font-medium flex items-center space-x-1"
                     >
-                      <span>Zobacz wszystkie</span>
+                      <span>{t('seeAll')}</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -336,7 +338,7 @@ export default function ClientDashboard() {
             {activeTab === 'bookings' && (
               <div className="space-y-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Wszystkie rezerwacje</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('allBookings')}</h2>
 
                   <div className="space-y-6">
                     {bookings.map(booking => (
@@ -424,7 +426,7 @@ export default function ClientDashboard() {
             {activeTab === 'favorites' && (
               <div className="space-y-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Ulubione miejsca</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('favoritePlaces')}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {favorites.map(favorite => (
                       <div key={favorite.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-300">
@@ -465,13 +467,13 @@ export default function ClientDashboard() {
               <div className="space-y-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Profil użytkownika</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('userProfile')}</h2>
                     <button
                       onClick={() => setIsEditingProfile(!isEditingProfile)}
                       className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
                     >
                       <Edit2 className="w-4 h-4" />
-                      <span>{isEditingProfile ? 'Zapisz' : 'Edytuj'}</span>
+                      <span>{isEditingProfile ? t('save') : t('edit')}</span>
                     </button>
                   </div>
 
@@ -520,12 +522,12 @@ export default function ClientDashboard() {
             {activeTab === 'rewards' && (
               <div className="space-y-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Program lojalnościowy</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('loyaltyProgram')}</h2>
 
                   <div className="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white mb-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-2xl font-bold">Twoje punkty</h3>
+                        <h3 className="text-2xl font-bold">{t('yourPoints')}</h3>
                         <p className="text-3xl font-black">{user.points}</p>
                         <p className="text-violet-200 text-sm mt-1">Do następnego poziomu: 250 punktów</p>
                       </div>

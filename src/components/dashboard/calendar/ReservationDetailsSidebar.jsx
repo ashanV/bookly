@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { X, Calendar, User, Clock, Check, CalendarCheck, MapPin, Play, UserX, Trash2 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useTranslations, useLocale } from 'next-intl';
+import { pl, enUS } from 'date-fns/locale';
 
 export const STATUS_OPTIONS = [
     { value: 'confirmed', label: 'Zarezerwowana', icon: CalendarCheck, color: 'text-blue-600', bgColor: 'bg-blue-600', borderColor: 'border-blue-600', hoverBg: 'hover:bg-blue-50' },
@@ -19,6 +20,9 @@ export default function ReservationDetailsSidebar({
     employeeInfo,
     onStatusChange
 }) {
+    const t = useTranslations('BusinessCalendar');
+    const locale = useLocale();
+    const dateLocale = locale === 'pl' ? pl : enUS;
     const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
     if (!isOpen || !reservation) return null;
@@ -29,6 +33,11 @@ export default function ReservationDetailsSidebar({
     const endDateTime = addMinutes(startDateTime, reservation.duration || 60);
 
     const currentStatusOption = STATUS_OPTIONS.find(op => op.value === reservation.status) || STATUS_OPTIONS[0];
+
+    const getStatusKey = (val) => {
+        if (val === 'no_show') return 'statusNoShow';
+        return `status${val.charAt(0).toUpperCase() + val.slice(1)}`;
+    };
 
     return (
         <div className={`fixed inset-y-0 right-0 w-[400px] bg-white shadow-[-4px_0_24px_-12px_rgba(0,0,0,0.1)] transform transition-transform duration-300 ease-in-out z-[100] flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
@@ -42,7 +51,7 @@ export default function ReservationDetailsSidebar({
                 </button>
                 
                 <h2 className="text-2xl font-bold mb-1">
-                    {format(startDateTime, 'EEE, d MMM', { locale: pl })}
+                    {format(startDateTime, 'EEE, d MMM', { locale: dateLocale })}
                 </h2>
                 <div className="text-white/90 text-sm mb-6 flex items-center gap-1.5">
                     <span>{reservation.time}</span>
@@ -56,7 +65,7 @@ export default function ReservationDetailsSidebar({
                         onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
                         className="flex items-center gap-2 bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded text-sm font-medium border border-white/20 w-fit"
                     >
-                        {currentStatusOption.label} <span className="ml-1 opacity-70">▼</span>
+                        {t(getStatusKey(currentStatusOption.value))} <span className="ml-1 opacity-70">▼</span>
                     </button>
 
                     {/* Status Dropdown Menu */}
@@ -77,7 +86,7 @@ export default function ReservationDetailsSidebar({
                                         `}
                                     >
                                         <option.icon size={16} className={option.value === 'no_show' || option.value === 'cancelled' ? 'text-red-500' : 'text-gray-400'} />
-                                        <span className="flex-1">{option.label}</span>
+                                        <span className="flex-1">{t(getStatusKey(option.value))}</span>
                                         {reservation.status === option.value && <Check size={16} className={option.color} />}
                                     </button>
                                 ))}
@@ -95,7 +104,7 @@ export default function ReservationDetailsSidebar({
                         <User size={24} />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-900 text-lg">{reservation.clientName || 'Bez rezerwacji'}</h3>
+                        <h3 className="font-semibold text-gray-900 text-lg">{reservation.clientName || t('noReservation')}</h3>
                         {reservation.clientEmail && <p className="text-gray-500 text-sm mt-0.5">{reservation.clientEmail}</p>}
                         {reservation.clientPhone && <p className="text-gray-500 text-sm mt-0.5">{reservation.clientPhone}</p>}
                     </div>
@@ -105,7 +114,7 @@ export default function ReservationDetailsSidebar({
 
                 {/* Services Section */}
                 <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-4 px-1">Usługi</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-4 px-1">{t('servicesTitle')}</h4>
                     <div className="flex gap-4">
                         <div className="w-1 bg-blue-500 rounded-full my-1"></div>
                         <div className="flex-1">
@@ -113,9 +122,9 @@ export default function ReservationDetailsSidebar({
                             <div className="text-sm text-gray-500 flex items-center gap-1.5 mt-1">
                                 <span>{reservation.time}</span>
                                 <span>•</span>
-                                <span>{reservation.duration} min</span>
+                                <span>{reservation.duration} {t('minutesShort')}</span>
                                 <span>•</span>
-                                <span>{employeeInfo?.name || 'Brak pracownika'}</span>
+                                <span>{employeeInfo?.name || t('noEmployee')}</span>
                             </div>
                         </div>
                     </div>
@@ -124,8 +133,8 @@ export default function ReservationDetailsSidebar({
 
             {/* Footer */}
             <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
-                <span className="font-medium text-gray-900">Razem</span>
-                <span className="font-semibold text-lg text-gray-900">{reservation.price ? `${reservation.price} zł` : 'Brak wyceny'}</span>
+                <span className="font-medium text-gray-900">{t('total')}</span>
+                <span className="font-semibold text-lg text-gray-900">{reservation.price ? `${reservation.price} zł` : t('noPricing')}</span>
             </div>
             
             {/* Payment / Check out button area (placeholder matching screenshot) */}
@@ -134,10 +143,10 @@ export default function ReservationDetailsSidebar({
                     <span className="font-bold flex leading-none mb-1 text-xl">⋮</span>
                 </button>
                 <button className="flex-1 bg-white border border-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                    Zapłać teraz <Calendar size={16} />
+                    {t('payNow')} <Calendar size={16} />
                 </button>
                 <button className="flex-1 bg-gray-900 text-white rounded-lg font-medium hover:bg-black transition-colors">
-                    Zapłać
+                    {t('pay')}
                 </button>
             </div>
         </div>

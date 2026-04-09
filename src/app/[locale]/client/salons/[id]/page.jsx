@@ -11,15 +11,16 @@ import {
   ChevronRight, Sparkles, Scissors, BadgeCheck, X
 } from 'lucide-react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { useTranslations } from 'next-intl';
 
 // Dynamic imports for heavy modal components
-const BookingModal = dynamic(() => import('../../../../components/BookingModal'), {
+const BookingModal = dynamic(() => import('@/components/BookingModal'), {
   loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>,
   ssr: false
 });
 
-const EmployeeBookingModal = dynamic(() => import('../../../../components/EmployeeBookingModal'), {
+const EmployeeBookingModal = dynamic(() => import('@/components/EmployeeBookingModal'), {
   loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>,
   ssr: false
 });
@@ -183,16 +184,6 @@ const getStudioDetails = (id) => {
   return studios[id];
 };
 
-const dayNames = {
-  monday: "Poniedziałek",
-  tuesday: "Wtorek",
-  wednesday: "Środa",
-  thursday: "Czwartek",
-  friday: "Piątek",
-  saturday: "Sobota",
-  sunday: "Niedziela"
-};
-
 const socialIcons = {
   instagram: Instagram,
   facebook: Facebook,
@@ -221,7 +212,9 @@ const TabButton = ({ id, label, icon: Icon, active, onClick }) => (
   </button>
 );
 
-const ServiceCard = ({ service, onBook }) => (
+const ServiceCard = ({ service, onBook }) => {
+  const t = useTranslations('ClientSalonProfile');
+  return (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -251,13 +244,16 @@ const ServiceCard = ({ service, onBook }) => (
         className="bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-violet-600 transition-colors flex items-center shadow-md hover:shadow-lg transform active:scale-95 duration-200"
       >
         <Calendar className="w-4 h-4 mr-2" />
-        Rezerwuj
+        {t('bookAppointment')}
       </button>
     </div>
   </motion.div>
-);
+  );
+};
 
-const ReviewCard = ({ review }) => (
+const ReviewCard = ({ review }) => {
+  const t = useTranslations('ClientSalonProfile');
+  return (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -283,12 +279,14 @@ const ReviewCard = ({ review }) => (
     </div>
     <p className="text-gray-600 text-sm leading-relaxed mb-3">{review.text}</p>
     <div className="text-xs text-violet-600 font-medium bg-violet-50 inline-block px-2 py-1 rounded">
-      Usługa: {review.service}
+      {t('tabServices')}: {review.service}
     </div>
   </motion.div>
-);
+  );
+};
 
 const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
+  const t = useTranslations('ClientSalonProfile');
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
@@ -304,7 +302,7 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (rating === 0 || !reviewText.trim() || !selectedServiceId) {
-      alert('Proszę wypełnić wszystkie pola i wybrać ocenę.');
+      alert(t('fillAllFields'));
       return;
     }
     const serviceName = services.find(s => s.id === parseInt(selectedServiceId))?.name;
@@ -332,11 +330,11 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
           <X className="w-5 h-5" />
         </button>
-        <h3 className="text-2xl font-bold text-gray-900 mb-6">Dodaj swoją opinię</h3>
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">{t('addYourReview')}</h3>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Ocena</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('rating')}</label>
             <div className="flex space-x-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
@@ -351,7 +349,7 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
 
           <div>
             <label htmlFor="service" className="block text-sm font-medium text-gray-700 mb-2">
-              Usługa, której dotyczy opinia
+              {t('serviceReviewed')}
             </label>
             <select
               id="service"
@@ -360,7 +358,7 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-violet-500 focus:border-violet-500 sm:text-sm rounded-md shadow-sm"
               required
             >
-              <option value="">Wybierz usługę</option>
+              <option value="">{t('selectService')}</option>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name}
@@ -371,7 +369,7 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
 
           <div>
             <label htmlFor="reviewText" className="block text-sm font-medium text-gray-700 mb-2">
-              Twoja opinia
+              {t('yourReview')}
             </label>
             <textarea
               id="reviewText"
@@ -379,7 +377,7 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
               className="shadow-sm focus:ring-violet-500 focus:border-violet-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-3"
-              placeholder="Podziel się swoją opinią o usłudze..."
+              placeholder={t('reviewPlaceholder')}
               required
             ></textarea>
           </div>
@@ -388,7 +386,7 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
             type="submit"
             className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-semibold transition-colors shadow-md"
           >
-            Wyślij opinię
+            {t('sendReviewBtn')}
           </button>
         </form>
       </motion.div>
@@ -401,8 +399,19 @@ const ReviewModal = ({ isOpen, onClose, onSubmit, services }) => {
 export default function StudioDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations('ClientSalonProfile');
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const id = params?.id;
+
+  const dayNames = {
+    monday: t('monday'),
+    tuesday: t('tuesday'),
+    wednesday: t('wednesday'),
+    thursday: t('thursday'),
+    friday: t('friday'),
+    saturday: t('saturday'),
+    sunday: t('sunday')
+  };
 
   const { scrollY } = useScroll();
   const heroScale = useTransform(scrollY, [0, 500], [1, 1.1]);
@@ -476,7 +485,7 @@ export default function StudioDetailsPage() {
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link skopiowany!');
+      alert(t('linkCopied'));
     }
   };
 
@@ -507,11 +516,11 @@ export default function StudioDetailsPage() {
         }
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Błąd podczas dodawania opinii');
+        alert(errorData.error || t('errorAddingReview'));
       }
     } catch (error) {
       console.error('Error adding review:', error);
-      alert('Wystąpił błąd. Spróbuj ponownie później.');
+      alert(t('genericError'));
     }
   };
 
@@ -535,9 +544,9 @@ export default function StudioDetailsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Nie znaleziono salonu</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('salonNotFound')}</h2>
           <Link href="/client/services" className="text-violet-600 hover:text-violet-700 font-medium">
-            ← Wróć do wyszukiwarki
+            {t('backToSearch')}
           </Link>
         </div>
       </div>
@@ -630,7 +639,7 @@ export default function StudioDetailsPage() {
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 {studio.isPromoted && (
                   <span className="bg-violet-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg shadow-violet-900/20">
-                    Promowany
+                    {t('promoted')}
                   </span>
                 )}
                 {studio.discount && (
@@ -655,7 +664,7 @@ export default function StudioDetailsPage() {
                 </div>
                 <div className="flex items-center">
                   <Clock className="w-5 h-5 mr-2 text-violet-400" />
-                  {studio.nextAvailable ? `Wolny termin: ${studio.nextAvailable}` : 'Sprawdź dostępność'}
+                  {studio.nextAvailable ? `${t('freeDate')}${studio.nextAvailable}` : t('checkAvailability')}
                 </div>
               </div>
             </motion.div>
@@ -673,11 +682,11 @@ export default function StudioDetailsPage() {
             <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-2 sticky top-24 z-30">
               <nav className="flex overflow-x-auto no-scrollbar gap-2">
                 {[
-                  { id: 'services', label: 'Usługi', icon: Scissors },
-                  { id: 'team', label: 'Zespół', icon: Users },
-                  { id: 'portfolio', label: 'Portfolio', icon: ImageIcon },
-                  { id: 'reviews', label: 'Opinie', icon: Star },
-                  { id: 'about', label: 'O nas', icon: Info }
+                  { id: 'services', label: t('tabServices'), icon: Scissors },
+                  { id: 'team', label: t('tabTeam'), icon: Users },
+                  { id: 'portfolio', label: t('tabPortfolio'), icon: ImageIcon },
+                  { id: 'reviews', label: t('tabReviews'), icon: Star },
+                  { id: 'about', label: t('tabAbout'), icon: Info }
                 ].map((tab) => (
                   <TabButton
                     key={tab.id}
@@ -701,7 +710,7 @@ export default function StudioDetailsPage() {
                     transition={{ duration: 0.2 }}
                   >
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl font-bold text-gray-900">Wybierz usługę</h3>
+                      <h3 className="text-xl font-bold text-gray-900">{t('chooseService')}</h3>
                       {serviceCategories.length > 1 && (
                         <div className="relative">
                           <select
@@ -762,7 +771,7 @@ export default function StudioDetailsPage() {
                             }}
                             className="w-full bg-gray-50 hover:bg-violet-50 text-gray-900 hover:text-violet-700 py-2 rounded-xl text-sm font-medium transition-colors"
                           >
-                            Umów wizytę
+                            {t('bookAppointment')}
                           </button>
                         </div>
                       );
@@ -802,7 +811,7 @@ export default function StudioDetailsPage() {
                           <Star key={i} className={`w-6 h-6 ${i < Math.round(studio.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
                         ))}
                       </div>
-                      <p className="text-violet-700 font-medium">Na podstawie {reviewsCount} opinii</p>
+                      <p className="text-violet-700 font-medium">{t('basedOnReviews', { count: reviewsCount })}</p>
 
                       <button
                         onClick={() => {
@@ -815,7 +824,7 @@ export default function StudioDetailsPage() {
                         className="mt-6 bg-violet-600 hover:bg-violet-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all shadow-lg hover:shadow-violet-500/30 flex items-center justify-center mx-auto"
                       >
                         <Star className="w-5 h-5 mr-2" />
-                        Dodaj opinię
+                        {t('addReview')}
                       </button>
                     </div>
                     <div className="space-y-4">
@@ -825,7 +834,7 @@ export default function StudioDetailsPage() {
                         ))
                       ) : (
                         <div className="text-center py-12 text-gray-500">
-                          Brak opinii. Bądź pierwszym, który doda opinię!
+                          {t('noReviews')}
                         </div>
                       )}
                     </div>
@@ -843,7 +852,7 @@ export default function StudioDetailsPage() {
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                         <Sparkles className="w-5 h-5 text-violet-600 mr-2" />
-                        Nasza historia
+                        {t('ourStory')}
                       </h3>
                       <p className="text-gray-600 leading-relaxed">{studio.aboutUs?.story || studio.description}</p>
                     </div>
@@ -852,7 +861,7 @@ export default function StudioDetailsPage() {
                       <div>
                         <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                           <BadgeCheck className="w-5 h-5 text-violet-600 mr-2" />
-                          Misja
+                          {t('mission')}
                         </h3>
                         <p className="text-gray-600 leading-relaxed">{studio.aboutUs.mission}</p>
                       </div>
@@ -860,7 +869,7 @@ export default function StudioDetailsPage() {
 
                     {studio.amenities && (
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">Udogodnienia</h3>
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">{t('amenities')}</h3>
                         <div className="flex flex-wrap gap-3">
                           {studio.amenities.map((amenity, i) => (
                             <span key={i} className="bg-gray-50 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium flex items-center">
@@ -884,7 +893,7 @@ export default function StudioDetailsPage() {
               {/* Booking Card */}
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
                 <div className="text-center mb-6">
-                  <p className="text-gray-500 text-sm mb-1">Ceny od</p>
+                  <p className="text-gray-500 text-sm mb-1">{t('pricesFrom')}</p>
                   <div className="text-3xl font-bold text-gray-900">
                     {studio.services && studio.services.length > 0 ? Math.min(...studio.services.map(s => s.price)) : 0} zł
                   </div>
@@ -895,31 +904,36 @@ export default function StudioDetailsPage() {
                   className="w-full bg-violet-600 hover:bg-violet-700 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-violet-500/30 mb-4 flex items-center justify-center"
                 >
                   <Calendar className="w-5 h-5 mr-2" />
-                  Zarezerwuj wizytę
+                  {t('bookVisit')}
                 </button>
 
                 <div className="flex items-center justify-center text-green-600 text-sm font-medium bg-green-50 py-2 rounded-lg mb-6">
                   <Clock className="w-4 h-4 mr-2" />
-                  {studio.nextAvailable || 'Dostępne terminy'}
+                  {studio.nextAvailable || t('availableDates')}
                 </div>
 
                 {/* Opening Hours Calendar */}
                 <div className="pt-6 border-t border-gray-100">
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                     <Clock className="w-4 h-4 mr-2" />
-                    Godziny otwarcia
+                    {t('openingHours')}
                   </h4>
                   <div className="space-y-2 text-sm">
                     {Object.entries(dayNames).map(([key, label]) => {
                       // Handle both data structures: simple string (mock) or object (real DB)
                       const hoursData = studio.workingHours?.[key] || studio.openingHours?.[key];
 
-                      let displayHours = 'Zamknięte';
+                      let displayHours = t('closed');
                       let isClosed = true;
 
                       if (typeof hoursData === 'string') {
-                        displayHours = hoursData;
-                        isClosed = hoursData === 'Zamknięte';
+                        if (hoursData === 'Zamknięte' || hoursData.toLowerCase() === 'closed') {
+                          displayHours = t('closed');
+                          isClosed = true;
+                        } else {
+                          displayHours = hoursData;
+                          isClosed = false;
+                        }
                       } else if (hoursData && typeof hoursData === 'object') {
                         if (!hoursData.closed && hoursData.open && hoursData.close) {
                           displayHours = `${hoursData.open} - ${hoursData.close}`;
@@ -955,7 +969,7 @@ export default function StudioDetailsPage() {
                   <div className="flex items-start space-x-3">
                     <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="font-medium text-gray-900">Adres</p>
+                      <p className="font-medium text-gray-900">{t('address')}</p>
                       <p className="text-sm text-gray-500">{studio.fullAddress}</p>
                     </div>
                   </div>
@@ -964,7 +978,7 @@ export default function StudioDetailsPage() {
 
               {/* Contact & Socials */}
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-900 mb-4">Kontakt</h3>
+                <h3 className="font-bold text-gray-900 mb-4">{t('contact')}</h3>
                 <div className="space-y-3 mb-6">
                   <a href={`tel:${studio.phone}`} className="flex items-center space-x-3 text-gray-600 hover:text-violet-600 transition-colors p-2 hover:bg-gray-50 rounded-lg">
                     <Phone className="w-5 h-5" />

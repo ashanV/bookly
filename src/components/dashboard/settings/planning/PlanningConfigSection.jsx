@@ -5,29 +5,31 @@ import { ArrowLeft } from 'lucide-react';
 import TimeCalendarSettings from './TimeCalendarSettings';
 import WaitlistSettings from './WaitlistSettings';
 import TimeBlockTypesSettings from './TimeBlockTypesSettings';
+import { useTranslations } from 'next-intl';
 
 export default function PlanningConfigSection({
     businessData,
     onBack,
     onUpdateBusiness
 }) {
+    const t = useTranslations('BusinessPlanningConfig');
     const [activeTab, setActiveTab] = useState('time-calendar');
 
     const sidebarItems = [
-        { id: 'time-calendar', label: 'Czas i kalendarz' },
-        { id: 'waitlist', label: 'Lista oczekujących' },
-        { id: 'block-types', label: 'Typy blokad czasu w kalendarzu' },
-        { id: 'resources', label: 'Zasoby', disabled: true },
-        { id: 'cancellation-reasons', label: 'Powody odwołania wizyty', disabled: true },
-        { id: 'visit-statuses', label: 'Statusy wizyt', disabled: true },
-        { id: 'closure-period', label: 'Okres zamknięcia', disabled: true },
-        { id: 'online-booking', label: 'Rezerwacje online', disabled: true },
+        { id: 'time-calendar', label: t('timeAndCalendar') },
+        { id: 'waitlist', label: t('waitlist') },
+        { id: 'block-types', label: t('blockTypes') },
+        { id: 'resources', label: t('resources'), disabled: true },
+        { id: 'cancellation-reasons', label: t('cancelReasons'), disabled: true },
+        { id: 'visit-statuses', label: t('visitStatuses'), disabled: true },
+        { id: 'closure-period', label: t('closurePeriod'), disabled: true },
+        { id: 'online-booking', label: t('onlineBooking'), disabled: true },
     ];
 
     const shortcuts = [
-        { id: 'work-schedule', label: 'Grafik pracy', type: 'internal', action: 'hours' },
-        { id: 'marketplace-profile', label: 'Profil we Fresha Marketplace', type: 'external' },
-        { id: 'service-menu', label: 'Menu usług', type: 'external' }
+        { id: 'work-schedule', label: t('workSchedule'), type: 'internal', action: 'hours' },
+        { id: 'marketplace-profile', label: t('marketplaceProfile'), type: 'external' },
+        { id: 'service-menu', label: t('serviceMenu'), type: 'external' }
     ];
 
     const renderContent = () => {
@@ -41,7 +43,7 @@ export default function PlanningConfigSection({
             default:
                 return (
                     <div className="flex items-center justify-center h-64 text-gray-500">
-                        Ta sekcja jest w trakcie budowy.
+                        {t('sectionUnderConstruction')}
                     </div>
                 );
         }
@@ -56,19 +58,19 @@ export default function PlanningConfigSection({
                     className="flex items-center gap-1 hover:text-gray-900 transition-colors px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm font-medium text-gray-700"
                 >
                     <ArrowLeft size={16} />
-                    Wróć
+                    {t('btnBack')}
                 </button>
                 <span className="text-gray-300">|</span>
-                <span>Ustawienia obszaru roboczego</span>
+                <span>{t('workspaceSettings')}</span>
                 <span className="text-gray-300">•</span>
-                <span className="font-semibold text-gray-900">Planowanie</span>
+                <span className="font-semibold text-gray-900">{t('planning')}</span>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Sidebar */}
                 <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 px-2">Planowanie</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6 px-2">{t('planning')}</h2>
                         <nav className="space-y-1">
                             {sidebarItems.map((item) => (
                                 <button
@@ -89,7 +91,7 @@ export default function PlanningConfigSection({
                     </div>
 
                     <div>
-                        <h2 className="text-sm font-bold text-gray-900 mb-3 px-2 uppercase tracking-wider">Skróty</h2>
+                        <h2 className="text-sm font-bold text-gray-900 mb-3 px-2 uppercase tracking-wider">{t('shortcuts')}</h2>
                         <nav className="space-y-1">
                             {shortcuts.map((item) => (
                                 <button

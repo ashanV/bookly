@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocale } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, isSameMonth, addDays } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import * as locales from 'date-fns/locale';
 
 export default function DatePickerPopover({ isOpen, date, onClose, onDateSelect }) {
+    const localeString = useLocale();
+    const currentLocale = localeString === 'pl' ? locales.pl : locales.enUS;
+
     const [currentMonth, setCurrentMonth] = useState(date || new Date());
     const popoverRef = useRef(null);
 
@@ -38,7 +42,7 @@ export default function DatePickerPopover({ isOpen, date, onClose, onDateSelect 
                     <ChevronLeft size={20} className="text-gray-600" />
                 </button>
                 <h2 className="text-base font-bold text-gray-900">
-                    {format(currentMonth, 'MMMM yyyy', { locale: pl }).replace(/^\w/, (c) => c.toUpperCase())}
+                    {format(currentMonth, 'MMMM yyyy', { locale: currentLocale }).replace(/^\w/, (c) => c.toUpperCase())}
                 </h2>
                 <button onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                     <ChevronRight size={20} className="text-gray-600" />
@@ -54,7 +58,7 @@ export default function DatePickerPopover({ isOpen, date, onClose, onDateSelect 
         for (let i = 0; i < 7; i++) {
             days.push(
                 <div key={i} className="text-center text-xs font-medium text-gray-500 mb-2">
-                    {format(addDays(startDate, i), 'EEE', { locale: pl }) + '.'}
+                    {format(addDays(startDate, i), 'EEE', { locale: currentLocale }) + '.'}
                 </div>
             );
         }

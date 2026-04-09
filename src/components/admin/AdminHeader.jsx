@@ -5,11 +5,13 @@ import { Bell, Search, User, MessageSquare, LogOut, ChevronDown } from 'lucide-r
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useRouter } from 'next/navigation';
 import { pusherClient } from '@/lib/pusher-client';
+import { useTranslations } from 'next-intl';
 
 export default function AdminHeader({ title, subtitle }) {
     const [activeAdmins, setActiveAdmins] = React.useState([]);
     const { adminUser, adminLogout } = useAdminAuth();
     const router = useRouter();
+    const t = useTranslations('AdminUI');
 
     // Notifications state
     const [unreadTickets, setUnreadTickets] = React.useState(0);
@@ -27,17 +29,17 @@ export default function AdminHeader({ title, subtitle }) {
     const searchRef = React.useRef(null);
 
     const searchablePages = [
-        { label: 'Dashboard', path: '/admin', keywords: ['home', 'główna', 'panel'] },
-        { label: 'Użytkownicy', path: '/admin/users', keywords: ['users', 'clients', 'klienci'] },
-        { label: 'Biznesy', path: '/admin/businesses', keywords: ['business', 'firmy', 'partnerzy'] },
-        { label: 'Rezerwacje', path: '/admin/reservations', keywords: ['reservations', 'bookings', 'wizyty'] },
-        { label: 'Zgłoszenia', path: '/admin/support', keywords: ['support', 'tickets', 'pomoc', 'kontakt'] },
-        { label: 'Finanse', path: '/admin/finance', keywords: ['finance', 'money', 'płatności', 'zarobki'] },
-        { label: 'Ustawienia', path: '/admin/settings', keywords: ['settings', 'config', 'konfiguracja'] },
-        { label: 'Role', path: '/admin/roles', keywords: ['roles', 'permissions', 'uprawnienia'] },
-        { label: 'Developer', path: '/admin/developer', keywords: ['dev', 'api', 'system'] },
-        { label: 'Bezpieczeństwo', path: '/admin/security', keywords: ['security', 'security logs', 'zabezpieczenia'] },
-        { label: 'Logi', path: '/admin/logs', keywords: ['logs', 'history', 'historia'] },
+        { label: t('menuDashboard'), path: '/admin', keywords: ['home', 'główna', 'panel'] },
+        { label: t('menuUsers'), path: '/admin/users', keywords: ['users', 'clients', 'klienci'] },
+        { label: t('menuBusinesses'), path: '/admin/businesses', keywords: ['business', 'firmy', 'partnerzy'] },
+        { label: t('menuReservations'), path: '/admin/reservations', keywords: ['reservations', 'bookings', 'wizyty'] },
+        { label: t('menuSupport'), path: '/admin/support', keywords: ['support', 'tickets', 'pomoc', 'kontakt'] },
+        { label: t('menuFinance'), path: '/admin/finance', keywords: ['finance', 'money', 'płatności', 'zarobki'] },
+        { label: t('menuSettings'), path: '/admin/settings', keywords: ['settings', 'config', 'konfiguracja'] },
+        { label: t('menuRoles'), path: '/admin/roles', keywords: ['roles', 'permissions', 'uprawnienia'] },
+        { label: t('menuDeveloper'), path: '/admin/developer', keywords: ['dev', 'api', 'system'] },
+        { label: t('menuSecurity'), path: '/admin/security', keywords: ['security', 'security logs', 'zabezpieczenia'] },
+        { label: t('menuLogs'), path: '/admin/logs', keywords: ['logs', 'history', 'historia'] },
     ];
 
     const filteredPages = React.useMemo(() => {
@@ -226,14 +228,14 @@ export default function AdminHeader({ title, subtitle }) {
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                             </span>
                             <span className="text-xs font-medium text-gray-300">
-                                {displayedAdmins.length} online
+                                {displayedAdmins.length} {t('online')}
                             </span>
                         </div>
 
                         {/* Dropdown */}
                         <div className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-gray-800 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                             <div className="p-3 border-b border-gray-800">
-                                <p className="text-xs font-medium text-gray-400">Aktywni administratorzy</p>
+                                <p className="text-xs font-medium text-gray-400">{t('activeAdmins')}</p>
                             </div>
                             <div className="max-h-64 overflow-y-auto py-2">
                                 {displayedAdmins.length > 0 ? (
@@ -264,7 +266,7 @@ export default function AdminHeader({ title, subtitle }) {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
                             type="text"
-                            placeholder="Szukaj..."
+                            placeholder={t('searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -296,7 +298,7 @@ export default function AdminHeader({ title, subtitle }) {
                                     </div>
                                 ) : (
                                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                                        Brak wyników
+                                        {t('noResults')}
                                     </div>
                                 )}
                             </div>
@@ -319,8 +321,8 @@ export default function AdminHeader({ title, subtitle }) {
                         {showNotifications && (
                             <div className="absolute right-0 top-full mt-2 w-72 bg-gray-900 border border-gray-800 rounded-xl shadow-xl z-50 overflow-hidden">
                                 <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-                                    <p className="text-xs font-medium text-gray-400">Powiadomienia</p>
-                                    {unreadTickets > 0 && <span className="text-xs font-bold text-red-500">{unreadTickets} nowe</span>}
+                                    <p className="text-xs font-medium text-gray-400">{t('notifications')}</p>
+                                    {unreadTickets > 0 && <span className="text-xs font-bold text-red-500">{unreadTickets} {t('new')}</span>}
                                 </div>
                                 <div className="py-2">
                                     {unreadTickets > 0 ? (
@@ -332,9 +334,9 @@ export default function AdminHeader({ title, subtitle }) {
                                                 <MessageSquare className="w-4 h-4 text-orange-400" />
                                             </div>
                                             <div>
-                                                <p className="text-sm text-white font-medium">Nowe zgłoszenia</p>
+                                                <p className="text-sm text-white font-medium">{t('newTickets')}</p>
                                                 <p className="text-xs text-gray-400 mt-0.5">
-                                                    Masz {unreadTickets} {unreadTickets === 1 ? 'nowe zgłoszenie' : 'nowych zgłoszeń'} dzisiaj.
+                                                    {t('youHave')} {unreadTickets} {unreadTickets === 1 ? t('newTicketSingle') : t('newTicketPlural')} {t('today')}.
                                                 </p>
                                             </div>
                                         </button>
@@ -343,7 +345,7 @@ export default function AdminHeader({ title, subtitle }) {
                                             <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-2">
                                                 <Bell className="w-5 h-5 text-gray-500" />
                                             </div>
-                                            <p className="text-sm text-gray-400">Brak nowych powiadomień</p>
+                                            <p className="text-sm text-gray-400">{t('noNewNotifications')}</p>
                                         </div>
                                     )}
                                 </div>
@@ -404,7 +406,7 @@ export default function AdminHeader({ title, subtitle }) {
                                         className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors group"
                                     >
                                         <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                        <span className="font-medium text-sm">Wyloguj się</span>
+                                        <span className="font-medium text-sm">{t('logout')}</span>
                                     </button>
                                 </div>
                             </div>

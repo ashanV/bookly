@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Clock, Eye, Edit, Trash2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ReservationsTable({
   reservations,
@@ -15,6 +16,7 @@ export default function ReservationsTable({
   formatDate,
   formatDateTime
 }) {
+  const t = useTranslations('BusinessReservationsTable');
   const formatDuration = (minutes) => {
     if (!minutes) return '-';
     const hours = Math.floor(minutes / 60);
@@ -58,34 +60,34 @@ export default function ReservationsTable({
           <thead className="bg-white border-b border-gray-100">
             <tr>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Nr ref.
+                {t('colRef')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Klient
+                {t('colClient')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Usługa
+                {t('colService')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Utworzono przez
+                {t('colCreatedBy')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Data utworzenia
+                {t('colCreatedDate')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Zarezerwowana data wizyty
+                {t('colBookedDate')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Czas trwania
+                {t('colDuration')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Pracownik
+                {t('colEmployee')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Cena
+                {t('colPrice')}
               </th>
               <th className="px-10 py-4 text-left text-xs font-bold text-gray-900 tracking-tight">
-                Status
+                {t('colStatus')}
               </th>
             </tr>
           </thead>
@@ -93,7 +95,7 @@ export default function ReservationsTable({
             {reservations.length === 0 ? (
               <tr>
                 <td colSpan="10" className="px-6 py-12 text-center text-gray-400 text-sm">
-                  Brak rezerwacji do wyświetlenia
+                  {t('noReservations')}
                 </td>
               </tr>
             ) : (
@@ -166,7 +168,7 @@ export default function ReservationsTable({
       </div>
       {reservations.length > 0 && (
         <div className="px-6 py-6 text-center text-sm text-gray-400">
-          Wyświetlono {reservations.length} z {reservations.length} wyników
+          {t('showing', { count: reservations.length, total: reservations.length })}
         </div>
       )}
     </div>

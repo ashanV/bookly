@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Search, Check } from 'lucide-react';
 
 export default function EmployeeSelectionModal({
@@ -7,8 +8,13 @@ export default function EmployeeSelectionModal({
     employees,
     selectedEmployeeIds,
     onSave,
-    businessName = "Twoim lokalu"
+    businessName
 }) {
+    const t = useTranslations('BusinessEmployeeSelection');
+    const tw = useTranslations('BusinessWorkSchedule');
+    
+    const displayBusinessName = businessName || t('yourLocation');
+
     const [searchQuery, setSearchQuery] = useState('');
     const [tempSelectedIds, setTempSelectedIds] = useState(selectedEmployeeIds);
 
@@ -61,9 +67,9 @@ export default function EmployeeSelectionModal({
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 flex justify-between items-start">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Pracownicy w lokalu {businessName}</h2>
+                        <h2 className="text-xl font-bold text-gray-900">{t('title')} {displayBusinessName}</h2>
                         <p className="text-gray-500 text-sm mt-1">
-                            Wybierz pracowników, którzy mogą być rezerwowani do wykonywania usług w tej lokalizacji.
+                            {t('subtitle')}
                         </p>
                     </div>
                     <button
@@ -80,7 +86,7 @@ export default function EmployeeSelectionModal({
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Szukaj pracowników"
+                            placeholder={t('searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600/20 focus:border-purple-600 transition-all"
@@ -98,7 +104,7 @@ export default function EmployeeSelectionModal({
                         <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all ${isAllSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'}`}>
                             {isAllSelected && <Check size={14} className="text-white" />}
                         </div>
-                        <span className="font-semibold text-gray-900">Wszyscy pracownicy</span>
+                        <span className="font-semibold text-gray-900">{t('allEmployees')}</span>
                         <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">
                             {filteredEmployees.length}
                         </span>
@@ -131,7 +137,8 @@ export default function EmployeeSelectionModal({
 
                                 <div className="flex-1">
                                     <div className="font-medium text-gray-900">{employee.name}</div>
-                                    <div className="text-xs text-gray-500">52 godz.</div>
+                                    {/* Placeholder hours - should ideally be dynamic but following original pattern */}
+                                    <div className="text-xs text-gray-500">52 {tw('hoursShort')}</div>
                                 </div>
                             </div>
                         );
@@ -141,20 +148,20 @@ export default function EmployeeSelectionModal({
                 {/* Footer */}
                 <div className="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-b-2xl">
                     <span className="text-sm text-gray-500 font-medium">
-                        wybrano {tempSelectedIds.length}
+                        {t('selectedCount')} {tempSelectedIds.length}
                     </span>
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
                             className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-200/50 rounded-lg transition-colors"
                         >
-                            Anuluj
+                            {t('cancel')}
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-6 py-2 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
                         >
-                            Zastosuj
+                            {t('apply')}
                         </button>
                     </div>
                 </div>

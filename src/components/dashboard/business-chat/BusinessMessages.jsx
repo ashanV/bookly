@@ -11,8 +11,10 @@ import {
 } from 'lucide-react';
 import BusinessChatWindow from './BusinessChatWindow';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 export default function BusinessMessages() {
+    const t = useTranslations('BusinessMessages');
     const [conversations, setConversations] = useState([]);
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export default function BusinessMessages() {
             if (selectedFile) {
                 const sigResponse = await secureFetch('/api/upload/signature');
                 const sigData = await sigResponse.json();
-                if (!sigResponse.ok) throw new Error('Nie udało się pobrać sygnatury');
+                if (!sigResponse.ok) throw new Error(t('signatureError'));
 
                 const formDataUpload = new FormData();
                 formDataUpload.append('file', selectedFile);
@@ -102,7 +104,7 @@ export default function BusinessMessages() {
                     body: formDataUpload
                 });
                 const clData = await clResponse.json();
-                if (!clResponse.ok) throw new Error('Błąd uploadu do Cloudinary');
+                if (!clResponse.ok) throw new Error(t('uploadError'));
 
                 fileUrl = clData.secure_url;
                 fileName = selectedFile.name;
@@ -136,7 +138,7 @@ export default function BusinessMessages() {
             }
         } catch (error) {
             console.error('Błąd tworzenia:', error);
-            alert('Wystąpił błąd podczas tworzenia zgłoszenia.');
+            alert(t('createError'));
         } finally {
             setIsCreating(false);
         }
@@ -165,9 +167,9 @@ export default function BusinessMessages() {
 
     const getStatusText = (status) => {
         switch (status) {
-            case 'open': return 'Otwarte';
-            case 'in_progress': return 'W toku';
-            case 'closed': return 'Zamknięte';
+            case 'open': return t('statusOpen');
+            case 'in_progress': return t('statusInProgress');
+            case 'closed': return t('statusClosed');
             default: return status;
         }
     };
@@ -178,7 +180,7 @@ export default function BusinessMessages() {
             <div className={`w-full lg:w-[380px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col ${selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
                 <div className="p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold text-gray-900">Centrum kontaktu</h2>
+                        <h2 className="text-lg font-bold text-gray-900">{t('contactCenter')}</h2>
                         <button
                             onClick={() => {
                                 setShowNewMessageModal(true);
@@ -199,7 +201,7 @@ export default function BusinessMessages() {
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
-                            Wiadomości
+                            {t('tabMessages')}
                         </button>
                         <button
                             onClick={() => setActiveTab('appeals')} // Fixed: Set to appeals
@@ -208,7 +210,7 @@ export default function BusinessMessages() {
                                 : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
-                            Moje odwołania
+                            {t('tabAppeals')}
                         </button>
                     </div>
 
@@ -217,7 +219,7 @@ export default function BusinessMessages() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input
                                 type="text"
-                                placeholder="Szukaj..."
+                                placeholder={t('searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
@@ -233,7 +235,7 @@ export default function BusinessMessages() {
                                         : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                                         }`}
                                 >
-                                    {status === 'all' ? 'Wszystkie' : status === 'open' ? 'Otwarte' : 'Archiwum'}
+                                    {status === 'all' ? t('filterAll') : status === 'open' ? t('filterOpen') : t('filterArchive')}
                                 </button>
                             ))}
                         </div>
@@ -244,7 +246,7 @@ export default function BusinessMessages() {
                     {loading ? (
                         <div className="text-center py-8">
                             <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                            <span className="text-xs text-gray-400">Ładowanie...</span>
+                            <span className="text-xs text-gray-400">{t('loading')}</span>
                         </div>
                     ) : filteredConversations.length === 0 ? (
                         <div className="text-center py-10 px-4">
@@ -252,12 +254,12 @@ export default function BusinessMessages() {
                                 <MessageSquare className="text-gray-300" size={24} />
                             </div>
                             <p className="text-gray-900 font-medium text-sm">
-                                {activeTab === 'appeals' ? 'Brak odwołań' : 'Brak wiadomości'}
+                                {activeTab === 'appeals' ? t('noAppeals') : t('noMessages')}
                             </p>
                             <p className="text-gray-400 text-xs mt-1">
                                 {activeTab === 'appeals'
-                                    ? 'Nie masz żadnych aktywnych odwołań od blokad.'
-                                    : 'Rozpocznij nową konwersację, aby skontaktować się z obsługą.'}
+                                    ? t('noAppealsDesc')
+                                    : t('noMessagesDesc')}
                             </p>
                         </div>
                     ) : (
@@ -308,9 +310,9 @@ export default function BusinessMessages() {
                         <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-6">
                             <Mail className="text-purple-200" size={40} />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Centrum Wiadomości</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('messageCenter')}</h2>
                         <p className="text-gray-500 max-w-md">
-                            Wybierz konwersację z listy po lewej stronie, aby zobaczyć szczegóły lub rozpocznij nowe zgłoszenie.
+                            {t('selectConversationMsg')}
                         </p>
                     </div>
                 )}
@@ -332,7 +334,7 @@ export default function BusinessMessages() {
                             className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
                         >
                             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-gray-900">Nowe zgłoszenie</h3>
+                                <h3 className="text-lg font-bold text-gray-900">{t('newTicket')}</h3>
                                 <button
                                     onClick={() => setShowNewMessageModal(false)}
                                     className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
@@ -343,11 +345,11 @@ export default function BusinessMessages() {
 
                             <form onSubmit={handleCreateConversation} className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Temat</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('subjectLabel')}</label>
                                     <input
                                         type="text"
                                         className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-                                        placeholder="Np. Problem z logowaniem"
+                                        placeholder={t('subjectPlaceholder')}
                                         value={newMsgSubject}
                                         onChange={e => setNewMsgSubject(e.target.value)}
                                         required
@@ -355,23 +357,23 @@ export default function BusinessMessages() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Kategoria</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('categoryLabel')}</label>
                                     <select
                                         className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                                         value={newMsgCategory}
                                         onChange={e => setNewMsgCategory(e.target.value)}
                                     >
-                                        <option value="question">Pytanie</option>
-                                        <option value="bug">Błąd</option>
-                                        <option value="blocked">Blokada konta</option>
-                                        <option value="suggestion">Sugestia</option>
-                                        <option value="billing">Płatności</option>
-                                        <option value="other">Inne</option>
+                                        <option value="question">{t('catQuestion')}</option>
+                                        <option value="bug">{t('catBug')}</option>
+                                        <option value="blocked">{t('catBlocked')}</option>
+                                        <option value="suggestion">{t('catSuggestion')}</option>
+                                        <option value="billing">{t('catBilling')}</option>
+                                        <option value="other">{t('catOther')}</option>
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Załącznik</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('attachmentLabel')}</label>
                                     <div className="flex gap-3 items-center">
                                         <button
                                             type="button"
@@ -379,7 +381,7 @@ export default function BusinessMessages() {
                                             className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-2"
                                         >
                                             <Paperclip size={18} />
-                                            {selectedFile ? 'Zmień plik' : 'Dodaj plik'}
+                                            {selectedFile ? t('changeFile') : t('addFile')}
                                         </button>
                                         {selectedFile && (
                                             <span className="text-sm text-gray-500 flex items-center gap-2">
@@ -405,10 +407,10 @@ export default function BusinessMessages() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Wiadomość</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('messageLabel')}</label>
                                     <textarea
                                         className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all h-32 resize-none"
-                                        placeholder="Opisz dokładnie swój problem..."
+                                        placeholder={t('messagePlaceholder')}
                                         value={newMsgContent}
                                         onChange={e => setNewMsgContent(e.target.value)}
                                         required={!selectedFile}
@@ -421,14 +423,14 @@ export default function BusinessMessages() {
                                         onClick={() => setShowNewMessageModal(false)}
                                         className="px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-xl font-medium transition-colors"
                                     >
-                                        Anuluj
+                                        {t('cancelBtn')}
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={isCreating}
                                         className="px-6 py-2 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
                                     >
-                                        {isCreating ? 'Wysyłanie...' : 'Wyślij zgłoszenie'}
+                                        {isCreating ? t('sendingBtn') : t('sendTicketBtn')}
                                     </button>
                                 </div>
                             </form>

@@ -13,6 +13,7 @@ import Step3AdditionalTypes from './wizard-steps/Step3AdditionalTypes';
 import Step4LocationAddress from './wizard-steps/Step4LocationAddress';
 import Step5WorkingHours from './wizard-steps/Step5WorkingHours';
 import { DEFAULT_HOURS } from './WorkingHoursEditor';
+import { useTranslations } from 'next-intl';
 
 // Import Modals
 import AddressDetailsModal from '@/components/dashboard/clients/AddressDetailsModal';
@@ -24,6 +25,7 @@ export default function SingleStepEditor({
     onUpdate,
     mode = 'contact' // 'contact', 'types', 'address', 'hours', etc.
 }) {
+    const t = useTranslations('BusinessSingleStepEditor');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -182,12 +184,12 @@ export default function SingleStepEditor({
     const validate = () => {
         const newErrors = {};
         if (mode === 'contact') {
-            if (!formData.name.trim()) newErrors.name = 'To pole jest wymagane';
-            if (!formData.phone.trim()) newErrors.phone = 'To pole jest wymagane';
-            if (!formData.email.trim()) newErrors.email = 'To pole jest wymagane';
-            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Nieprawidłowy format email';
+            if (!formData.name.trim()) newErrors.name = t('valRequired');
+            if (!formData.phone.trim()) newErrors.phone = t('valRequired');
+            if (!formData.email.trim()) newErrors.email = t('valRequired');
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = t('valEmail');
         } else if (mode === 'address') {
-            if (!formData.noAddress && !formData.address.trim()) newErrors.address = 'Wprowadź adres firmy';
+            if (!formData.noAddress && !formData.address.trim()) newErrors.address = t('valAddress');
         }
         return newErrors;
     };
@@ -235,17 +237,17 @@ export default function SingleStepEditor({
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'Błąd aktualizacji danych');
+                throw new Error(data.error || t('errUpdateData'));
             }
 
             const updatedLocation = await response.json();
 
-            toast.success('Dane zostały zaktualizowane');
+            toast.success(t('successUpdateData'));
             if (onUpdate) onUpdate(updatedLocation.location || updatedLocation); // Handle wrapper if any
             onClose();
         } catch (error) {
             console.error('Error updating location:', error);
-            toast.error(error.message || 'Wystąpił błąd');
+            toast.error(error.message || t('errOccurred'));
         } finally {
             setIsSubmitting(false);
         }
@@ -257,15 +259,15 @@ export default function SingleStepEditor({
 
     switch (mode) {
         case 'contact':
-            title = 'Edytuj informacje podstawowe';
+            title = t('editBasicInfo');
             StepComponent = Step1BasicInfo;
             break;
         case 'types':
-            title = 'Edytuj rodzaje działalności';
+            title = t('editBusinessTypes');
             StepComponent = ({ formData, handleChange }) => (
                 <div className="space-y-8 animate-fade-in">
                     <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Główny rodzaj działalności</h3>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mainBusinessType')}</h3>
                         <Step2BusinessType
                             formData={formData}
                             handleChange={handleChange}
@@ -273,7 +275,7 @@ export default function SingleStepEditor({
                         />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Dodatkowe rodzaje działalności</h3>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">{t('additionalBusinessTypes')}</h3>
                         <Step3AdditionalTypes
                             formData={formData}
                             handleChange={handleChange}
@@ -284,11 +286,11 @@ export default function SingleStepEditor({
             );
             break;
         case 'address':
-            title = 'Edytuj adres i dane rozliczeniowe';
+            title = t('editAddressAndBilling');
             StepComponent = Step4LocationAddress;
             break;
         case 'hours':
-            title = 'Edytuj godziny otwarcia';
+            title = t('editOpeningHours');
             StepComponent = Step5WorkingHours;
             break;
         default:
@@ -315,7 +317,7 @@ export default function SingleStepEditor({
                     className="px-8 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
                 >
                     {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-                    Zapisz zmiany
+                    {t('btnSaveChanges')}
                 </button>
             </div>
 

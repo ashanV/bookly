@@ -2,22 +2,24 @@
 
 import React from 'react';
 import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function PortfolioSection({
     portfolio,
     onPortfolioUpload,
     onDeleteImage
 }) {
+    const t = useTranslations('BusinessSettingsPortfolio');
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
-                    <p className="text-sm text-gray-500 mt-1">Zaprezentuj swoje najlepsze prace</p>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+                    <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
                 </div>
                 <label className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer">
                     <Upload className="w-5 h-5" />
-                    Dodaj Zdjęcia
+                    {t('addPhotosBtn')}
                     <input type="file" className="hidden" accept="image/*" multiple onChange={onPortfolioUpload} />
                 </label>
             </div>
@@ -39,8 +41,8 @@ export default function PortfolioSection({
                 {portfolio.length === 0 && (
                     <div className="col-span-full text-center py-12">
                         <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500">Brak zdjęć w portfolio</p>
-                        <p className="text-sm text-gray-400 mt-2">Dodaj swoje prace, aby pokazać je klientom</p>
+                        <p className="text-gray-500">{t('emptyState')}</p>
+                        <p className="text-sm text-gray-400 mt-2">{t('emptyStateDesc')}</p>
                     </div>
                 )}
             </div>

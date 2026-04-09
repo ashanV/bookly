@@ -5,23 +5,24 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { Search, MapPin, Star, Heart, X, ChevronDown, Map, User, LogOut, Filter } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 // Dynamically import components that might use browser APIs
-const MapModal = dynamic(() => import('../../../components/Map'), {
+const MapModal = dynamic(() => import('@/components/Map'), {
   ssr: false,
   loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>
 });
-const BookingModal = dynamic(() => import('../../../components/BookingModal'), {
+const BookingModal = dynamic(() => import('@/components/BookingModal'), {
   ssr: false,
   loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full"></div></div>
 });
-const StudioCard = dynamic(() => import('../../../components/StudioCard'), {
+const StudioCard = dynamic(() => import('@/components/StudioCard'), {
   ssr: false,
   loading: () => <div className="h-[400px] bg-gray-100 rounded-2xl animate-pulse"></div>
 });
-const FilterSidebar = dynamic(() => import('../../../components/FilterSidebar'), {
+const FilterSidebar = dynamic(() => import('@/components/FilterSidebar'), {
   ssr: false,
   loading: () => <div className="w-full h-[600px] bg-gray-100 rounded-2xl animate-pulse"></div>
 });
@@ -95,14 +96,6 @@ const mockStudios = [
   },
 ];
 
-const sortOptions = [
-  { value: "relevance", label: "Trafność" },
-  { value: "price-low", label: "Cena: od najniższej" },
-  { value: "price-high", label: "Cena: od najwyższej" },
-  { value: "rating", label: "Najwyżej oceniane" },
-  { value: "distance", label: "Najbliżej" }
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -115,6 +108,7 @@ const containerVariants = {
 
 export default function ServicesPage() {
   const router = useRouter();
+  const t = useTranslations('ClientServices');
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [isClient, setIsClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,6 +130,14 @@ export default function ServicesPage() {
   const [studios, setStudios] = useState([]);
   const [loading, setLoading] = useState(true);
   const userMenuRef = useRef(null);
+
+  const sortOptions = useMemo(() => [
+    { value: "relevance", label: t('sortRelevance') },
+    { value: "price-low", label: t('sortPriceLow') },
+    { value: "price-high", label: t('sortPriceHigh') },
+    { value: "rating", label: t('sortRating') },
+    { value: "distance", label: t('sortDistance') }
+  ], [t]);
 
   useEffect(() => {
     setIsClient(true);
@@ -213,12 +215,12 @@ export default function ServicesPage() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLocationQuery('Warszawa');
-          alert('Lokalizacja ustawiona na: Warszawa (demo)');
+          alert(t('locationSet'));
         },
-        (error) => alert('Błąd geolokalizacji: ' + error.message)
+        (error) => alert(t('locationError') + error.message)
       );
     } else {
-      alert('Geolokalizacja nie jest wspierana.');
+      alert(t('locationNotSupported'));
     }
   };
 
@@ -312,7 +314,7 @@ export default function ServicesPage() {
                 <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
                   Bookly
                 </h1>
-                <p className="text-xs text-gray-500 font-medium">Rezerwuj piękno</p>
+                <p className="text-xs text-gray-500 font-medium">{t('bookBeauty')}</p>
               </div>
             </div>
           </div>
@@ -322,7 +324,7 @@ export default function ServicesPage() {
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
               <div className="text-gray-500">
-                {authLoading ? 'Sprawdzanie autoryzacji...' : loading ? 'Ładowanie salonów...' : 'Ładowanie...'}
+                {authLoading ? t('checkingAuth') : loading ? t('loadingSalons') : t('loading')}
               </div>
             </div>
           </div>
@@ -340,7 +342,7 @@ export default function ServicesPage() {
               <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
                 Bookly
               </h1>
-              <p className="text-xs text-gray-500 font-medium tracking-wide">Rezerwuj piękno</p>
+              <p className="text-xs text-gray-500 font-medium tracking-wide">{t('bookBeauty')}</p>
             </div>
 
             <div className="hidden md:flex flex-1 max-w-3xl mx-8 items-center space-x-3">
@@ -350,7 +352,7 @@ export default function ServicesPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Szukaj usługi, salonu lub kategorii..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white shadow-sm hover:shadow transition-all duration-300"
                 />
               </div>
@@ -360,21 +362,21 @@ export default function ServicesPage() {
                   type="text"
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
-                  placeholder="Miasto lub lokalizacja..."
+                  placeholder={t('locationPlaceholder')}
                   className="w-full pl-12 pr-6 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white shadow-sm hover:shadow transition-all duration-300"
                 />
               </div>
               <button
                 onClick={handleGeolocation}
                 className="bg-violet-100 hover:bg-violet-200 text-violet-700 p-3.5 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5"
-                title="Użyj mojej lokalizacji"
+                title={t('useMyLocation')}
               >
                 <MapPin className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setIsMapOpen(true)}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3.5 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5"
-                title="Pokaż na mapie"
+                title={t('showOnMap')}
               >
                 <Map className="w-5 h-5" />
               </button>
@@ -382,7 +384,7 @@ export default function ServicesPage() {
 
             <div className="flex items-center space-x-4">
               <Link href="/business" className="hidden lg:block text-gray-600 hover:text-violet-600 px-4 py-2 rounded-full font-medium transition-all duration-300 hover:bg-violet-50">
-                Dla firmy
+                {t('forBusiness')}
               </Link>
               {isAuthenticated ? (
                 // User dropdown menu
@@ -395,7 +397,7 @@ export default function ServicesPage() {
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white shadow-inner">
                       <User size={20} />
                     </div>
-                    <span className="text-sm font-semibold text-gray-700 group-hover:text-violet-700 hidden xl:block">{user?.firstName || 'Konto'}</span>
+                    <span className="text-sm font-semibold text-gray-700 group-hover:text-violet-700 hidden xl:block">{user?.firstName || t('account')}</span>
                     <ChevronDown size={16} className="text-gray-400 group-hover:text-violet-500 transition-transform duration-300 group-hover:rotate-180" />
                   </button>
 
@@ -420,7 +422,7 @@ export default function ServicesPage() {
                           className="w-full text-left px-4 py-3 hover:bg-violet-50 transition-colors flex items-center space-x-3 group"
                         >
                           <User size={18} className="text-gray-500 group-hover:text-violet-600 transition-colors" />
-                          <span className="text-gray-700 font-medium group-hover:text-violet-700 transition-colors">Mój profil</span>
+                          <span className="text-gray-700 font-medium group-hover:text-violet-700 transition-colors">{t('myProfile')}</span>
                         </button>
                         <div className="border-t border-gray-100 my-1"></div>
                         <button
@@ -428,7 +430,7 @@ export default function ServicesPage() {
                           className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center space-x-3 text-red-600 group"
                         >
                           <LogOut size={18} className="group-hover:text-red-700 transition-colors" />
-                          <span className="font-medium group-hover:text-red-700 transition-colors">Wyloguj się</span>
+                          <span className="font-medium group-hover:text-red-700 transition-colors">{t('logout')}</span>
                         </button>
                       </motion.div>
                     )}
@@ -444,7 +446,7 @@ export default function ServicesPage() {
                   }}
                   className="bg-violet-600 cursor-pointer hover:bg-violet-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-0.5 shadow-md hover:shadow-lg"
                 >
-                  Zaloguj
+                  {t('login')}
                 </button>
               )}
             </div>
@@ -454,12 +456,12 @@ export default function ServicesPage() {
           <div className="md:hidden pb-4 space-y-3">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Szukaj usługi, salonu..." className="w-full pl-12 pr-6 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent shadow-sm" />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('mobileSearchPlaceholder')} className="w-full pl-12 pr-6 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent shadow-sm" />
             </div>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input type="text" value={locationQuery} onChange={(e) => setLocationQuery(e.target.value)} placeholder="Lokalizacja..." className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent shadow-sm" />
+                <input type="text" value={locationQuery} onChange={(e) => setLocationQuery(e.target.value)} placeholder={t('mobileLocationPlaceholder')} className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent shadow-sm" />
               </div>
               <button onClick={handleGeolocation} className="bg-violet-100 text-violet-700 p-3 rounded-xl">
                 <MapPin className="w-5 h-5" />
@@ -479,7 +481,7 @@ export default function ServicesPage() {
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between font-semibold text-gray-700"
                 >
-                  <span className="flex items-center"><Filter className="w-5 h-5 mr-2" /> Filtry</span>
+                  <span className="flex items-center"><Filter className="w-5 h-5 mr-2" /> {t('filters')}</span>
                   <ChevronDown className={`w-5 h-5 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
                 </button>
               </div>
@@ -494,16 +496,16 @@ export default function ServicesPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                    {searchQuery ? `Wyniki dla "${searchQuery}"` : 'Odkryj usługi beauty'}
+                    {searchQuery ? t('resultsFor', { query: searchQuery }) : t('discoverServices')}
                   </h2>
                   <div className="flex items-center space-x-4 text-gray-600 mt-2">
                     <span className="bg-violet-50 text-violet-700 px-3 py-1 rounded-full text-sm font-medium border border-violet-100">
-                      {filteredStudios.length} wyników
+                      {filteredStudios.length} {t('results')}
                     </span>
                     {favorites.size > 0 && (
                       <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm font-medium flex items-center border border-red-100">
                         <Heart className="w-3.5 h-3.5 mr-1.5 fill-current" />
-                        {favorites.size} ulubionych
+                        {favorites.size} {t('favorites')}
                       </span>
                     )}
                   </div>
@@ -539,7 +541,7 @@ export default function ServicesPage() {
                     )}
                     {filters.promotions && (
                       <motion.span layout initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full text-sm font-medium flex items-center shadow-sm border border-orange-200">
-                        🔥 Promocje
+                        {t('promotionsBadge')}
                         <button onClick={() => setFilters({ ...filters, promotions: false })} className="ml-2 hover:bg-orange-200 rounded-full p-0.5 transition-colors"><X className="w-3 h-3" /></button>
                       </motion.span>
                     )}
@@ -560,8 +562,8 @@ export default function ServicesPage() {
                 <div className="mb-4 bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
                   <Search className="w-8 h-8 text-gray-300" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Brak wyników</h3>
-                <p>Spróbuj zmienić kryteria wyszukiwania lub filtry.</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('noResults')}</h3>
+                <p>{t('tryDifferentCriteria')}</p>
                 <button
                   onClick={() => {
                     setSearchQuery('');
@@ -576,7 +578,7 @@ export default function ServicesPage() {
                   }}
                   className="mt-4 text-violet-600 font-medium hover:text-violet-800"
                 >
-                  Wyczyść wszystkie filtry
+                  {t('clearFilters')}
                 </button>
               </div>
             ) : (

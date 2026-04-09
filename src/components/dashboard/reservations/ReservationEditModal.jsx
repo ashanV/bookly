@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { XCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ReservationEditModal({
   reservation,
@@ -10,6 +11,7 @@ export default function ReservationEditModal({
   onSave,
   onFormChange
 }) {
+  const t = useTranslations('BusinessReservationEdit');
   if (!reservation) return null;
 
   return (
@@ -23,7 +25,7 @@ export default function ReservationEditModal({
       >
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Edytuj rezerwację</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
@@ -37,7 +39,7 @@ export default function ReservationEditModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Usługa
+                {t('serviceLabel')}
               </label>
               <input
                 type="text"
@@ -49,23 +51,23 @@ export default function ReservationEditModal({
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Status
+                {t('statusLabel')}
               </label>
               <select
                 value={editForm.status || 'pending'}
                 onChange={(e) => onFormChange({ ...editForm, status: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
-                <option value="pending">Oczekująca</option>
-                <option value="confirmed">Potwierdzona</option>
-                <option value="cancelled">Anulowana</option>
-                <option value="completed">Zakończona</option>
+                <option value="pending">{t('statusPending')}</option>
+                <option value="confirmed">{t('statusConfirmed')}</option>
+                <option value="cancelled">{t('statusCancelled')}</option>
+                <option value="completed">{t('statusCompleted')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Data
+                {t('dateLabel')}
               </label>
               <input
                 type="date"
@@ -77,7 +79,7 @@ export default function ReservationEditModal({
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Godzina
+                {t('timeLabel')}
               </label>
               <input
                 type="time"
@@ -89,7 +91,7 @@ export default function ReservationEditModal({
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Czas trwania (min)
+                {t('durationLabel')}
               </label>
               <input
                 type="number"
@@ -101,7 +103,7 @@ export default function ReservationEditModal({
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Cena (zł)
+                {t('priceLabel')}
               </label>
               <input
                 type="number"
@@ -114,14 +116,14 @@ export default function ReservationEditModal({
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Notatki
+              {t('notesLabel')}
             </label>
             <textarea
               value={editForm.notes || ''}
               onChange={(e) => onFormChange({ ...editForm, notes: e.target.value })}
               rows={4}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Dodaj notatki do rezerwacji..."
+              placeholder={t('notesPlaceholder')}
             />
           </div>
 
@@ -130,13 +132,13 @@ export default function ReservationEditModal({
               onClick={onClose}
               className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
             >
-              Anuluj
+              {t('cancel')}
             </button>
             <button
               onClick={onSave}
               className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-medium"
             >
-              Zapisz zmiany
+              {t('save')}
             </button>
           </div>
         </div>

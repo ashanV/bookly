@@ -6,12 +6,14 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { Loader2 } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 export default function AdminLayout({ children }) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const { adminUser, loading, isAdminAuthenticated, canAccess } = useAdminAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations('AdminUI');
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -33,7 +35,7 @@ export default function AdminLayout({ children }) {
             <div className="min-h-screen bg-gray-950 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-                    <p className="text-gray-400">Ładowanie panelu...</p>
+                    <p className="text-gray-400">{t('loadingPanel')}</p>
                 </div>
             </div>
         );

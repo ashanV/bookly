@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ChevronDown, Loader2, Trash2 } from 'lucide-react';
 import SingleStepEditor from './SingleStepEditor';
+import { useTranslations } from 'next-intl';
 
 const DAYS_MAP = {
     monday: 'poniedziałek',
@@ -22,14 +23,15 @@ export default function LocationDetails({
     onDelete,
     isDeleting
 }) {
+    const t = useTranslations('BusinessLocationDetails');
     const [showDropdown, setShowDropdown] = useState(false);
     const [editMode, setEditMode] = useState(null); // 'contact', etc.
 
     // Format address helper
     const getFormattedAddress = () => {
-        if (location.noAddress) return 'Brak stałego adresu';
+        if (location.noAddress) return t('noFixedAddress');
         const addr = location.address;
-        if (!addr) return 'Brak adresu';
+        if (!addr) return t('noAddress');
 
         // Handle both simple string and object structure
         if (typeof addr === 'string') return addr;
@@ -41,14 +43,14 @@ export default function LocationDetails({
             addr.province
         ].filter(Boolean);
 
-        return parts.join(', ') || 'Brak adresu';
+        return parts.join(', ') || t('noAddress');
     };
 
     // Helper for billing address
     const getBillingAddress = () => {
-        if (!location.billingAddress) return 'Brak danych';
+        if (!location.billingAddress) return t('noData');
         const d = location.billingAddress;
-        return [d.street, d.city, d.postCode].filter(Boolean).join(', ') || 'Takie same jak adres lokalizacji';
+        return [d.street, d.city, d.postCode].filter(Boolean).join(', ') || t('sameAsLocationAddress');
     };
 
     return (
@@ -60,12 +62,12 @@ export default function LocationDetails({
                     className="flex items-center gap-1 hover:text-gray-900 transition-colors px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm font-medium text-gray-700"
                 >
                     <ArrowLeft size={16} />
-                    Wróć
+                    {t('btnBack')}
                 </button>
                 <span className="text-gray-300">|</span>
-                <span>Ustawienia obszaru roboczego</span>
+                <span>{t('workspaceSettings')}</span>
                 <span className="text-gray-300">•</span>
-                <span>Lokalizacje</span>
+                <span>{t('locations')}</span>
                 <span className="text-gray-300">•</span>
                 <span className="font-semibold text-gray-900">{location.name}</span>
             </div>
@@ -74,14 +76,14 @@ export default function LocationDetails({
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-1">{location.name}</h1>
-                    <p className="text-gray-500">Brak opinii</p>
+                    <p className="text-gray-500">{t('noReviews')}</p>
                 </div>
                 <div className="relative">
                     <button
                         onClick={() => setShowDropdown(!showDropdown)}
                         className="flex items-center gap-2 px-6 py-2.5 border border-gray-200 rounded-full text-base font-medium hover:bg-gray-50 transition-colors bg-white shadow-sm"
                     >
-                        Opcje
+                        {t('options')}
                         <ChevronDown size={18} />
                     </button>
                     {showDropdown && (
@@ -96,7 +98,7 @@ export default function LocationDetails({
                                 ) : (
                                     <Trash2 size={14} />
                                 )}
-                                Usuń lokalizację
+                                {t('deleteLocation')}
                             </button>
                         </div>
                     )}
@@ -106,12 +108,12 @@ export default function LocationDetails({
             {/* Banner */}
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 mb-8 text-white relative overflow-hidden flex items-center justify-between">
                 <div className="relative z-10 max-w-xl">
-                    <h2 className="text-xl font-bold mb-2">Zarządzaj swoją firmą online</h2>
+                    <h2 className="text-xl font-bold mb-2">{t('manageOnlineBiz')}</h2>
                     <p className="text-blue-100 mb-6 text-sm leading-relaxed">
-                        Zwiększ liczbę rezerwacji poprzez umieszczenie profilu Twojej firmy we Fresha Marketplace i umożliwienie swoim klientom rezerwacji bezpośrednio przez Twoją stronę internetową i profile w mediach społecznościowych.
+                        {t('onlineBizDesc')}
                     </p>
                     <button className="flex items-center gap-2 font-medium hover:underline">
-                        Włącz swój profil online
+                        {t('enableOnlineProfile')}
                         <span>→</span>
                     </button>
                 </div>
@@ -125,22 +127,22 @@ export default function LocationDetails({
                 {/* Contact Info */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col h-full">
                     <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-lg font-bold text-gray-900">Dane kontaktowe</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{t('contactData')}</h3>
                         <button
                             onClick={() => setEditMode('contact')}
                             className="text-sm text-purple-600 font-medium hover:underline"
                         >
-                            Zmień
+                            {t('btnChange')}
                         </button>
                     </div>
                     <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Adres e-mail lokalizacji</label>
-                            <p className="text-gray-900">{location.email || 'Brak'}</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('locationEmail')}</label>
+                            <p className="text-gray-900">{location.email || t('none')}</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Numer kontaktowy lokalizacji</label>
-                            <p className="text-gray-900">{location.phone || 'Brak'}</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('locationPhone')}</label>
+                            <p className="text-gray-900">{location.phone || t('none')}</p>
                         </div>
                     </div>
                 </div>
@@ -148,22 +150,22 @@ export default function LocationDetails({
                 {/* Business Types */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col h-full">
                     <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-lg font-bold text-gray-900">Rodzaje działalności</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{t('businessTypes')}</h3>
                         <button
                             onClick={() => setEditMode('types')}
                             className="text-sm text-purple-600 font-medium hover:underline"
                         >
-                            Zmień
+                            {t('btnChange')}
                         </button>
                     </div>
                     <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Główny rodzaj</label>
-                            <p className="text-gray-900 capitalize">{location.businessType || 'Brak'}</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('mainType')}</label>
+                            <p className="text-gray-900 capitalize">{location.businessType || t('none')}</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dodatkowe rodzaje</label>
-                            <p className="text-gray-900">{location.additionalTypes?.join(', ') || 'Brak'}</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('additionalTypes')}</label>
+                            <p className="text-gray-900">{location.additionalTypes?.join(', ') || t('none')}</p>
                         </div>
                     </div>
                 </div>
@@ -171,16 +173,16 @@ export default function LocationDetails({
                 {/* Location Map */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm col-span-1 md:col-span-2">
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-lg font-bold text-gray-900">Lokalizacja</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{t('location')}</h3>
                         <button
                             onClick={() => setEditMode('address')}
                             className="text-sm text-purple-600 font-medium hover:underline"
                         >
-                            Zmień
+                            {t('btnChange')}
                         </button>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Adres firmy</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('companyAddress')}</label>
                         <p className="text-gray-900">{getFormattedAddress()}</p>
                     </div>
                     {!location.noAddress && location.address && (
@@ -201,16 +203,16 @@ export default function LocationDetails({
                 {/* Hours */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm col-span-1 md:col-span-2">
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-lg font-bold text-gray-900">Godziny otwarcia</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{t('openingHours')}</h3>
                         <button
                             onClick={() => setEditMode('hours')}
                             className="text-sm text-purple-600 font-medium hover:underline"
                         >
-                            Zmień
+                            {t('btnChange')}
                         </button>
                     </div>
                     <p className="text-sm text-gray-500 mb-6">
-                        Godziny otwarcia tych lokalizacji są domyślnymi godzinami pracy Twojego zespołu i będą widoczne dla Twoich klientów.
+                        {t('openingHoursDesc')}
                     </p>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
@@ -221,7 +223,7 @@ export default function LocationDetails({
 
                             return (
                                 <div key={day} className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-                                    <div className="text-sm font-medium text-purple-600 mb-2 capitalize">{DAYS_MAP[day]}</div>
+                                    <div className="text-sm font-medium text-purple-600 mb-2 capitalize">{t(day)}</div>
                                     {isOpen ? (
                                         <div className="text-sm text-gray-900 font-medium space-y-1">
                                             {ranges.map((range, idx) => (
@@ -231,7 +233,7 @@ export default function LocationDetails({
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-sm text-gray-400 py-4">Zamknięte</div>
+                                        <div className="text-sm text-gray-400 py-4">{t('closed')}</div>
                                     )}
                                 </div>
                             );
@@ -242,24 +244,24 @@ export default function LocationDetails({
                 {/* Billing Data */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col h-full">
                     <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-lg font-bold text-gray-900">Dane rozliczeniowe wymagane przy sprzedaży</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{t('billingDataTitle')}</h3>
                         <button
                             onClick={() => setEditMode('address')}
                             className="text-sm text-purple-600 font-medium hover:underline"
                         >
-                            Zmień
+                            {t('btnChange')}
                         </button>
                     </div>
                     <p className="text-sm text-gray-500 mb-6">
-                        Te dane pojawią się na dowodzie sprzedaży wystawianym w tej lokalizacji.
+                        {t('billingDataDesc')}
                     </p>
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dane firmy</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('companyData')}</label>
                             <p className="text-gray-900">{businessName}</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
                             <p className="text-gray-900">{getBillingAddress()}</p>
                         </div>
                     </div>
@@ -268,20 +270,20 @@ export default function LocationDetails({
                 {/* Default Tax (Placeholder) */}
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col h-full">
                     <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-lg font-bold text-gray-900">Domyślny podatek</h3>
-                        <button className="text-sm text-purple-600 font-medium hover:underline">Zmień</button>
+                        <h3 className="text-lg font-bold text-gray-900">{t('defaultTax')}</h3>
+                        <button className="text-sm text-purple-600 font-medium hover:underline">{t('btnChange')}</button>
                     </div>
                     <p className="text-sm text-gray-500 mb-6">
-                        Ustawienia podatku od usług i produktów w danej lokalizacji.
+                        {t('defaultTaxDesc')}
                     </p>
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Usługi</label>
-                            <p className="text-gray-900">Bez podatku</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('services')}</label>
+                            <p className="text-gray-900">{t('noTax')}</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Produkty</label>
-                            <p className="text-gray-900">Bez podatku</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('products')}</label>
+                            <p className="text-gray-900">{t('noTax')}</p>
                         </div>
                     </div>
                 </div>

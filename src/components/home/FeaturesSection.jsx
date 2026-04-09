@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 
 import AnimatedContent from '@/components/animations/AnimatedContent';
+import { useTranslations } from "next-intl";
 
 export default function FeaturesSection() {
+    const t = useTranslations('FeaturesSection');
     const [activeFeature, setActiveFeature] = useState(0);
 
     const mainFeatures = [
@@ -99,15 +101,14 @@ export default function FeaturesSection() {
                     <div className="text-center mb-24">
                         <div className="inline-flex items-center bg-violet-50 border border-violet-100 px-4 py-1.5 rounded-full text-violet-700 font-semibold text-sm mb-6">
                             <Sparkles className="w-4 h-4 mr-2" />
-                            Dlaczego Bookly?
+                            {t('badge')}
                         </div>
                         <h2 className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">
-                            Doświadczenie, które{" "}
-                            <span className="hero-gradient-text">zmienia wszystko</span>
+                            {t('title1')}
+                            <span className="hero-gradient-text">{t('title2')}</span>
                         </h2>
                         <p className="text-xl text-slate-600 max-w-3xl mx-auto font-light">
-                            Nie jesteśmy kolejną platformą rezerwacji. Tworzymy nowy standard
-                            w branży beauty & wellness.
+                            {t('subtitle')}
                         </p>
                     </div>
                 </AnimatedContent>
@@ -267,19 +268,18 @@ export default function FeaturesSection() {
 
                             <div className="relative z-10 max-w-3xl mx-auto">
                                 <h3 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
-                                    Gotowy na <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">nowy poziom</span>?
+                                    {t('ctaTitle1')}<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">{t('ctaTitle2')}</span>?
                                 </h3>
                                 <p className="text-xl text-slate-300 mb-12 leading-relaxed">
-                                    Dołącz do tysięcy zadowolonych użytkowników, którzy już odkryli
-                                    wygodę rezerwacji online.
+                                    {t('ctaSubtitle')}
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                                     <button className="cursor-pointer bg-white text-slate-900 px-10 py-4 rounded-xl font-bold text-lg hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] transform hover:scale-105 transition-all duration-300 flex items-center">
-                                        Rozpocznij teraz
+                                        {t('ctaButton1')}
                                         <ArrowRight className="w-5 h-5 ml-2" />
                                     </button>
                                     <button className="cursor-pointer px-10 py-4 rounded-xl font-bold text-lg text-white border border-white/20 hover:bg-white/10 transition-all duration-300">
-                                        Dla biznesu
+                                        {t('ctaButton2')}
                                     </button>
                                 </div>
                             </div>

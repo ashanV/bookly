@@ -2,8 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ServiceItem({ service, color, onEdit, onDelete }) {
+    const t = useTranslations('BusinessServiceItem');
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
 
@@ -21,9 +23,9 @@ export default function ServiceItem({ service, color, onEdit, onDelete }) {
     const formatDuration = (min) => {
         const h = Math.floor(min / 60);
         const m = min % 60;
-        if (h > 0 && m > 0) return `${h} h ${m} min`;
-        if (h > 0) return `${h} h`;
-        return `${m} min`;
+        if (h > 0 && m > 0) return t('hoursAndMinutes', { h, m });
+        if (h > 0) return t('hours', { h });
+        return t('minutes', { m });
     };
 
     return (
@@ -44,7 +46,7 @@ export default function ServiceItem({ service, color, onEdit, onDelete }) {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <span className="font-semibold text-gray-900">{service.price} zł</span>
+                    <span className="font-semibold text-gray-900">{service.price} {t('currency')}</span>
 
                     <div className="relative" ref={menuRef}>
                         <button
@@ -61,14 +63,14 @@ export default function ServiceItem({ service, color, onEdit, onDelete }) {
                                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2"
                                 >
                                     <Edit2 className="w-4 h-4" />
-                                    Edytuj
+                                    {t('edit')}
                                 </button>
                                 <button
                                     onClick={() => { setShowMenu(false); onDelete(service.id); }}
                                     className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    Usuń
+                                    {t('delete')}
                                 </button>
                             </div>
                         )}

@@ -14,15 +14,17 @@ import {
     Gift,
     Zap
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function Marketing() {
+    const t = useTranslations('BusinessMarketing');
     const [activeTab, setActiveTab] = useState('campaigns'); // 'campaigns', 'automations', 'templates'
 
     // Mock data
     const campaigns = [
         {
             id: 1,
-            name: 'Promocja Listopadowa',
+            name: t('mockCamp1'),
             type: 'sms',
             status: 'sent',
             sent: 156,
@@ -32,7 +34,7 @@ export default function Marketing() {
         },
         {
             id: 2,
-            name: 'Przypomnienie o świętach',
+            name: t('mockCamp2'),
             type: 'email',
             status: 'scheduled',
             audience: 340,
@@ -40,7 +42,7 @@ export default function Marketing() {
         },
         {
             id: 3,
-            name: 'Nowa usługa - Masaż',
+            name: t('mockCamp3'),
             type: 'sms',
             status: 'draft',
             date: '-'
@@ -50,27 +52,27 @@ export default function Marketing() {
     const automations = [
         {
             id: 1,
-            name: 'Życzenia urodzinowe',
-            trigger: 'Urodziny klienta',
-            action: 'Wyślij SMS z kodem -20%',
+            name: t('mockAuto1'),
+            trigger: t('mockTrig1'),
+            action: t('mockAct1'),
             status: 'active',
-            stats: 'Wysłano: 45 w tym miesiącu'
+            stats: `${t('sent')} 45 ${t('thisMonth')}`
         },
         {
             id: 2,
-            name: 'Przypomnienie o wizycie',
-            trigger: '24h przed wizytą',
-            action: 'Wyślij SMS przypominający',
+            name: t('mockAuto2'),
+            trigger: t('mockTrig2'),
+            action: t('mockAct2'),
             status: 'active',
-            stats: 'Wysłano: 128 w tym miesiącu'
+            stats: `${t('sent')} 128 ${t('thisMonth')}`
         },
         {
             id: 3,
-            name: 'Odzyskiwanie klienta',
-            trigger: 'Brak wizyty przez 90 dni',
-            action: 'Wyślij Email "Tęsknimy"',
+            name: t('mockAuto3'),
+            trigger: t('mockTrig3'),
+            action: t('mockAct3'),
             status: 'paused',
-            stats: 'Wysłano: 0'
+            stats: `${t('sent')} 0`
         }
     ];
 
@@ -79,12 +81,12 @@ export default function Marketing() {
             {/* Header */}
             <div className="p-6 border-b border-slate-200 bg-white flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Marketing i Automatyzacja</h2>
-                    <p className="text-slate-500 text-sm mt-1">Zarządzaj kampaniami SMS/Email i buduj relacje z klientami</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('title')}</h2>
+                    <p className="text-slate-500 text-sm mt-1">{t('description')}</p>
                 </div>
                 <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors shadow-sm shadow-violet-200 font-medium">
                     <Plus size={18} />
-                    Utwórz kampanię
+                    {t('createCampaign')}
                 </button>
             </div>
 
@@ -98,7 +100,7 @@ export default function Marketing() {
                         }`}
                 >
                     <Send size={16} />
-                    Kampanie
+                    {t('tabCampaigns')}
                 </button>
                 <button
                     onClick={() => setActiveTab('automations')}
@@ -108,7 +110,7 @@ export default function Marketing() {
                         }`}
                 >
                     <Zap size={16} />
-                    Automatyzacje
+                    {t('tabAutomations')}
                 </button>
                 <button
                     onClick={() => setActiveTab('templates')}
@@ -118,7 +120,7 @@ export default function Marketing() {
                         }`}
                 >
                     <MessageSquare size={16} />
-                    Szablony
+                    {t('tabTemplates')}
                 </button>
             </div>
 
@@ -133,7 +135,7 @@ export default function Marketing() {
                                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
                                         <CheckCircle size={16} />
                                     </div>
-                                    <span className="text-sm font-medium text-slate-600">Dostarczone</span>
+                                    <span className="text-sm font-medium text-slate-600">{t('delivered')}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-slate-900">98.5%</p>
                             </div>
@@ -142,7 +144,7 @@ export default function Marketing() {
                                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
                                         <Users size={16} />
                                     </div>
-                                    <span className="text-sm font-medium text-slate-600">Zasięg</span>
+                                    <span className="text-sm font-medium text-slate-600">{t('reach')}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-slate-900">1,240</p>
                             </div>
@@ -151,7 +153,7 @@ export default function Marketing() {
                                     <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center text-violet-600">
                                         <BarChart3 size={16} />
                                     </div>
-                                    <span className="text-sm font-medium text-slate-600">Konwersja</span>
+                                    <span className="text-sm font-medium text-slate-600">{t('conversion')}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-slate-900">12.4%</p>
                             </div>
@@ -162,11 +164,11 @@ export default function Marketing() {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-slate-50 text-slate-500">
                                     <tr>
-                                        <th className="px-6 py-4 font-medium">Nazwa kampanii</th>
-                                        <th className="px-6 py-4 font-medium">Typ</th>
-                                        <th className="px-6 py-4 font-medium">Status</th>
-                                        <th className="px-6 py-4 font-medium">Data</th>
-                                        <th className="px-6 py-4 font-medium text-right">Wyniki</th>
+                                        <th className="px-6 py-4 font-medium">{t('colCampaignName')}</th>
+                                        <th className="px-6 py-4 font-medium">{t('colType')}</th>
+                                        <th className="px-6 py-4 font-medium">{t('colStatus')}</th>
+                                        <th className="px-6 py-4 font-medium">{t('colDate')}</th>
+                                        <th className="px-6 py-4 font-medium text-right">{t('colResults')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -185,14 +187,14 @@ export default function Marketing() {
                                                         campaign.status === 'scheduled' ? 'bg-violet-100 text-violet-700' :
                                                             'bg-slate-100 text-slate-600'
                                                     }`}>
-                                                    {campaign.status === 'sent' ? 'Wysłana' :
-                                                        campaign.status === 'scheduled' ? 'Zaplanowana' : 'Szkic'}
+                                                    {campaign.status === 'sent' ? t('statusSent') :
+                                                        campaign.status === 'scheduled' ? t('statusScheduled') : t('statusDraft')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-slate-600">{campaign.date}</td>
                                             <td className="px-6 py-4 text-right text-slate-600">
                                                 {campaign.status === 'sent' ? (
-                                                    <span>{campaign.delivered} dostarczono • {campaign.clicks} kliknięć</span>
+                                                    <span>{campaign.delivered} {t('deliveredCount')} • {campaign.clicks} {t('clicks')}</span>
                                                 ) : (
                                                     <span>-</span>
                                                 )}
@@ -230,23 +232,23 @@ export default function Marketing() {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg text-sm">
                                         <Clock size={16} className="text-slate-400" />
-                                        <span className="text-slate-600">Kiedy: <span className="font-medium text-slate-900">{auto.trigger}</span></span>
+                                        <span className="text-slate-600">{t('when')} <span className="font-medium text-slate-900">{auto.trigger}</span></span>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg text-sm">
                                         <Send size={16} className="text-slate-400" />
-                                        <span className="text-slate-600">Wykonaj: <span className="font-medium text-slate-900">{auto.action}</span></span>
+                                        <span className="text-slate-600">{t('execute')} <span className="font-medium text-slate-900">{auto.action}</span></span>
                                     </div>
                                 </div>
 
                                 <button className="w-full mt-4 py-2 text-sm font-medium text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
-                                    Edytuj ustawienia
+                                    {t('editSettings')}
                                 </button>
                             </div>
                         ))}
 
                         <button className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all min-h-[200px]">
                             <Plus size={32} className="mb-2" />
-                            <span className="font-medium">Dodaj nową automatyzację</span>
+                            <span className="font-medium">{t('addNewAutomation')}</span>
                         </button>
                     </div>
                 )}
@@ -261,9 +263,9 @@ export default function Marketing() {
                                         <Settings size={16} />
                                     </button>
                                 </div>
-                                <h4 className="font-semibold text-slate-900 mb-2">Przypomnienie standard</h4>
+                                <h4 className="font-semibold text-slate-900 mb-2">{t('templateStandard')}</h4>
                                 <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg italic border border-slate-100">
-                                    "Cześć [Imie], przypominamy o wizycie w Bookly jutro o [Godzina]. Do zobaczenia!"
+                                    {t('templateStandardText')}
                                 </p>
                             </div>
                         ))}

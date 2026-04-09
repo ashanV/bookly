@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -10,18 +11,9 @@ for (let h = 0; h < 24; h++) {
     }
 }
 
-function calculateDuration(start, end) {
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-    const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-    if (totalMinutes <= 0) return '0 godz.';
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    if (minutes === 0) return `${hours} godz.`;
-    return `${hours} godz. ${minutes} min.`;
-}
-
 export default function ShiftModal({ isOpen, onClose, employee, date, onSave, existingShifts }) {
+    const t = useTranslations('BusinessShiftModal');
+    const tw = useTranslations('BusinessWorkSchedule'); // For hours/mins short
     const [shifts, setShifts] = useState([]);
     const [openDropdown, setOpenDropdown] = useState(null); // { index, type: 'start' | 'end' }
 
@@ -36,6 +28,17 @@ export default function ShiftModal({ isOpen, onClose, employee, date, onSave, ex
     }, [isOpen, existingShifts]);
 
     if (!isOpen || !employee || !date) return null;
+
+    const calculateDuration = (start, end) => {
+        const [startH, startM] = start.split(':').map(Number);
+        const [endH, endM] = end.split(':').map(Number);
+        const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+        if (totalMinutes <= 0) return `0 ${tw('hoursShort')}`;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (minutes === 0) return `${hours} ${tw('hoursShort')}`;
+        return `${hours} ${tw('hoursShort')} ${minutes} ${tw('minsShort')}`;
+    };
 
     const handleAddShift = () => {
         setShifts([...shifts, { id: Date.now(), start: '10:00', end: '19:00' }]);
@@ -79,8 +82,8 @@ export default function ShiftModal({ isOpen, onClose, employee, date, onSave, ex
     }, 0);
 
     const totalDuration = totalMinutes > 0
-        ? `${Math.floor(totalMinutes / 60)} godz.${totalMinutes % 60 > 0 ? ` ${totalMinutes % 60} min.` : ''}`
-        : '0 godz.';
+        ? `${Math.floor(totalMinutes / 60)} ${tw('hoursShort')}${totalMinutes % 60 > 0 ? ` ${totalMinutes % 60} ${tw('minsShort')}` : ''}`
+        : `0 ${tw('hoursShort')}`;
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -89,11 +92,11 @@ export default function ShiftModal({ isOpen, onClose, employee, date, onSave, ex
                 <div className="flex items-center justify-between p-6 pb-2">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {employee.name} – zmiana w dniu {format(date, 'EEE. d LLL', { locale: pl })}
+                            {employee.name} – {t('title')} {format(date, 'EEE. d LLL', { locale: pl })}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            Edytujesz tylko zmiany z tego dnia. Aby ustawić powtarzające się zmiany, przejdź do{' '}
-                            <span className="text-blue-600 cursor-pointer hover:underline">zaplanowanych zmian</span>.
+                            {t('subtitle')}{' '}
+                            <span className="text-blue-600 cursor-pointer hover:underline">{t('scheduledShifts')}</span>.
                         </p>
                     </div>
                     <button
@@ -108,8 +111,8 @@ export default function ShiftModal({ isOpen, onClose, employee, date, onSave, ex
                 <div className="p-6 pt-4 space-y-4">
                     {/* Labels */}
                     <div className="grid grid-cols-[1fr_1fr_40px] gap-4 text-sm font-medium text-gray-700">
-                        <div>Godzina rozpoczęcia</div>
-                        <div>Godzina zakończenia</div>
+                        <div>{t('startTime')}</div>
+                        <div>{t('endTime')}</div>
                         <div></div>
                     </div>
 
@@ -186,10 +189,10 @@ export default function ShiftModal({ isOpen, onClose, employee, date, onSave, ex
                             className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                             <Plus size={16} />
-                            Dodaj zmianę
+                            {t('addShift')}
                         </button>
                         <span className="text-sm text-gray-500">
-                            Całkowity czas trwania zmiany: {totalDuration}
+                            {t('totalDuration')}: {totalDuration}
                         </span>
                     </div>
                 </div>
@@ -207,13 +210,13 @@ export default function ShiftModal({ isOpen, onClose, employee, date, onSave, ex
                             onClick={onClose}
                             className="px-6 py-2.5 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                            Anuluj
+                            {t('cancel')}
                         </button>
                         <button
                             onClick={handleSubmit}
                             className="px-8 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
                         >
-                            Zapisz
+                            {t('save')}
                         </button>
                     </div>
                 </div>

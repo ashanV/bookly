@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AdminHeader from '@/components/admin/AdminHeader';
-import ReservationsStats from '../../../components/admin/reservations/ReservationsStats';
+import ReservationsStats from '@/components/admin/reservations/ReservationsStats';
 import {
     Search, Filter, Calendar, Clock, User, Building2, XCircle, Eye,
     ChevronLeft, ChevronRight, ArrowUpDown, CheckSquare, Square,

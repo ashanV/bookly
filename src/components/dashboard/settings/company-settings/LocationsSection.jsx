@@ -5,6 +5,7 @@ import { ArrowLeft, Store, ChevronDown, Loader2, AlertCircle, Trash2 } from 'luc
 import { toast } from '@/components/Toast';
 import { canAddLocation, getLimitErrorMessage } from '@/lib/subscriptionLimits';
 import LocationDetails from './LocationDetails';
+import { useTranslations } from 'next-intl';
 
 export default function LocationsSection({
     businessId,
@@ -17,8 +18,10 @@ export default function LocationsSection({
     onBack,
     onSidebarClick,
     onAddClick,
+    onAddClick,
     activeTab = 'locations'
 }) {
+    const t = useTranslations('BusinessLocationsSection');
     const [showDropdown, setShowDropdown] = React.useState(null);
     const [showHeaderDropdown, setShowHeaderDropdown] = React.useState(false);
     const [viewMode, setViewMode] = React.useState('list'); // 'list' | 'details'
@@ -44,7 +47,7 @@ export default function LocationsSection({
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Błąd pobierania lokalizacji');
+                throw new Error(data.error || t('errFetchLocations'));
             }
 
             setSubscription(data.subscription);
@@ -55,7 +58,7 @@ export default function LocationsSection({
             // Create primary location object from business props
             const primaryLocation = {
                 id: 'primary',
-                name: businessName || 'Lokalizacja główna',
+                name: businessName || t('primaryLocation'),
                 phone: businessPhone || '',
                 email: '',
                 address: {
@@ -81,7 +84,7 @@ export default function LocationsSection({
             if (address || city) {
                 setLocations([{
                     id: 'primary',
-                    name: businessName || 'Lokalizacja główna',
+                    name: businessName || t('primaryLocation'),
                     address: { street: address, city: city },
                     isPrimary: true,
                     isOriginal: true
@@ -94,21 +97,21 @@ export default function LocationsSection({
 
     // Helper to format address display
     const formatAddress = (loc) => {
-        if (loc.noAddress) return 'Brak stałego adresu';
+        if (loc.noAddress) return t('noFixedAddress');
         const addr = loc.address;
-        if (!addr) return 'Brak adresu';
+        if (!addr) return t('noAddress');
         const parts = [addr.street, addr.city].filter(Boolean);
-        return parts.join(', ') || 'Brak adresu';
+        return parts.join(', ') || t('noAddress');
     };
 
     // Delete location
     const handleDeleteLocation = async (locationId) => {
         if (locationId === 'primary') {
-            toast.error('Nie można usunąć głównej lokalizacji');
+            toast.error(t('errDeletePrimaryLocation'));
             return;
         }
 
-        if (!confirm('Czy na pewno chcesz usunąć tę lokalizację?')) {
+        if (!confirm(t('confirmDeleteLocation'))) {
             setShowDropdown(null);
             return;
         }
@@ -128,15 +131,15 @@ export default function LocationsSection({
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'Błąd usuwania lokalizacji');
+                throw new Error(data.error || t('errDeleteLocation'));
             }
 
-            toast.success('Lokalizacja została usunięta');
+            toast.success(t('successDeleteLocation'));
             // Remove from local state
             setLocations(prev => prev.filter(loc => loc.id !== locationId));
         } catch (err) {
             console.error('Error deleting location:', err);
-            toast.error(err.message || 'Błąd usuwania lokalizacji');
+            toast.error(err.message || t('errDeleteLocation'));
         } finally {
             setDeleting(null);
             setShowDropdown(null);
@@ -184,52 +187,52 @@ export default function LocationsSection({
                     className="flex items-center gap-1 hover:text-gray-900 transition-colors px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm font-medium text-gray-700"
                 >
                     <ArrowLeft size={16} />
-                    Wróć
+                    {t('btnBack')}
                 </button>
                 <span className="text-gray-300">|</span>
-                <span>Ustawienia obszaru roboczego</span>
+                <span>{t('workspaceSettings')}</span>
                 <span className="text-gray-300">•</span>
-                <span className="font-semibold text-gray-900">Konfiguracja firmy</span>
+                <span className="font-semibold text-gray-900">{t('companyConfig')}</span>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Sidebar */}
                 <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">Konfiguracja firmy</h2>
+                        <h2 className="text-lg font-bold text-gray-900 mb-4 px-2">{t('companyConfig')}</h2>
                         <nav className="space-y-1">
                             <button
                                 onClick={() => onSidebarClick('details')}
                                 className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'details' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
                             >
-                                Szczegóły dotyczące firmy
+                                {t('companyDetails')}
                             </button>
                             <button
                                 onClick={() => onSidebarClick('locations')}
                                 className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'locations' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
                             >
-                                Lokalizacje
+                                {t('locations')}
                             </button>
                         </nav>
                     </div>
 
                     <div>
-                        <h2 className="text-sm font-bold text-gray-900 mb-3 px-2 uppercase tracking-wider">Skróty</h2>
+                        <h2 className="text-sm font-bold text-gray-900 mb-3 px-2 uppercase tracking-wider">{t('shortcuts')}</h2>
                         <nav className="space-y-1">
                             <button className="w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm transition-colors group">
-                                <span>Menu usług</span>
+                                <span>{t('serviceMenu')}</span>
                                 <span className="text-gray-300 group-hover:text-gray-500">↗</span>
                             </button>
                             <button className="w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm transition-colors group">
-                                <span>Lista produktów</span>
+                                <span>{t('productList')}</span>
                                 <span className="text-gray-300 group-hover:text-gray-500">↗</span>
                             </button>
                             <button className="w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm transition-colors group">
-                                <span>Karnety</span>
+                                <span>{t('memberships')}</span>
                                 <span className="text-gray-300 group-hover:text-gray-500">↗</span>
                             </button>
                             <button className="w-full flex items-center justify-between px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm transition-colors group">
-                                <span>Lista klientów</span>
+                                <span>{t('clientList')}</span>
                                 <span className="text-gray-300 group-hover:text-gray-500">↗</span>
                             </button>
                         </nav>
@@ -241,9 +244,9 @@ export default function LocationsSection({
                     {/* Header */}
                     <div className="flex items-start justify-between mb-6">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-2">Lokalizacje</h1>
+                            <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('locations')}</h1>
                             <p className="text-gray-500">
-                                Zarządzaj informacjami i preferencjami dotyczącymi Twoich lokalizacji. <a href="#" className="text-purple-600 hover:underline">Dowiedz się więcej.</a>
+                                {t('locationsDesc')} <a href="#" className="text-purple-600 hover:underline">{t('learnMore')}</a>
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -252,7 +255,7 @@ export default function LocationsSection({
                                     onClick={() => setShowHeaderDropdown(!showHeaderDropdown)}
                                     className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                                 >
-                                    Opcje
+                                    {t('options')}
                                     <ChevronDown size={16} />
                                 </button>
                                 {showHeaderDropdown && (
@@ -261,7 +264,7 @@ export default function LocationsSection({
                                             className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                                             onClick={() => setShowHeaderDropdown(false)}
                                         >
-                                            Utwórz link do udostępniania
+                                            {t('createShareLink')}
                                         </button>
                                     </div>
                                 )}
@@ -273,9 +276,9 @@ export default function LocationsSection({
                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     : 'bg-black text-white hover:bg-gray-800'
                                     }`}
-                                title={!canAddMore ? 'Osiągnięto limit lokalizacji' : ''}
+                                title={!canAddMore ? t('limitReachedTitle') : ''}
                             >
-                                Dodaj
+                                {t('btnAdd')}
                             </button>
                         </div>
                     </div>
@@ -299,13 +302,13 @@ export default function LocationsSection({
                     {!loading && !error && locations.length === 0 && (
                         <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
                             <Store size={48} className="mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Brak lokalizacji</h3>
-                            <p className="text-gray-500 mb-4">Dodaj pierwszą lokalizację swojej firmy.</p>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('noLocations')}</h3>
+                            <p className="text-gray-500 mb-4">{t('addFirstLocation')}</p>
                             <button
                                 onClick={onAddClick}
                                 className="px-6 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
                             >
-                                Dodaj lokalizację
+                                {t('addLocation')}
                             </button>
                         </div>
                     )}
@@ -327,11 +330,11 @@ export default function LocationsSection({
                                                 <h3 className="text-lg font-bold text-gray-900">{loc.name}</h3>
                                                 {loc.isOriginal ? (
                                                     <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                                                        Główna
+                                                        {t('tagPrimary')}
                                                     </span>
                                                 ) : (
                                                     <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                                                        Dodatkowa
+                                                        {t('tagAdditional')}
                                                     </span>
                                                 )}
                                             </div>
@@ -349,7 +352,7 @@ export default function LocationsSection({
                                                 onClick={() => setShowDropdown(showDropdown === loc.id ? null : loc.id)}
                                                 className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                                             >
-                                                Opcje
+                                                {t('options')}
                                                 <ChevronDown size={16} />
                                             </button>
 
@@ -363,7 +366,7 @@ export default function LocationsSection({
                                                             setShowDropdown(null);
                                                         }}
                                                     >
-                                                        Zobacz
+                                                        {t('btnView')}
                                                     </button>
                                                     <button
                                                         className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium flex items-center gap-2"
@@ -375,7 +378,7 @@ export default function LocationsSection({
                                                         ) : (
                                                             <Trash2 size={14} />
                                                         )}
-                                                        Usuń lokalizację
+                                                        {t('btnDeleteLocation')}
                                                     </button>
                                                 </div>
                                             )}
@@ -394,15 +397,15 @@ export default function LocationsSection({
                                     <AlertCircle size={20} />
                                 </div>
                                 <div className="text-left">
-                                    <h4 className="font-medium text-amber-900">Osiągnięto limit lokalizacji</h4>
-                                    <p className="text-sm text-amber-700">Twoja obecna subskrypcja nie pozwala na dodanie kolejnych lokalizacji.</p>
+                                    <h4 className="font-medium text-amber-900">{t('limitReachedTitle')}</h4>
+                                    <p className="text-sm text-amber-700">{t('limitReachedDesc')}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => window.location.href = '/business/dashboard/billing'}
                                 className="px-4 py-2 bg-white border border-amber-200 rounded-lg text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors shadow-sm whitespace-nowrap"
                             >
-                                Ulepsz plan
+                                {t('btnUpgradePlan')}
                             </button>
                         </div>
                     )}

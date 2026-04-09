@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function Step4LocationAddress({
     formData,
@@ -8,14 +9,15 @@ export default function Step4LocationAddress({
     billingAddressDisplay,
     openAddressModal
 }) {
+    const t = useTranslations('BusinessLocationWizard');
     return (
         <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
             {/* Address Section */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Adres firmy</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-6">{t('step4Title')}</h3>
 
                 <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">Gdzie znajduje się Twoja firma?</label>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">{t('step4Question')}</label>
                     <div className="relative">
                         {/* Mockup Map Pin Icon */}
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
@@ -27,7 +29,7 @@ export default function Step4LocationAddress({
                             value={formData.address}
                             onChange={(e) => handleChange('address', e.target.value)}
                             className={`w-full bg-white border rounded-lg py-3 pl-12 pr-4 text-sm outline-none transition-all ${errors.address ? 'border-red-300 focus:border-red-500 bg-red-50' : 'border-gray-200 focus:border-purple-600 disabled:bg-gray-50 disabled:text-gray-400'}`}
-                            placeholder={formData.noAddress ? "" : "Wpisz adres"}
+                            placeholder={formData.noAddress ? "" : t('step4Placeholder')}
                         />
                     </div>
                     {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
@@ -39,15 +41,15 @@ export default function Step4LocationAddress({
                                 {/* Col 1 */}
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-900 mb-1">Adres</label>
+                                        <label className="block text-xs font-bold text-gray-900 mb-1">{t('step4Address')}</label>
                                         <p className="text-sm text-gray-700">{parsedAddress.street}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-900 mb-1">Miasto</label>
+                                        <label className="block text-xs font-bold text-gray-900 mb-1">{t('step4City')}</label>
                                         <p className="text-sm text-gray-700">{parsedAddress.city}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-900 mb-1">Kraj</label>
+                                        <label className="block text-xs font-bold text-gray-900 mb-1">{t('step4Country')}</label>
                                         <p className="text-sm text-gray-700">{parsedAddress.country}</p>
                                     </div>
                                 </div>
@@ -56,29 +58,29 @@ export default function Step4LocationAddress({
                                 <div className="space-y-4">
                                     <div>
                                         <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs font-bold text-gray-900">Nr lokalu, piętro</label>
+                                            <label className="text-xs font-bold text-gray-900">{t('step4Apartment')}</label>
                                         </div>
                                         <button
                                             onClick={() => openAddressModal('main')}
                                             className="text-sm text-purple-600 font-medium hover:underline"
                                         >
-                                            {formData.addressDetails?.apartmentNumber ? "Zmień" : "+ Dodaj"}
+                                            {formData.addressDetails?.apartmentNumber ? t('step4BtnChange') : t('step4BtnAdd')}
                                         </button>
                                         {formData.addressDetails?.apartmentNumber && (
                                             <p className="text-sm text-gray-700">{formData.addressDetails.apartmentNumber}</p>
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-900 mb-1">Region</label>
+                                        <label className="block text-xs font-bold text-gray-900 mb-1">{t('step4Region')}</label>
                                         <p className="text-sm text-gray-700">{parsedAddress.region}</p>
                                     </div>
                                     <div>
                                         <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs font-bold text-gray-900">Dojazd</label>
+                                            <label className="text-xs font-bold text-gray-900">{t('step4Access')}</label>
                                         </div>
                                         <button
                                             className="text-sm text-purple-600 font-medium hover:underline"
-                                        >+ Dodaj</button>
+                                        >{t('step4BtnAdd')}</button>
                                     </div>
                                 </div>
 
@@ -88,24 +90,24 @@ export default function Step4LocationAddress({
                                         onClick={() => openAddressModal('main')}
                                         className="absolute -top-1 right-0 text-sm text-purple-600 font-medium hover:underline"
                                     >
-                                        Zmień
+                                        {t('step4BtnChange')}
                                     </button>
                                     <div>
                                         <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs font-bold text-gray-900">Dzielnica</label>
+                                            <label className="text-xs font-bold text-gray-900">{t('step4District')}</label>
                                         </div>
                                         <button
                                             onClick={() => openAddressModal('main')}
                                             className="text-sm text-purple-600 font-medium hover:underline"
                                         >
-                                            {formData.addressDetails?.district ? "Zmień" : "+ Dodaj"}
+                                            {formData.addressDetails?.district ? t('step4BtnChange') : t('step4BtnAdd')}
                                         </button>
                                         {formData.addressDetails?.district && (
                                             <p className="text-sm text-gray-700">{formData.addressDetails.district}</p>
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-900 mb-1">Kod pocztowy</label>
+                                        <label className="block text-xs font-bold text-gray-900 mb-1">{t('step4Zip')}</label>
                                         <p className="text-sm text-gray-700">{parsedAddress.zip}</p>
                                     </div>
                                 </div>
@@ -124,7 +126,7 @@ export default function Step4LocationAddress({
                             />
                         </div>
                         <label htmlFor="noAddress" className="text-sm text-gray-700 cursor-pointer leading-tight pt-0.5">
-                            Nie mam adresu firmowego (świadczę wyłącznie usługi mobilne z dojazdem do klienta i online)
+                            {t('step4NoAddress')}
                         </label>
                     </div>
                 </div>
@@ -134,8 +136,8 @@ export default function Step4LocationAddress({
             {formData.address.length > 5 && !formData.noAddress && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in">
                     <div className="p-6 border-b border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">Lokalizacja na mapie</h3>
-                        <p className="text-sm text-gray-500">Przeciągnij mapę, aby pinezka odpowiadała dokładnej lokalizacji Twojej firmy.</p>
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">{t('step4MapTitle')}</h3>
+                        <p className="text-sm text-gray-500">{t('step4MapDesc')}</p>
                     </div>
                     <div className="h-64 w-full bg-gray-100 relative">
                         <iframe
@@ -152,17 +154,19 @@ export default function Step4LocationAddress({
 
             {/* Billing Data Section */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Dane rozliczeniowe wymagane przy sprzedaży</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{t('step4BillingTitle')}</h3>
                 <p className="text-sm text-gray-500 mb-6">
-                    Te dane będą pojawiać się na dowodach sprzedaży z tej lokalizacji, wraz z informacjami skonfigurowanymi w ustawieniach <a href="#" className="text-purple-600 hover:underline">szablonu dowodu sprzedaży</a>.
+                    {t.rich('step4BillingDesc', {
+                        link: (chunks) => <a href="#" className="text-purple-600 hover:underline">{chunks}</a>
+                    })}
                 </p>
 
                 <div className="space-y-4">
                     {/* Company Name Row */}
                     <div className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                         <div className="flex justify-between items-start mb-1">
-                            <span className="text-sm font-bold text-gray-900">Nazwa firmy</span>
-                            <button className="text-sm text-purple-600 hover:text-purple-700 font-medium">Zmień</button>
+                            <span className="text-sm font-bold text-gray-900">{t('step4CompanyName')}</span>
+                            <button className="text-sm text-purple-600 hover:text-purple-700 font-medium">{t('step4BtnChange')}</button>
                         </div>
                         <p className="text-sm text-gray-700">ashan2</p>
                     </div>
@@ -170,7 +174,7 @@ export default function Step4LocationAddress({
                     {/* Address Row */}
                     <div className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                         <div className="flex justify-between items-start mb-1">
-                            <span className="text-sm font-bold text-gray-900">Adres</span>
+                            <span className="text-sm font-bold text-gray-900">{t('step4Address')}</span>
                         </div>
                         {billingAddressDisplay ? (
                             <div className="flex justify-between items-center group">
@@ -179,7 +183,7 @@ export default function Step4LocationAddress({
                                     onClick={() => openAddressModal('billing')}
                                     className="text-sm text-purple-600 font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
-                                    Zmień
+                                    {t('step4BtnChange')}
                                 </button>
                             </div>
                         ) : (
@@ -187,7 +191,7 @@ export default function Step4LocationAddress({
                                 onClick={() => openAddressModal('billing')}
                                 className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
                             >
-                                + Dodaj
+                                {t('step4BtnAdd')}
                             </button>
                         )}
                     </div>

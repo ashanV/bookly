@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ReferralClientModal({
     isOpen,
@@ -11,6 +12,7 @@ export default function ReferralClientModal({
     businessId,
     excludeClientId = null
 }) {
+    const t = useTranslations('BusinessReferralClient');
     const [searchQuery, setSearchQuery] = useState('');
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ export default function ReferralClientModal({
                 });
 
                 if (!response.ok) {
-                    throw new Error('Nie udało się pobrać klientów');
+                    throw new Error(t('errFetchClients'));
                 }
 
                 const data = await response.json();
@@ -109,7 +111,7 @@ export default function ReferralClientModal({
                             {/* Header */}
                             <div className="p-6 border-b border-slate-100">
                                 <div className="flex items-start justify-between mb-1">
-                                    <h2 className="text-xl font-bold text-slate-900">Dodaj polecenie</h2>
+                                    <h2 className="text-xl font-bold text-slate-900">{t('title')}</h2>
                                     <button
                                         onClick={onClose}
                                         className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -118,9 +120,9 @@ export default function ReferralClientModal({
                                     </button>
                                 </div>
                                 <p className="text-sm text-slate-500">
-                                    Wyszukaj klienta, aby dodać polecenie.{' '}
+                                    {t('description')}{' '}
                                     <span className="text-violet-600 cursor-pointer hover:underline">
-                                        Dowiedz się więcej
+                                        {t('learnMore')}
                                     </span>
                                 </p>
                             </div>
@@ -134,7 +136,7 @@ export default function ReferralClientModal({
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="np. Sara Kowalska"
+                                        placeholder={t('searchPlaceholder')}
                                         className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all placeholder:text-slate-400"
                                     />
                                 </div>
@@ -153,8 +155,8 @@ export default function ReferralClientModal({
                                 ) : clients.length === 0 ? (
                                     <div className="text-center py-8 text-slate-500">
                                         {searchQuery
-                                            ? 'Nie znaleziono klientów pasujących do wyszukiwania'
-                                            : 'Brak klientów do wyświetlenia'
+                                            ? t('noSearchResults')
+                                            : t('noClients')
                                         }
                                     </div>
                                 ) : (
@@ -173,7 +175,7 @@ export default function ReferralClientModal({
                                                         {client.firstName} {client.lastName}
                                                     </div>
                                                     <div className="text-sm text-slate-500 truncate">
-                                                        {client.email || client.phone || 'Brak danych kontaktowych'}
+                                                        {client.email || client.phone || t('noContactData')}
                                                     </div>
                                                 </div>
                                             </button>

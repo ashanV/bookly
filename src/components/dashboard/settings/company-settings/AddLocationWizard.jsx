@@ -10,6 +10,7 @@ import { toast } from '@/components/Toast';
 import AddressDetailsModal from '@/components/dashboard/clients/AddressDetailsModal';
 import { DEFAULT_HOURS } from '@/components/dashboard/settings/company-settings/WorkingHoursEditor';
 import { INDUSTRIES } from '@/constants/industries';
+import { useTranslations } from 'next-intl';
 
 // Import Wizard Steps
 import Step1BasicInfo from './wizard-steps/Step1BasicInfo';
@@ -19,6 +20,7 @@ import Step4LocationAddress from './wizard-steps/Step4LocationAddress';
 import Step5WorkingHours from './wizard-steps/Step5WorkingHours';
 
 export default function AddLocationWizard({ onClose, onNext, businessId }) {
+    const t = useTranslations('BusinessLocationWizard');
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -75,17 +77,17 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
     const validate = (data, currentStep) => {
         const newErrors = {};
         if (currentStep === 1) {
-            if (!data.name.trim()) newErrors.name = 'To pole jest wymagane';
-            if (!data.phone.trim()) newErrors.phone = 'To pole jest wymagane';
-            if (!data.email.trim()) newErrors.email = 'To pole jest wymagane';
-            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) newErrors.email = 'Nieprawidłowy format email';
+            if (!data.name.trim()) newErrors.name = t('validationRequired');
+            if (!data.phone.trim()) newErrors.phone = t('validationRequired');
+            if (!data.email.trim()) newErrors.email = t('validationRequired');
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) newErrors.email = t('validationEmail');
         }
         if (currentStep === 2) {
-            if (!data.businessType) newErrors.businessType = 'Wybierz typ działalności';
+            if (!data.businessType) newErrors.businessType = t('validationBusinessType');
         }
         // Step 3 is optional
         if (currentStep === 4) {
-            if (!data.noAddress && !data.address.trim()) newErrors.address = 'Wprowadź adres firmy';
+            if (!data.noAddress && !data.address.trim()) newErrors.address = t('validationAddress');
         }
         return newErrors;
     };
@@ -103,7 +105,7 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
             if (Object.keys(newErrors).length === 0) {
                 setStep(3);
             } else {
-                toast.error("Wybierz rodzaj działalności aby kontynuować");
+                toast.error(t('errSelectBusinessType'));
             }
         } else if (step === 3) {
             setStep(4);
@@ -119,7 +121,7 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
 
     const saveLocation = async () => {
         if (!businessId) {
-            toast.error("Brak identyfikatora biznesu");
+            toast.error(t('errNoBusinessId'));
             return;
         }
 
@@ -153,19 +155,19 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
 
             if (!response.ok) {
                 if (data.limitReached) {
-                    toast.error(data.error || "Osiągnięto limit lokalizacji dla Twojego planu");
+                    toast.error(data.error || t('errLimitReached'));
                 } else {
-                    toast.error(data.error || "Wystąpił błąd podczas dodawania lokalizacji");
+                    toast.error(data.error || t('errAddLocation'));
                 }
                 return;
             }
 
-            toast.success("Lokalizacja dodana pomyślnie");
+            toast.success(t('successAddLocation'));
             if (onNext) onNext(data.location);
             onClose();
         } catch (error) {
             console.error('Error saving location:', error);
-            toast.error("Wystąpił błąd podczas zapisywania lokalizacji");
+            toast.error(t('errSaveLocation'));
         } finally {
             setIsSubmitting(false);
         }
@@ -259,7 +261,7 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
                             onClick={handleBack}
                             className="text-purple-600 font-medium hover:underline text-sm"
                         >
-                            Wstecz
+                            {t('btnBack')}
                         </button>
                     )}
                 </div>
@@ -275,7 +277,7 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
                     onClick={handleNext}
                     className="px-8 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
                 >
-                    Dalej
+                    {t('btnNext')}
                 </button>
             </div>
 
@@ -283,9 +285,9 @@ export default function AddLocationWizard({ onClose, onNext, businessId }) {
             <div className="flex-1 overflow-y-auto bg-gray-50 flex justify-center p-6">
                 <div className="w-full max-w-5xl mt-12">
                     <div className="text-center mb-10">
-                        <h2 className="text-sm font-medium text-gray-500 mb-2">Dodaj nową lokalizację</h2>
+                        <h2 className="text-sm font-medium text-gray-500 mb-2">{t('titleAddLocation')}</h2>
                         <h1 className="text-3xl font-bold text-gray-900">
-                            {step === 1 ? 'O Twojej firmie' : step === 2 ? 'Wybierz główny rodzaj działalności' : step === 3 ? 'Wybierz dodatkowe rodzaje działalności' : 'Dodaj swoją lokalizację'}
+                            {step === 1 ? t('step1Title') : step === 2 ? t('step2Title') : step === 3 ? t('step3Title') : t('step4Title')}
                         </h1>
                     </div>
 

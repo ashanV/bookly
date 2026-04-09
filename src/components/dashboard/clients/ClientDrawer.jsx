@@ -13,24 +13,26 @@ import {
     Sparkles,
     User
 } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import { format } from 'date-fns';
+import { pl, enUS } from 'date-fns/locale';
 
 // Format date helper
-const formatDate = (dateStr) => {
+const formatDateStr = (dateStr, dateLocale) => {
     if (!dateStr) return '-';
     try {
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) return dateStr;
-        const day = date.getDate();
-        const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
+        return format(date, 'd MMM yyyy', { locale: dateLocale });
     } catch (e) {
         return dateStr;
     }
 };
 
 export default function ClientDrawer({ isOpen, onClose, client }) {
+    const t = useTranslations('BusinessClientDrawer');
+    const locale = useLocale();
+    const dateLocale = locale === 'pl' ? pl : enUS;
     const [isOptionsOpen, setIsOptionsOpen] = React.useState(false);
 
     if (!client) return null;
@@ -81,7 +83,7 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                                                     onClick={() => setIsOptionsOpen(!isOptionsOpen)}
                                                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-300 rounded-full text-slate-700 hover:bg-slate-50 text-sm font-bold transition-colors shadow-sm"
                                                 >
-                                                    Opcje
+                                                    {t('options')}
                                                     <ChevronDown size={14} className={`transition-transform duration-200 ${isOptionsOpen ? 'rotate-180' : ''}`} />
                                                 </button>
 
@@ -99,23 +101,23 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                                                                 className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-20 overflow-hidden"
                                                             >
                                                                 <div className="px-5 py-2 text-sm font-bold text-slate-900 mb-1">
-                                                                    Szybkie czynności
+                                                                    {t('quickActions')}
                                                                 </div>
 
-                                                                <DropdownItem icon={ShoppingBag} label="Sprzedaż" />
-                                                                <DropdownItem icon={Flag} label="Dodaj powiadomienie pracowników" />
-                                                                <DropdownItem icon={StickyNote} label="Dodaj notatkę" />
-                                                                <DropdownItem icon={ShieldAlert} label="Dodaj alergie" />
-                                                                <DropdownItem icon={Square} label="Dodaj test płatkowy" />
-                                                                <DropdownItem icon={Sparkles} label="Dodaj nagrodę" />
+                                                                <DropdownItem icon={ShoppingBag} label={t('sales')} />
+                                                                <DropdownItem icon={Flag} label={t('addStaffNotice')} />
+                                                                <DropdownItem icon={StickyNote} label={t('addNote')} />
+                                                                <DropdownItem icon={ShieldAlert} label={t('addAllergies')} />
+                                                                <DropdownItem icon={Square} label={t('addPatchTest')} />
+                                                                <DropdownItem icon={Sparkles} label={t('addReward')} />
 
                                                                 <div className="h-px bg-slate-100 my-2" />
 
                                                                 <button className="w-full px-5 py-2.5 text-left text-[15px] font-medium text-slate-900 hover:bg-slate-50 transition-colors">
-                                                                    Edytuj dane klienta
+                                                                    {t('editClientData')}
                                                                 </button>
                                                                 <button className="w-full px-5 py-2.5 text-left text-[15px] font-medium text-slate-900 hover:bg-slate-50 transition-colors">
-                                                                    Połącz profile
+                                                                    {t('mergeProfiles')}
                                                                 </button>
                                                             </motion.div>
                                                         </>
@@ -123,7 +125,7 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                                                 </AnimatePresence>
                                             </div>
                                             <button className="flex-1 px-4 py-2.5 bg-black text-white rounded-full hover:bg-slate-800 text-sm font-bold transition-colors shadow-lg shadow-gray-200">
-                                                Zarezerwuj teraz
+                                                {t('bookNow')}
                                             </button>
                                         </div>
                                     </div>
@@ -139,7 +141,7 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                                     ) : (
                                         <button className="flex items-center gap-3 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors group text-left">
                                             <span className="w-5 flex justify-center text-lg leading-none text-slate-400 group-hover:text-slate-600 transition-colors">+</span>
-                                            Dodaj zaimki
+                                            {t('addPronouns')}
                                         </button>
                                     )}
 
@@ -151,13 +153,13 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                                     ) : (
                                         <button className="flex items-center gap-3 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors group text-left">
                                             <span className="w-5 flex justify-center text-lg leading-none text-slate-400 group-hover:text-slate-600 transition-colors">🎂</span>
-                                            Dodaj datę urodzenia
+                                            {t('addBirthDate')}
                                         </button>
                                     )}
 
                                     <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
                                         <span className="w-5 flex justify-center text-lg leading-none text-slate-400 text-[18px]">👤</span>
-                                        Utworzono: {formatDate(client.createdAt || client.created)}
+                                        {t('created')} {formatDateStr(client.createdAt || client.created, dateLocale)}
                                     </div>
                                 </div>
                             </div>
@@ -165,52 +167,52 @@ export default function ClientDrawer({ isOpen, onClose, client }) {
                             {/* Middle Navigation Column */}
                             <div className="w-[250px] border-r border-slate-100 py-8 overflow-y-auto hidden md:block bg-slate-50/30">
                                 <nav className="space-y-1.5 px-4">
-                                    <NavButton active>Podsumowanie</NavButton>
-                                    <NavButton badge="1">Wizyty</NavButton>
-                                    <NavButton>Sprzedaż</NavButton>
-                                    <NavButton>Dane klienta</NavButton>
-                                    <NavButton>Produkty i usługi</NavButton>
-                                    <NavButton hasArrow>Dokumenty</NavButton>
-                                    <NavButton>Portfel</NavButton>
-                                    <NavButton>Programy lojalnościowe</NavButton>
-                                    <NavButton>Opinie</NavButton>
+                                    <NavButton active>{t('navSummary')}</NavButton>
+                                    <NavButton badge="1">{t('navVisits')}</NavButton>
+                                    <NavButton>{t('navSales')}</NavButton>
+                                    <NavButton>{t('navClientData')}</NavButton>
+                                    <NavButton>{t('navProductsServices')}</NavButton>
+                                    <NavButton hasArrow>{t('navDocuments')}</NavButton>
+                                    <NavButton>{t('navWallet')}</NavButton>
+                                    <NavButton>{t('navLoyalty')}</NavButton>
+                                    <NavButton>{t('navReviews')}</NavButton>
                                 </nav>
                             </div>
 
                             {/* Main Content Area */}
                             <div className="flex-1 bg-white overflow-y-auto">
                                 <div className="p-8 max-w-2xl">
-                                    <h2 className="text-2xl font-bold text-slate-900 mb-8">Podsumowanie</h2>
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-8">{t('navSummary')}</h2>
 
                                     {/* Portfel Card */}
                                     <div className="mb-8">
                                         <div className="flex items-center justify-between mb-2">
-                                            <h3 className="font-semibold text-slate-900">Portfel</h3>
-                                            <button className="text-sm text-violet-600 hover:underline">Zobacz portfel</button>
+                                            <h3 className="font-semibold text-slate-900">{t('navWallet')}</h3>
+                                            <button className="text-sm text-violet-600 hover:underline">{t('viewWallet')}</button>
                                         </div>
                                         <div className="bg-white border border-slate-200 rounded-xl p-6 relative group hover:shadow-md transition-shadow cursor-default">
                                             <Info size={16} className="absolute top-4 right-4 text-slate-300" />
-                                            <div className="text-sm font-medium text-slate-500 mb-1">Saldo</div>
+                                            <div className="text-sm font-medium text-slate-500 mb-1">{t('balance')}</div>
                                             <div className="text-2xl font-bold text-slate-900">0 zł</div>
                                         </div>
                                     </div>
 
                                     {/* Card Summary */}
                                     <div className="mb-4">
-                                        <h3 className="font-semibold text-slate-900 mb-2">Podsumowanie</h3>
+                                        <h3 className="font-semibold text-slate-900 mb-2">{t('navSummary')}</h3>
                                         <div className="bg-white border border-slate-200 rounded-xl p-6 relative mb-4 hover:shadow-md transition-shadow cursor-default">
                                             <Info size={16} className="absolute top-4 right-4 text-slate-300" />
-                                            <div className="text-sm font-medium text-slate-500 mb-1">Całkowita sprzedaż</div>
+                                            <div className="text-sm font-medium text-slate-500 mb-1">{t('totalSales')}</div>
                                             <div className="text-2xl font-bold text-slate-900">0 zł</div>
                                         </div>
                                     </div>
 
                                     {/* Stats Grid */}
                                     <div className="grid grid-cols-2 gap-4">
-                                        <StatCard label="Wizyty" value="1" />
-                                        <StatCard label="Ocena" value="-" />
-                                        <StatCard label="Anulowana" value="0" />
-                                        <StatCard label="Nieobecność" value="0" />
+                                        <StatCard label={t('statVisits')} value="1" />
+                                        <StatCard label={t('statRating')} value="-" />
+                                        <StatCard label={t('statCancelled')} value="0" />
+                                        <StatCard label={t('statNoShow')} value="0" />
                                     </div>
                                 </div>
                             </div>

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import {
     LayoutDashboard,
     Calendar,
@@ -23,18 +23,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Sidebar = () => {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const t = useTranslations('BusinessSidebar');
 
     const menuItems = [
-        { name: 'Dashboard', icon: LayoutDashboard, path: '/business/dashboard' },
-        { name: 'Kalendarz', icon: Calendar, path: '/business/dashboard/calendar' },
-        { name: 'Rezerwacje', icon: BookCheck, path: '/business/dashboard/reservations' },
-        { name: 'Klienci', icon: Users, path: '/business/dashboard/clients' },
-        { name: 'Zespół', icon: Users, path: '/business/dashboard/team' },
-        { name: 'Usługi', icon: Scissors, path: '/business/dashboard/services' },
-        { name: 'Wiadomości', icon: MessageSquare, path: '/business/messages' },
-        { name: 'Marketing', icon: Megaphone, path: '/business/dashboard/marketing' },
-        { name: 'Finanse', icon: DollarSign, path: '/business/dashboard/finance' },
-        { name: 'Ustawienia', icon: Settings, path: '/business/dashboard/settings' },
+        { name: t('dashboard'), icon: LayoutDashboard, path: '/business/dashboard' },
+        { name: t('calendar'), icon: Calendar, path: '/business/dashboard/calendar' },
+        { name: t('reservations'), icon: BookCheck, path: '/business/dashboard/reservations' },
+        { name: t('clients'), icon: Users, path: '/business/dashboard/clients' },
+        { name: t('team'), icon: Users, path: '/business/dashboard/team' },
+        { name: t('services'), icon: Scissors, path: '/business/dashboard/services' },
+        { name: t('messages'), icon: MessageSquare, path: '/business/messages' },
+        { name: t('marketing'), icon: Megaphone, path: '/business/dashboard/marketing' },
+        { name: t('finance'), icon: DollarSign, path: '/business/dashboard/finance' },
+        { name: t('settings'), icon: Settings, path: '/business/dashboard/settings' },
     ];
 
     const toggleSidebar = () => {

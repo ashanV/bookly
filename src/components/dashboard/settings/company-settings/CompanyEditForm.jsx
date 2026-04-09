@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Facebook, Instagram, Globe } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function CompanyEditForm({
     businessName,
@@ -19,23 +20,25 @@ export default function CompanyEditForm({
     onSave,
     onClose
 }) {
+    const t = useTranslations('BusinessCompanyEditForm');
+
     return (
         <div className="max-w-3xl mx-auto animate-fade-in text-left">
             {/* Header Actions */}
             <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-4 border-b border-gray-100">
-                <h1 className="text-xl font-bold text-gray-900">Edytuj dane firmy</h1>
+                <h1 className="text-xl font-bold text-gray-900">{t('editCompanyDataTitle')}</h1>
                 <div className="flex gap-3">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 font-medium transition-colors"
                     >
-                        Zamknij
+                        {t('close')}
                     </button>
                     <button
                         onClick={onSave}
                         className="px-6 py-2 bg-black text-white rounded-xl hover:bg-gray-800 font-medium transition-all shadow-lg shadow-gray-200"
                     >
-                        Zapisz
+                        {t('save')}
                     </button>
                 </div>
             </div>
@@ -43,14 +46,14 @@ export default function CompanyEditForm({
             <div className="space-y-12 pb-12">
                 {/* Company Info */}
                 <section>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Informacje o firmie</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('companyInfo')}</h2>
                     <p className="text-gray-500 mb-6 text-sm">
-                        Wybierz nazwę wyświetlaną w Twoim profilu rezerwacji online, na dowodach sprzedaży i w wiadomościach do klientów.
+                        {t('companyInfoDesc')}
                     </p>
 
                     <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">Nazwa firmy</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('companyName')}</label>
                             <input
                                 type="text"
                                 value={businessName}
@@ -59,9 +62,10 @@ export default function CompanyEditForm({
                             />
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-sm text-gray-600">
-                            Twój wybrany kraj to <span className="font-bold text-gray-900">Polska</span>, a waluta to <span className="font-bold text-gray-900">PLN</span>.
-                        </div>
+                        <div 
+                            className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-sm text-gray-600"
+                            dangerouslySetInnerHTML={{ __html: t('countryCurrencyInfo', { country: 'Polska', currency: 'PLN' }) }}
+                        />
                     </div>
                 </section>
 
@@ -69,9 +73,9 @@ export default function CompanyEditForm({
 
                 {/* Tax Settings */}
                 <section>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Podatek</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('tax')}</h2>
                     <p className="text-gray-500 mb-4 text-sm">
-                        Określ sposób doliczania podatku do cen na potrzeby sprzedaży i raportów.
+                        {t('taxDesc')}
                     </p>
 
                     <div className="space-y-4">
@@ -87,9 +91,9 @@ export default function CompanyEditForm({
                                 <div className="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-purple-600 peer-checked:border-[6px] transition-all bg-white"></div>
                             </div>
                             <div>
-                                <div className="font-medium text-gray-900 mb-1">Ceny detaliczne nie zawierają podatku</div>
+                                <div className="font-medium text-gray-900 mb-1">{t('retailExclTax')}</div>
                                 <p className="text-xs text-gray-500 leading-relaxed">
-                                    Podatek = cena detaliczna * stawka podatkowa
+                                    {t('taxFormulaExcl')}
                                 </p>
                             </div>
                         </label>
@@ -106,9 +110,9 @@ export default function CompanyEditForm({
                                 <div className="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-purple-600 peer-checked:border-[6px] transition-all bg-white"></div>
                             </div>
                             <div>
-                                <div className="font-medium text-gray-900 mb-1">Ceny detaliczne zawierają podatek</div>
+                                <div className="font-medium text-gray-900 mb-1">{t('retailInclTax')}</div>
                                 <p className="text-xs text-gray-500 leading-relaxed">
-                                    Podatek = (stawka podatkowa * cena detaliczna) / (1 + stawka podatkowa)
+                                    {t('taxFormulaIncl')}
                                 </p>
                             </div>
                         </label>
@@ -119,30 +123,30 @@ export default function CompanyEditForm({
 
                 {/* Language Settings */}
                 <section>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Ustawienia języka</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('languageSettings')}</h2>
                     <p className="text-gray-500 mb-6 text-sm">
-                        Wybierz domyślny język dla klientów i zespołu.
+                        {t('languageSettingsDesc')}
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">Domyślny język zespołu</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('defaultTeamLanguage')}</label>
                             <div className="flex items-center justify-between w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5">
-                                <span className="text-sm text-gray-900">polski (PL)</span>
-                                <button className="text-sm text-purple-600 font-medium hover:underline">Zmień</button>
+                                <span className="text-sm text-gray-900">{t('langPolish')}</span>
+                                <button className="text-sm text-purple-600 font-medium hover:underline">{t('btnChange')}</button>
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">Domyślny język klienta</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('defaultClientLanguage')}</label>
                             <div className="flex items-center justify-between w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5">
-                                <span className="text-sm text-gray-900">polski (PL)</span>
-                                <button className="text-sm text-purple-600 font-medium hover:underline">Zmień</button>
+                                <span className="text-sm text-gray-900">{t('langPolish')}</span>
+                                <button className="text-sm text-purple-600 font-medium hover:underline">{t('btnChange')}</button>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 text-sm text-gray-700">
-                        Pracownicy i klienci będą mogli zmienić język wyświetlany w ich ustawieniach.
+                        {t('langSettingsNote')}
                     </div>
                 </section>
 
@@ -150,14 +154,14 @@ export default function CompanyEditForm({
 
                 {/* External Links */}
                 <section>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Linki zewnętrzne</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('externalLinks')}</h2>
                     <p className="text-gray-500 mb-6 text-sm">
-                        Dodaj swoją stronę internetową i linki do mediów społecznościowych.
+                        {t('externalLinksDesc')}
                     </p>
 
                     <div className="space-y-6">
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">Facebook</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('facebook')}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Facebook size={18} className="text-gray-400" />
@@ -173,7 +177,7 @@ export default function CompanyEditForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">Instagram</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('instagram')}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Instagram size={18} className="text-gray-400" />
@@ -189,7 +193,7 @@ export default function CompanyEditForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">X (Twitter)</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('twitter')}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
@@ -207,7 +211,7 @@ export default function CompanyEditForm({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">Strona internetowa</label>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">{t('website')}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Globe size={18} className="text-gray-400" />

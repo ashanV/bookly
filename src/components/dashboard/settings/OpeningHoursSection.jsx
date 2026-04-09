@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Save, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function OpeningHoursSection({
     openingHours,
@@ -9,11 +10,12 @@ export default function OpeningHoursSection({
     onSaveHours,
     onApplyToAllEmployees
 }) {
+    const t = useTranslations('BusinessSettingsHours');
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">Godziny Otwarcia</h2>
-                <p className="text-sm text-gray-500 mt-1">Ustaw godziny pracy swojej firmy</p>
+                <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+                <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
             </div>
 
             <div className="space-y-4">
@@ -48,7 +50,7 @@ export default function OpeningHoursSection({
                                         onChange={(e) => onUpdateOpeningHours(index, 'closed', e.target.checked)}
                                         className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                                     />
-                                    <span className="text-sm text-gray-700 font-medium">Nieczynne</span>
+                                    <span className="text-sm text-gray-700 font-medium">{t('closed')}</span>
                                 </label>
                             </div>
                         </div>
@@ -60,14 +62,14 @@ export default function OpeningHoursSection({
                         className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:shadow-lg text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
                     >
                         <Save className="w-5 h-5" />
-                        Zapisz Godziny
+                        {t('saveBtn')}
                     </button>
                     <button
                         onClick={onApplyToAllEmployees}
                         className="bg-white border-2 border-purple-600 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all"
                     >
                         <Users className="w-5 h-5" />
-                        Zastosuj do wszystkich pracowników
+                        {t('applyToAllBtn')}
                     </button>
                 </div>
             </div>

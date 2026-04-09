@@ -2,18 +2,20 @@
 
 import React from 'react';
 import { Bell, Search, User, Menu } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 const Topbar = ({ onMenuClick }) => {
     const pathname = usePathname();
+    const t = useTranslations('BusinessTopbar');
 
     const getPageTitle = (path) => {
-        if (path.includes('/dashboard')) return 'Dashboard';
-        if (path.includes('/calendar')) return 'Kalendarz';
-        if (path.includes('/crm')) return 'Klienci';
-        if (path.includes('/services')) return 'Usługi';
-        if (path.includes('/settings')) return 'Ustawienia';
-        return 'Dashboard';
+        if (path.includes('/dashboard') && !path.includes('/calendar') && !path.includes('/crm') && !path.includes('/services') && !path.includes('/settings')) return t('dashboard');
+        if (path.includes('/calendar')) return t('calendar');
+        if (path.includes('/crm') || path.includes('/clients')) return t('clients');
+        if (path.includes('/services')) return t('services');
+        if (path.includes('/settings')) return t('settings');
+        return t('dashboard');
     };
 
     return (
@@ -36,7 +38,7 @@ const Topbar = ({ onMenuClick }) => {
                     <Search className="w-4 h-4 text-gray-400 absolute left-3" />
                     <input
                         type="text"
-                        placeholder="Szukaj..."
+                        placeholder={t('searchPlaceholder')}
                         className="pl-10 pr-4 py-2 bg-gray-50 border-none rounded-full text-sm focus:ring-2 focus:ring-purple-100 focus:bg-white transition-all w-64"
                     />
                 </div>

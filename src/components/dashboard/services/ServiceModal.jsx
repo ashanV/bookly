@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ServiceModal({
     isOpen,
@@ -10,6 +11,7 @@ export default function ServiceModal({
     initialData,
     categories
 }) {
+    const t = useTranslations('BusinessServiceModal');
     const [formData, setFormData] = useState({
         name: '',
         category: '',
@@ -50,7 +52,7 @@ export default function ServiceModal({
             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <h2 className="text-xl font-bold text-gray-900">
-                        {initialData ? 'Edytuj usługę' : 'Nowa usługa'}
+                        {initialData ? t('editService') : t('newService')}
                     </h2>
                     <button
                         onClick={onClose}
@@ -62,25 +64,25 @@ export default function ServiceModal({
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa usługi</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('serviceName')}</label>
                         <input
                             type="text"
                             required
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                            placeholder="np. Strzyżenie męskie"
+                            placeholder={t('serviceNamePlaceholder')}
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Kategoria</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
                         <input
                             type="text"
                             list="categories-list"
                             required
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
-                            placeholder="Wybierz lub wpisz nową..."
+                            placeholder={t('categoryPlaceholder')}
                             value={formData.category}
                             onChange={e => setFormData({ ...formData, category: e.target.value })}
                         />
@@ -93,7 +95,7 @@ export default function ServiceModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Czas trwania (min)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('duration')}</label>
                             <input
                                 type="number"
                                 required
@@ -105,7 +107,7 @@ export default function ServiceModal({
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Cena (PLN)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('price', { currency: 'PLN' })}</label>
                             <input
                                 type="number"
                                 required
@@ -120,11 +122,11 @@ export default function ServiceModal({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Opis (opcjonalnie)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
                         <textarea
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all resize-none"
                             rows="3"
-                            placeholder="Dodaj krótki opis usługi..."
+                            placeholder={t('descriptionPlaceholder')}
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
                         />
@@ -136,13 +138,13 @@ export default function ServiceModal({
                             onClick={onClose}
                             className="flex-1 px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
                         >
-                            Anuluj
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             className="flex-1 px-6 py-3 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 shadow-lg shadow-purple-200 transition-all"
                         >
-                            {initialData ? 'Zapisz zmiany' : 'Dodaj usługę'}
+                            {initialData ? t('saveChanges') : t('addService')}
                         </button>
                     </div>
                 </form>

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, ChevronDown } from 'lucide-react';
 
-const VACATION_TYPES = [
-    { value: 'vacation', label: 'Urlop wypoczynkowy' },
-    { value: 'sick', label: 'Zwolnienie lekarskie' },
-    { value: 'unpaid', label: 'Urlop bezpłatny' },
-    { value: 'other', label: 'Inny' }
-];
-
 export default function VacationModal({ isOpen, onClose, employees, onSave, initialEmployeeId, initialData }) {
+    const t = useTranslations('BusinessVacationModal');
+    
+    const VACATION_TYPES = [
+        { value: 'vacation', label: t('types.vacation') },
+        { value: 'sick', label: t('types.sick') },
+        { value: 'unpaid', label: t('types.unpaid') },
+        { value: 'other', label: t('types.other') }
+    ];
+
     const [formData, setFormData] = useState({
         id: null,
         employeeId: '',
@@ -50,7 +53,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
         e.preventDefault();
 
         if (!formData.employeeId || !formData.startDate || !formData.endDate) {
-            alert('Wypełnij wszystkie wymagane pola');
+            alert(t('requiredFields'));
             return;
         }
 
@@ -81,7 +84,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
-                    <h2 className="text-2xl font-bold text-gray-900">{initialData ? 'Edytuj urlop' : 'Dodaj urlop'}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{initialData ? t('editTitle') : t('addTitle')}</h2>
                     <button
                         onClick={handleClose}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -97,7 +100,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="relative">
                                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                                    Pracownik
+                                    {t('employee')}
                                 </label>
                                 <button
                                     type="button"
@@ -105,7 +108,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                                     className="w-full px-4 py-3 rounded-lg border border-gray-200 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                                 >
                                     <span className={selectedEmployee ? 'text-gray-900' : 'text-gray-400'}>
-                                        {selectedEmployee ? selectedEmployee.name : 'Wybierz pracownika'}
+                                        {selectedEmployee ? selectedEmployee.name : t('selectEmployee')}
                                     </span>
                                     <ChevronDown size={16} className="text-gray-400" />
                                 </button>
@@ -143,7 +146,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                             {/* Type Selection */}
                             <div className="relative">
                                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                                    Typ
+                                    {t('type')}
                                 </label>
                                 <button
                                     type="button"
@@ -180,7 +183,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                                    Data rozpoczęcia
+                                    {t('startDate')}
                                 </label>
                                 <input
                                     type="date"
@@ -192,7 +195,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
 
                             <div>
                                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                                    Godzina rozpoczęcia
+                                    {t('startTime')}
                                 </label>
                                 <input
                                     type="time"
@@ -206,7 +209,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                                    Data zakończenia
+                                    {t('endDate')}
                                 </label>
                                 <input
                                     type="date"
@@ -218,7 +221,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
 
                             <div>
                                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                                    Godzina zakończenia
+                                    {t('endTime')}
                                 </label>
                                 <input
                                     type="time"
@@ -239,7 +242,7 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                                 className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                             />
                             <label htmlFor="recurring" className="text-sm font-medium text-gray-900 cursor-pointer">
-                                Powtarzaj
+                                {t('recurring')}
                             </label>
                         </div>
 
@@ -247,14 +250,14 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                         <div>
                             <div className="flex justify-between mb-2">
                                 <label className="block text-sm font-bold text-gray-900">
-                                    Opis
+                                    {t('notes')}
                                 </label>
                                 <span className="text-xs text-gray-500">{formData.notes.length}/100</span>
                             </div>
                             <textarea
                                 value={formData.notes}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 100) })}
-                                placeholder="Dodaj opis lub notatkę (niewymagane)"
+                                placeholder={t('notesPlaceholder')}
                                 rows={3}
                                 className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-purple-100 focus:border-purple-600 transition-all resize-none"
                             />
@@ -269,13 +272,13 @@ export default function VacationModal({ isOpen, onClose, employees, onSave, init
                         onClick={handleClose}
                         className="px-6 py-2.5 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                        Anuluj
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
                         className="px-8 py-2.5 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
                     >
-                        Zapisz
+                        {t('save')}
                     </button>
                 </div>
             </div>

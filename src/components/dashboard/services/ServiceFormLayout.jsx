@@ -6,6 +6,7 @@ import { toast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function ServiceFormLayout({
     children,
@@ -16,6 +17,7 @@ export default function ServiceFormLayout({
     onSectionChange
 }) {
     const router = useRouter();
+    const t = useTranslations('BusinessServiceFormLayout');
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -27,16 +29,16 @@ export default function ServiceFormLayout({
     }, []);
 
     const sections = [
-        { id: 'basic', label: 'Podstawowe informacje' },
-        { id: 'team', label: 'Pracownicy', badge: '2' }, // Example badge
-        { id: 'resources', label: 'Zasoby' },
-        { id: 'addons', label: 'Dodatki do usługi' },
+        { id: 'basic', label: t('sectionBasic') },
+        { id: 'team', label: t('sectionTeam'), badge: '2' },
+        { id: 'resources', label: t('sectionResources') },
+        { id: 'addons', label: t('sectionAddons') },
         { type: 'divider' },
-        { id: 'settings', label: 'Ustawienia', isHeader: true },
-        { id: 'online', label: 'Rezerwacje online' },
-        { id: 'forms', label: 'Formularze', badge: '1' },
-        { id: 'commission', label: 'Prowizje' },
-        { id: 'advanced', label: 'Ustawienia zaawansowane' },
+        { id: 'settings', label: t('sectionSettings'), isHeader: true },
+        { id: 'online', label: t('sectionOnline') },
+        { id: 'forms', label: t('sectionForms'), badge: '1' },
+        { id: 'commission', label: t('sectionCommission') },
+        { id: 'advanced', label: t('sectionAdvanced') },
     ];
 
     return (
@@ -56,7 +58,7 @@ export default function ServiceFormLayout({
                             onClick={() => router.back()}
                             className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
                         >
-                            Zamknij
+                            {t('close')}
                         </button>
                         <button
                             onClick={onSave}
@@ -64,7 +66,7 @@ export default function ServiceFormLayout({
                             className="px-6 py-2 text-sm font-semibold text-white bg-black hover:bg-gray-800 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                            Zapisz
+                            {t('save')}
                         </button>
                     </div>
                 </div>

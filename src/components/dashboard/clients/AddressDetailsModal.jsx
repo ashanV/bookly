@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown, AlertCircle } from 'lucide-react';
 import { validateInput, addressDetailsSchema } from '@/lib/validations';
+import { useTranslations } from 'next-intl';
 
 export default function AddressDetailsModal({ isOpen, onClose, onSave, initialData = {} }) {
+    const t = useTranslations('BusinessAddressDetails');
     const [formData, setFormData] = useState({
         street: '',
         apartmentNumber: '',
@@ -100,7 +102,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                         >
                             {/* Header */}
                             <div className="p-6 pb-0 flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-slate-900">Edytuj szczegóły adresu</h2>
+                                <h2 className="text-xl font-bold text-slate-900">{t('title')}</h2>
                                 <button
                                     onClick={onClose}
                                     className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -113,7 +115,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                             <div className="p-6 overflow-y-auto">
                                 <div className="grid grid-cols-12 gap-4 mb-4">
                                     <div className="col-span-8">
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Adres</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('addressLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.street}
@@ -126,7 +128,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                                         {errors.street && <p className="text-xs text-red-500 mt-1">{errors.street}</p>}
                                     </div>
                                     <div className="col-span-4">
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Nr mieszkania</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('apartmentLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.apartmentNumber}
@@ -138,7 +140,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
 
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Dzielnica</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('districtLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.district}
@@ -147,7 +149,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Miasto</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('cityLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.city}
@@ -163,7 +165,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
 
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Okręg</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('regionLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.region}
@@ -172,7 +174,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Województwo</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('provinceLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.province}
@@ -184,7 +186,7 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Kod pocztowy</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('postCodeLabel')}</label>
                                         <input
                                             type="text"
                                             value={formData.postCode}
@@ -198,16 +200,16 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                                         {errors.postCode && <p className="text-xs text-red-500 mt-1">{errors.postCode}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-900 mb-2">Kraj</label>
+                                        <label className="block text-sm font-bold text-slate-900 mb-2">{t('countryLabel')}</label>
                                         <div className="relative">
                                             <select
                                                 value={formData.country}
                                                 onChange={(e) => handleChange('country', e.target.value)}
                                                 className="w-full px-4 py-2 appearance-none bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all font-medium text-slate-900"
                                             >
-                                                <option>Polska</option>
-                                                <option>Niemcy</option>
-                                                <option>Ukraina</option>
+                                                <option>{t('countryPoland')}</option>
+                                                <option>{t('countryGermany')}</option>
+                                                <option>{t('countryUkraine')}</option>
                                                 {/* Add more countries as needed */}
                                             </select>
                                             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
@@ -222,13 +224,13 @@ export default function AddressDetailsModal({ isOpen, onClose, onSave, initialDa
                                     onClick={onClose}
                                     className="px-6 py-2 text-slate-700 font-bold hover:bg-slate-50 rounded-full border border-slate-300 transition-colors"
                                 >
-                                    Anuluj
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     onClick={handleSave}
                                     className="px-6 py-2 bg-black text-white font-bold rounded-full hover:bg-slate-800 transition-colors ml-auto"
                                 >
-                                    Dalej
+                                    {t('next')}
                                 </button>
                             </div>
                         </div>

@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isSunday, isBefore, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import * as locales from 'date-fns/locale';
 import { Clock, Plus, ChevronDown } from 'lucide-react';
 import QuickActionPopover from './QuickActionPopover';
 import EmployeeMenuPopover from './EmployeeMenuPopover';
 
 export default function MonthView({ date, employees = [], reservations = [], onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter }) {
+    const t = useTranslations('BusinessMonthView');
+    const localeString = useLocale();
+    
+    // Choose date-fns locale
+    const currentLocale = localeString === 'pl' ? locales.pl : locales.enUS;
+
     const [hoveredDay, setHoveredDay] = useState(null);
     const [activeEmployeeId, setActiveEmployeeId] = useState(null);
     const [anchorRect, setAnchorRect] = useState(null);
@@ -23,7 +30,7 @@ export default function MonthView({ date, employees = [], reservations = [], onR
         end: endDate,
     });
 
-    const weekDays = ['poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota', 'niedziela'];
+    const weekDays = t.raw('days');
 
     const handleDayClick = (e, day) => {
         // If clicks are not on reservation
@@ -109,7 +116,7 @@ export default function MonthView({ date, employees = [], reservations = [], onR
                     {/* Default Column if no employees */}
                     {employees.length === 0 && (
                         <div className="flex-1 p-2 text-center border-r border-gray-100 bg-white">
-                            <span className="text-sm font-medium text-gray-500">Wszyscy pracownicy</span>
+                            <span className="text-sm font-medium text-gray-500">{t('allEmployees')}</span>
                         </div>
                     )}
                 </div>
@@ -167,7 +174,7 @@ export default function MonthView({ date, employees = [], reservations = [], onR
                                         ${isToday ? 'bg-purple-600 text-white' : (isBeforeToday && isCurrentMonth ? 'text-gray-400' : 'text-gray-900')}
                                         ${!isCurrentMonth && !isToday ? 'text-gray-300' : ''}
                                     `}>
-                                        {format(day, 'd')} {isToday && format(day, 'MMM', { locale: pl })}
+                                        {format(day, 'd')} {isToday && format(day, 'MMM', { locale: currentLocale })}
                                     </div>
                                 </div>
 
@@ -189,7 +196,7 @@ export default function MonthView({ date, employees = [], reservations = [], onR
                                     ))}
                                     {dayReservations.length > 4 && (
                                         <div className="text-[10px] text-gray-500 pl-1">
-                                            + {dayReservations.length - 4} więcej
+                                            + {dayReservations.length - 4} {t('more')}
                                         </div>
                                     )}
                                 </div>

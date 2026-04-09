@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Info, PenLine, Trash2, Repeat, MapPin, UserCog, Briefcase, UserPlus, CalendarOff } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
+import { ChevronLeft, ChevronRight, Plus, Info, PenLine, Trash2, Repeat, MapPin, UserCog, Briefcase, UserPlus, CalendarOff, Settings, ChevronDown, Palmtree, Building, MoreVertical, Edit2 } from 'lucide-react';
 import {
     format,
     startOfWeek,
@@ -14,13 +15,15 @@ import {
     startOfMonth,
     endOfMonth,
     getDay,
-    isWithinInterval
+    isWithinInterval,
+    addDays
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import EmployeeSelectionModal from './EmployeeSelectionModal';
 import VacationModal from './VacationModal';
 import ShiftModal from './ShiftModal';
 import RecurringShiftsPage from './RecurringShiftsPage';
+import ConfirmationModal from './ConfirmationModal'; // Assuming this is a new component
 
 const DAYS_MAP = {
     1: 'monday',
@@ -32,19 +35,21 @@ const DAYS_MAP = {
     0: 'sunday'
 };
 
-const VACATION_TYPES_MAP = {
-    'vacation': 'Urlop wypoczynkowy',
-    'sick': 'Zwolnienie lekarskie',
-    'unpaid': 'Urlop bezpłatny',
-    'other': 'Inny'
-};
+// const VACATION_TYPES_MAP = { // This map is removed as per the diff
+//     'vacation': 'Urlop wypoczynkowy',
+//     'sick': 'Zwolnienie lekarskie',
+//     'unpaid': 'Urlop bezpłatny',
+//     'other': 'Inny'
+// };
 
-export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate, businessName, onAddEmployee, onEditClick }) {
+export default function WorkSchedule({ employees = [], openingHours, onEmployeeUpdate, businessName, onAddEmployee, onEditClick, onUpdateShifts, onAddVacation, onUpdateVacation, onDeleteVacation }) {
+    const t = useTranslations('BusinessWorkSchedule');
     const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
     const [pickerDate, setPickerDate] = useState(new Date());
     const [activeDropdownId, setActiveDropdownId] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date()); // Added from diff
 
     // Employee Selection Modal State
     const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
@@ -133,7 +138,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
     };
 
     const handleDeleteAllShifts = (employee) => {
-        if (confirm(`Czy na pewno chcesz usunąć wszystkie zmiany dla pracownika ${employee.name}?`)) {
+        if (confirm(t('deleteAllShiftsConfirm', { employeeName: employee.name }))) {
             const updatedEmployee = JSON.parse(JSON.stringify(employee));
             if (updatedEmployee.availability) {
                 Object.keys(updatedEmployee.availability).forEach(key => {
@@ -156,7 +161,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
     };
 
     const handleDeleteVacation = (employeeId, vacationId) => {
-        if (confirm('Czy na pewno chcesz usunąć ten urlop?')) {
+        if (confirm(t('deleteVacationConfirm'))) {
             const updatedEmployees = employees.map(emp => {
                 if (emp.id === employeeId) {
                     return {
@@ -369,8 +374,8 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
         if (minutes <= 0) return '0 min';
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        if (mins === 0) return `${hours} godz.`;
-        return `${hours} godz. ${mins} min`;
+        if (mins === 0) return `${hours} ${t('hoursShort')}`;
+        return `${hours} ${t('hoursShort')} ${mins} ${t('minsShort')}`;
     };
 
     const getDailyTotalMinutes = (day) => {
@@ -399,63 +404,74 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
         return totalMinutes;
     };
 
+    const getVacationTypeTranslation = (type) => {
+        return t(`vacationTypes.${type}`, { defaultValue: type });
+    };
+
+    const totalWorkTime = useMemo(() => {
+        const totalMinutes = getDailyTotalMinutes(selectedDate);
+        return {
+            hours: Math.floor(totalMinutes / 60),
+            minutes: totalMinutes % 60
+        };
+    }, [selectedDate, visibleEmployees]);
+
 
     return (
         <div className="bg-white min-h-screen p-8">
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Grafik pracy</h1>
-                <div className="flex gap-3">
-                    <button className="px-4 py-2 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                        Opcje
-                        <ChevronLeft className="rotate-[-90deg]" size={16} />
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <Settings size={18} />
+                        {t('options')}
                     </button>
-
-                    <div className="relative" ref={addDropdownRef}>
-                        <button
-                            onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
-                            className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 flex items-center gap-2"
-                        >
-                            Dodaj
-                            <ChevronLeft className={`transition-transform duration-200 ${isAddDropdownOpen ? 'rotate-90' : 'rotate-[-90deg]'}`} size={16} />
+                    <div className="relative group">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                            <Plus size={18} />
+                            {t('add')}
+                            <ChevronDown size={14} />
                         </button>
-
-                        {isAddDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-                                <div className="py-1">
-                                    <button
-                                        onClick={() => {
-                                            setIsAddDropdownOpen(false);
-                                            setIsVacationModalOpen(true);
-                                        }}
-                                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                    >
-                                        <Briefcase size={18} className="text-gray-400" />
-                                        Urlop
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setIsAddDropdownOpen(false);
-                                            if (onAddEmployee) onAddEmployee();
-                                        }}
-                                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                    >
-                                        <UserPlus size={18} className="text-gray-400" />
-                                        Nowy pracownik
-                                    </button>
-                                    <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
-                                        <CalendarOff size={18} className="text-gray-400" />
-                                        Daty zamknięcia firmy
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+                            <button
+                                onClick={() => setIsVacationModalOpen(true)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                                <Palmtree size={16} /> {t('vacation')}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (onAddEmployee) onAddEmployee();
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                                <UserPlus size={16} /> {t('newEmployee')}
+                            </button>
+                            <div className="h-px bg-gray-100 my-1"></div>
+                            <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                <Building size={16} /> {t('closingDates')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Week Navigation */}
-            <div className="flex justify-end mb-6 relative">
+            <div className="flex justify-between items-center mb-6 relative">
+                <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-bold text-gray-900 border-l-4 border-blue-600 pl-3">
+                        {t('week')} {format(weekDays[0], 'd')} - {format(weekDays[6], 'd.MM.yyyy')}
+                    </h2>
+                    <div className="flex p-1 bg-gray-100 rounded-lg">
+                        <button className="px-3 py-1.5 text-xs font-bold bg-white text-blue-600 rounded-md shadow-sm">{t('day')}</button>
+                        <button className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700">{t('3days')}</button>
+                        <button className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700">{t('week')}</button>
+                        <button className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700">{t('month')}</button>
+                    </div>
+                </div>
                 <div className="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200 shadow-sm">
                     <button
                         onClick={handlePrevWeek}
@@ -464,7 +480,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                         <ChevronLeft size={20} />
                     </button>
                     <div className="px-4 py-1 font-medium text-gray-700 border-l border-r border-gray-200 mx-1">
-                        Tydzień
+                        {t('week')}
                     </div>
                     <button
                         onClick={() => {
@@ -499,7 +515,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                         </div>
 
                         <div className="grid grid-cols-7 gap-1 mb-2 text-center">
-                            {['pon.', 'wt.', 'śr.', 'czw.', 'pt.', 'sob.', 'niedz.'].map(day => (
+                            {[t('monShort'), t('tueShort'), t('wedShort'), t('thuShort'), t('friShort'), t('satShort'), t('sunShort')].map(day => (
                                 <div key={day} className="text-xs font-medium text-gray-500 py-1">
                                     {day}
                                 </div>
@@ -570,36 +586,15 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
 
             {/* Delete Shift Confirmation Modal */}
             {deleteShiftModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-                        <div className="flex justify-end mb-2">
-                            <button
-                                onClick={() => setDeleteShiftModal(null)}
-                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Usuń zmianę</h2>
-                        <p className="text-gray-500 mb-6">Tej czynności nie można cofnąć</p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={() => setDeleteShiftModal(null)}
-                                className="px-6 py-2.5 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                                Anuluj
-                            </button>
-                            <button
-                                onClick={handleDeleteShift}
-                                className="px-6 py-2.5 bg-red-600 text-white rounded-full font-medium hover:bg-red-700 transition-colors"
-                            >
-                                Usuń
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ConfirmationModal
+                    isOpen={!!deleteShiftModal}
+                    onClose={() => setDeleteShiftModal(null)}
+                    onConfirm={handleDeleteShift}
+                    title={t('deleteShiftTitle')}
+                    description={t('deleteShiftConfirm')}
+                    cancelText={t('cancel')}
+                    confirmText={t('delete')}
+                />
             )}
 
             {/* Schedule Table */}
@@ -607,12 +602,12 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                 {/* Table Header */}
                 <div className="grid grid-cols-[250px_repeat(7,1fr)] border-b border-gray-200">
                     <div className="p-4 flex items-center gap-2">
-                        <span className="font-bold text-gray-900">Pracownik</span>
+                        <span className="font-bold text-gray-900">{t('employee')}</span>
                         <button
                             onClick={() => setIsEmployeeModalOpen(true)}
                             className="text-blue-600 font-medium hover:underline"
                         >
-                            Zmień
+                            {t('change')}
                         </button>
                     </div>
                     {weekDays.map((day, index) => (
@@ -638,14 +633,14 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                            <span>Z możliwością rezerwacji:</span>
+                                            <span>{t('bookable')}:</span>
                                         </div>
                                         <div className="pl-4 font-bold text-sm">
                                             {formatMinutesToHours(getDailyTotalMinutes(day))}
                                         </div>
                                         <div className="flex items-center gap-2 mt-2">
                                             <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                                            <span>Bez możliwości rezerwacji: 0 min</span>
+                                            <span>{t('nonBookable')}: 0 {t('minsShort')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -691,11 +686,11 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                             >
                                                 <Repeat size={16} className="text-gray-400" />
-                                                Ustaw powtarzające się zmiany
+                                                {t('setRecurringShifts')}
                                             </button>
                                             <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
                                                 <MapPin size={16} className="text-gray-400" />
-                                                Usuń pracownika z lokalizacji
+                                                {t('removeFromLocation')}
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -705,7 +700,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                             >
                                                 <UserCog size={16} className="text-gray-400" />
-                                                Edytuj informacje dotyczące pracownika
+                                                {t('editEmployeeInfo')}
                                             </button>
                                             <div className="h-px bg-gray-100 my-1"></div>
                                             <button
@@ -713,7 +708,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                 className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
                                             >
                                                 <Trash2 size={16} />
-                                                Usuń wszystkie zmiany
+                                                {t('deleteAllShifts')}
                                             </button>
                                         </div>
                                     </div>
@@ -763,7 +758,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                         backgroundImage: 'repeating-linear-gradient(45deg, #e2e8f0, #e2e8f0 10px, #f8fafc 10px, #f8fafc 20px)'
                                                     }}
                                                 >
-                                                    <div className="font-semibold text-gray-800 relative z-10">{VACATION_TYPES_MAP[vacation.type] || vacation.type || 'Urlop wypoczynkowy'}</div>
+                                                    <div className="font-semibold text-gray-800 relative z-10">{getVacationTypeTranslation(vacation.type)}</div>
                                                     <div className="text-[11px] text-gray-500 relative z-10">{vacation.startTime} - {vacation.endTime}</div>
 
                                                     {/* Vacation Dropdown */}
@@ -778,7 +773,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                     className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
                                                                 >
                                                                     <PenLine size={14} className="text-gray-400" />
-                                                                    Edytuj
+                                                                    {t('edit')}
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => {
@@ -788,7 +783,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
                                                                 >
                                                                     <Trash2 size={14} />
-                                                                    Usuń
+                                                                    {t('delete')}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -875,7 +870,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                                             >
                                                                 <Plus size={16} className="text-gray-400" />
-                                                                Dodaj zmianę
+                                                                {t('addShift')}
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -885,7 +880,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                                             >
                                                                 <Repeat size={16} className="text-gray-400" />
-                                                                Ustaw powtarzające się zmiany
+                                                                {t('setRecurringShifts')}
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -897,7 +892,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                                             >
                                                                 <Briefcase size={16} className="text-gray-400" />
-                                                                Dodaj urlop
+                                                                {t('addVacation')}
                                                             </button>
                                                         </>
                                                     ) : (
@@ -911,7 +906,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                                             >
                                                                 <PenLine size={16} className="text-gray-400" />
-                                                                Edytuj ten dzień
+                                                                {t('editThisDay')}
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -921,7 +916,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                                             >
                                                                 <Repeat size={16} className="text-gray-400" />
-                                                                Ustaw powtarzające się zmiany
+                                                                {t('setRecurringShifts')}
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -933,7 +928,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                                                             >
                                                                 <Briefcase size={16} className="text-gray-400" />
-                                                                Dodaj urlop
+                                                                {t('addVacation')}
                                                             </button>
                                                             <div className="h-px bg-gray-100 my-1"></div>
                                                             <button
@@ -949,7 +944,7 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
                                                                 className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
                                                             >
                                                                 <Trash2 size={16} />
-                                                                Usuń tę zmianę
+                                                                {t('deleteThisShift')}
                                                             </button>
                                                         </>
                                                     )}
@@ -965,11 +960,19 @@ export default function WorkSchedule({ employees, openingHours, onEmployeeUpdate
             </div>
 
             {/* Info Footer */}
-            <div className="bg-blue-50 rounded-xl p-4 flex gap-4 items-start border border-blue-100 mt-8">
-                <Info className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                <p className="text-sm text-blue-900 leading-relaxed">
-                    Grafik pracy pokazuje dostępność pracownika w przypadku rezerwacji i nie jest powiązany ze standardowymi godzinami otwarcia Twojej firmy. Aby ustawić standardowe godziny otwarcia, <span className="text-blue-600 font-semibold cursor-pointer hover:underline">kliknij tutaj</span>.
-                </p>
+            <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-200">
+                <div className="flex gap-4 items-start">
+                    <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
+                        <Info size={24} />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-gray-900 mb-1">{t('infoTitle')}</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
+                            {t('infoFooter')}{' '}
+                            <button className="text-blue-600 font-bold hover:underline">{t('clickHere')}</button>.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Recurring Shifts Page */}

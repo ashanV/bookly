@@ -1,8 +1,10 @@
 "use client";
 
 import { Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ServiceEmployees({ data, onChange, employees = [] }) {
+    const t = useTranslations('BusinessServiceEmployees');
     const selectedIds = data.employees || [];
 
     const handleToggleAll = () => {
@@ -35,8 +37,8 @@ export default function ServiceEmployees({ data, onChange, employees = [] }) {
 
     return (
         <section id="team" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mt-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pracownicy</h2>
-            <p className="text-gray-500 text-sm mb-6">Wybierz, którzy pracownicy będą świadczyć tę usługę</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('sectionTitle')}</h2>
+            <p className="text-gray-500 text-sm mb-6">{t('sectionDescription')}</p>
 
             <div className="space-y-4">
                 {/* Select All */}
@@ -48,7 +50,7 @@ export default function ServiceEmployees({ data, onChange, employees = [] }) {
                         }`}>
                         {allSelected && <Check className="w-4 h-4 text-white" />}
                     </div>
-                    <span className="font-semibold text-gray-900">Wszyscy pracownicy</span>
+                    <span className="font-semibold text-gray-900">{t('allEmployees')}</span>
                     <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">
                         {employees.length}
                     </span>
@@ -90,7 +92,7 @@ export default function ServiceEmployees({ data, onChange, employees = [] }) {
 
                 {employees.length === 0 && (
                     <div className="text-center py-4 text-gray-500 text-sm">
-                        Brak pracowników. Dodaj ich w zakładce Zespół.
+                        {t('noEmployees')}
                     </div>
                 )}
             </div>

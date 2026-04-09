@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
 import ServicesSection from '@/components/dashboard/services/ServicesSection';
+import { useTranslations } from 'next-intl';
 
 export default function ServicesPage() {
+    const t = useTranslations('BusinessServicesPage');
     const { user } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ export default function ServicesPage() {
                 }
             } catch (error) {
                 console.error('Failed to fetch business data:', error);
-                toast.error('Nie udało się pobrać danych firmy');
+                toast.error(t('errFetchData'));
             } finally {
                 setLoading(false);
             }
@@ -53,7 +55,7 @@ export default function ServicesPage() {
 
         if (!user?.id) {
             console.error('No user ID available');
-            toast.error("Błąd: Brak ID użytkownika. Spróbuj odświeżyć stronę.");
+            toast.error(t('errNoUserId'));
             return;
         }
 
@@ -77,11 +79,11 @@ export default function ServicesPage() {
             if (response.ok) {
                 console.log('Saved successfully');
             } else {
-                toast.error(data.error || 'Błąd zapisu');
+                toast.error(data.error || t('errSave'));
             }
         } catch (error) {
             console.error('Save error:', error);
-            toast.error('Wystąpił błąd połączenia z serwerem');
+            toast.error(t('errConnection'));
         }
     };
 
@@ -97,11 +99,11 @@ export default function ServicesPage() {
                 );
                 setServices(updatedServices);
                 setEditingServiceId(null);
-                toast.success('Usługa została zaktualizowana');
+                toast.success(t('serviceUpdated'));
             } else {
                 updatedServices = [...services, { ...serviceData, id: Date.now().toString(), duration: parseInt(serviceData.duration), price: parseFloat(serviceData.price) }];
                 setServices(updatedServices);
-                toast.success('Usługa została dodana');
+                toast.success(t('serviceAdded'));
             }
             setNewService({ name: '', category: '', duration: '', price: '', description: '' });
             setShowServiceForm(false);
@@ -109,7 +111,7 @@ export default function ServicesPage() {
             // Auto save
             saveServices(updatedServices, categories);
         } else {
-            toast.error('Wypełnij wymagane pola (Nazwa, Kategoria, Czas, Cena)');
+            toast.error(t('errFillFields'));
         }
     };
 
@@ -118,7 +120,7 @@ export default function ServicesPage() {
     };
 
     const deleteService = (id) => {
-        if (confirm('Czy na pewno chcesz usunąć tę usługę?')) {
+        if (confirm(t('confirmDeleteService'))) {
             const updatedServices = services.filter(service => service.id !== id);
             setServices(updatedServices);
             saveServices(updatedServices, categories);
@@ -132,7 +134,7 @@ export default function ServicesPage() {
         } else {
             // Check for duplicates
             if (categories.some(c => c?.name?.toLowerCase() === categoryData.name?.toLowerCase())) {
-                toast.error('Kategoria o tej nazwie już istnieje');
+                toast.error(t('errCategoryExists'));
                 return;
             }
 
@@ -141,7 +143,7 @@ export default function ServicesPage() {
             const newCategories = [...categories, cleanCategory];
 
             setCategories(newCategories);
-            toast.success(`Dodano kategorię: ${categoryData.name}`);
+            toast.success(t('categoryAdded', { name: categoryData.name }));
 
             // Auto save
             saveServices(services, newCategories);
@@ -169,14 +171,14 @@ export default function ServicesPage() {
         setCategories(newCategories);
 
         setEditingCategory(null);
-        toast.success('Kategoria została zaktualizowana');
+        toast.success(t('categoryUpdated'));
 
         // Auto save
         saveServices(newServices, newCategories);
     };
 
     const handleDeleteCategory = (categoryName) => {
-        if (confirm(`Czy na pewno chcesz usunąć kategorię "${categoryName}"? Usługi w tej kategorii nie zostaną usunięte, ale stracą przypisanie.`)) {
+        if (confirm(t('confirmDeleteCategory', { name: categoryName }))) {
             // Remove category from metadata
             const newCategories = categories.filter(c => c.name !== categoryName);
             setCategories(newCategories);
@@ -188,7 +190,7 @@ export default function ServicesPage() {
                     : s
             );
             setServices(newServices);
-            toast.success('Kategoria usunięta');
+            toast.success(t('categoryDeleted'));
 
             // Auto save
             saveServices(newServices, newCategories);
@@ -215,7 +217,7 @@ export default function ServicesPage() {
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-                    <p className="text-gray-500 font-medium">Ładowanie usług...</p>
+                    <p className="text-gray-500 font-medium">{t('loadingServices')}</p>
                 </div>
             </div>
         );

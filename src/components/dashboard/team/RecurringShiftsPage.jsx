@@ -1,46 +1,49 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Plus, Trash2, ChevronDown, Info } from 'lucide-react';
-import { format, addWeeks } from 'date-fns';
-import { pl } from 'date-fns/locale';
-
-const DAYS_OF_WEEK = [
-    { key: 'monday', label: 'poniedziałek' },
-    { key: 'tuesday', label: 'wtorek' },
-    { key: 'wednesday', label: 'środa' },
-    { key: 'thursday', label: 'czwartek' },
-    { key: 'friday', label: 'piątek' },
-    { key: 'saturday', label: 'sobota' },
-    { key: 'sunday', label: 'niedziela' }
-];
-
-const TIME_OPTIONS = [];
-for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
-        TIME_OPTIONS.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-    }
-}
-
-const PLANNING_OPTIONS = [
-    { value: 'weekly', label: 'Co tydzień' },
-    { value: 'biweekly', label: 'Co dwa tygodnie' },
-    { value: 'custom', label: 'Niestandardowe' }
-];
-
-function calculateDayHours(shifts) {
-    return shifts.reduce((acc, shift) => {
-        const [startH, startM] = shift.start.split(':').map(Number);
-        const [endH, endM] = shift.end.split(':').map(Number);
-        return acc + ((endH * 60 + endM) - (startH * 60 + startM));
-    }, 0);
-}
-
-function formatHours(minutes) {
-    if (minutes <= 0) return '0 godz.';
-    const hours = Math.floor(minutes / 60);
-    return `${hours} godz.`;
-}
+import { format } from 'date-fns';
 
 export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave }) {
+    const t = useTranslations('BusinessRecurringShifts');
+    const tw = useTranslations('BusinessWorkSchedule');
+
+    const DAYS_OF_WEEK = [
+        { key: 'monday', label: t('days.monday') },
+        { key: 'tuesday', label: t('days.tuesday') },
+        { key: 'wednesday', label: t('days.wednesday') },
+        { key: 'thursday', label: t('days.thursday') },
+        { key: 'friday', label: t('days.friday') },
+        { key: 'saturday', label: t('days.saturday') },
+        { key: 'sunday', label: t('days.sunday') }
+    ];
+
+    const PLANNING_OPTIONS = [
+        { value: 'weekly', label: t('types.weekly') },
+        { value: 'biweekly', label: t('types.biweekly') },
+        { value: 'custom', label: t('types.custom') }
+    ];
+
+    const TIME_OPTIONS = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            TIME_OPTIONS.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+        }
+    }
+
+    function calculateDayHours(shifts) {
+        return shifts.reduce((acc, shift) => {
+            const [startH, startM] = shift.start.split(':').map(Number);
+            const [endH, endM] = shift.end.split(':').map(Number);
+            return acc + ((endH * 60 + endM) - (startH * 60 + startM));
+        }, 0);
+    }
+
+    function formatHours(minutes) {
+        if (minutes <= 0) return `0 ${tw('hoursShort')}`;
+        const hours = Math.floor(minutes / 60);
+        return `${hours} ${tw('hoursShort')}`;
+    }
+
     const [planningType, setPlanningType] = useState('weekly');
     const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [endDate, setEndDate] = useState('');
@@ -166,20 +169,20 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                 <div className="text-sm text-gray-600">
                     <span className="font-medium text-gray-900">{employee.name}</span>
                     <span className="mx-1">•</span>
-                    <span>Powtarzające się zmiany seta</span>
+                    <span>{t('title')}</span>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={onClose}
                         className="px-6 py-2 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                        Zamknij
+                        {t('close')}
                     </button>
                     <button
                         onClick={handleSave}
                         className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
                     >
-                        Zapisz
+                        {t('save')}
                     </button>
                 </div>
             </div>
@@ -188,13 +191,13 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
             <div className="max-w-6xl mx-auto px-6 py-8">
                 {/* Title */}
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {employee.name}Powtarzające się zmiany seta
+                    {employee.name} {t('title')}
                 </h1>
                 <p className="text-gray-500 mb-1">
-                    Ustaw cotygodniowe, dwutygodniowe lub niestandardowe zmiany. Zmiany zostaną zapisane dla wszystkich nadchodzących zmian w wybranym okresie.
+                    {t('description')}
                 </p>
                 <button className="text-blue-600 hover:underline text-sm mb-8">
-                    Dowiedz się więcej
+                    {t('learnMore')}
                 </button>
 
                 <div className="grid grid-cols-[320px_1fr] gap-12">
@@ -203,7 +206,7 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                         {/* Planning Type */}
                         <div>
                             <label className="block text-sm font-medium text-gray-900 mb-2">
-                                Planowanie
+                                {t('planning')}
                             </label>
                             <div className="relative">
                                 <button
@@ -237,7 +240,7 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                         {/* Start Date */}
                         <div>
                             <label className="block text-sm font-medium text-gray-900 mb-2">
-                                Data rozpoczęcia
+                                {t('startDate')}
                             </label>
                             <input
                                 type="date"
@@ -250,13 +253,13 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                         {/* End Date */}
                         <div>
                             <label className="block text-sm font-medium text-gray-900 mb-2">
-                                Data zakończenia
+                                {t('endDate')}
                             </label>
                             <input
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                placeholder="Wybierz opcję"
+                                placeholder={t('selectOption')}
                                 className="w-full px-4 py-3 rounded-lg border border-gray-200 text-gray-900 focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all"
                             />
                         </div>
@@ -265,7 +268,7 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                         <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
                             <Info size={18} className="text-gray-400 mt-0.5 shrink-0" />
                             <p className="text-sm text-gray-600">
-                                Zmiany pracowników nie będą wyświetlane w dniach zamknięcia firmy.
+                                {t('infoNote')}
                             </p>
                         </div>
                     </div>
@@ -273,8 +276,8 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                     {/* Right Content - Weekly Schedule */}
                     <div>
                         <div className="flex items-center gap-4 mb-6">
-                            <h2 className="text-lg font-bold text-gray-900">Co tydzień</h2>
-                            <span className="text-sm text-gray-500">{Math.floor(totalWeeklyMinutes / 60)} h łącznie</span>
+                            <h2 className="text-lg font-bold text-gray-900">{t('weekly')}</h2>
+                            <span className="text-sm text-gray-500">{Math.floor(totalWeeklyMinutes / 60)} {tw('hoursShort')} {t('total')}</span>
                         </div>
 
                         <div className="space-y-4">
@@ -339,7 +342,7 @@ export default function RecurringShiftsPage({ isOpen, onClose, employee, onSave 
                                                             )}
                                                         </div>
 
-                                                        <span className="text-gray-400 text-sm">do</span>
+                                                        <span className="text-gray-400 text-sm">{t('to')}</span>
 
                                                         {/* End Time */}
                                                         <div className="relative">

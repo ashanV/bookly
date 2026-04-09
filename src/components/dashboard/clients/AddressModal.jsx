@@ -4,14 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Briefcase, Home, MoreHorizontal, Check, Plus } from 'lucide-react';
 import AddressDetailsModal from './AddressDetailsModal';
+import { useTranslations } from 'next-intl';
 
-const ADDRESS_TYPES = [
-    { id: 'Dom', icon: Home, label: 'Dom' },
-    { id: 'Praca', icon: Briefcase, label: 'Praca' },
-    { id: 'Inny', icon: MoreHorizontal, label: 'Inny' }
+const ADDRESS_TYPES_CONFIG = [
+    { id: 'Dom', icon: Home, labelKey: 'typeHome' },
+    { id: 'Praca', icon: Briefcase, labelKey: 'typeWork' },
+    { id: 'Inny', icon: MoreHorizontal, labelKey: 'typeOther' }
 ];
 
 export default function AddressModal({ isOpen, onClose, onSave, initialData = null }) {
+    const t = useTranslations('BusinessAddress');
     const [selectedType, setSelectedType] = useState('Dom');
     const [name, setName] = useState('Dom');
     const [address, setAddress] = useState('');
@@ -97,7 +99,7 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
                         >
                             {/* Header */}
                             <div className="p-6 pb-0 flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-slate-900">Nowy adres</h2>
+                                <h2 className="text-xl font-bold text-slate-900">{t('title')}</h2>
                                 <button
                                     onClick={onClose}
                                     className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -110,7 +112,7 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
                             <div className="p-6">
                                 {/* Type Selection */}
                                 <div className="flex gap-4 mb-6">
-                                    {ADDRESS_TYPES.map((type) => {
+                                    {ADDRESS_TYPES_CONFIG.map((type) => {
                                         const Icon = type.icon;
                                         const isSelected = selectedType === type.id;
                                         return (
@@ -128,7 +130,7 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
                                                     </div>
                                                 )}
                                                 <Icon size={24} className="mb-2" strokeWidth={1.5} />
-                                                <span className="text-sm font-medium">{type.label}</span>
+                                                <span className="text-sm font-medium">{t(type.labelKey)}</span>
                                             </button>
                                         );
                                     })}
@@ -136,7 +138,7 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
 
                                 {/* Name Input */}
                                 <div className="mb-4">
-                                    <label className="block text-sm font-bold text-slate-900 mb-2">Nazwa adresu</label>
+                                    <label className="block text-sm font-bold text-slate-900 mb-2">{t('addressNameLabel')}</label>
                                     <input
                                         type="text"
                                         value={name}
@@ -147,7 +149,7 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
 
                                 {/* Address Input/Details */}
                                 <div className="mb-4">
-                                    <label className="block text-sm font-bold text-slate-900 mb-2">Adres</label>
+                                    <label className="block text-sm font-bold text-slate-900 mb-2">{t('addressLabel')}</label>
                                     {!addressDetails && !address ? (
                                         <button
                                             onClick={() => setIsDetailsModalOpen(true)}
@@ -156,7 +158,7 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
                                             <div className="w-6 h-6 rounded-full border border-violet-600 flex items-center justify-center">
                                                 <Plus size={14} />
                                             </div>
-                                            Dodaj
+                                            {t('addBtn')}
                                         </button>
                                     ) : (
                                         <div className="relative cursor-pointer" onClick={() => setIsDetailsModalOpen(true)}>
@@ -178,13 +180,13 @@ export default function AddressModal({ isOpen, onClose, onSave, initialData = nu
                                     onClick={onClose}
                                     className="flex-1 px-4 py-2 text-slate-700 font-medium hover:bg-slate-50 rounded-full border border-slate-300 transition-colors"
                                 >
-                                    Anuluj
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     onClick={handleSave}
                                     className="flex-1 px-4 py-2 bg-black text-white font-medium rounded-full hover:bg-slate-800 transition-colors"
                                 >
-                                    Dalej
+                                    {t('next')}
                                 </button>
                             </div>
                         </div>

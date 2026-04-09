@@ -4,8 +4,8 @@ import ThreeDayView from './ThreeDayView';
 import WeekView from './WeekView';
 import MonthView from './MonthView';
 
-export default function DailyCalendar({ date, employees = [], reservations = [], draftVisit = null, onReservationClick, onEmptySlotClick, viewType = 'Dzień', onViewChange, onEmployeeFilter, onReservationResize, onReservationDrop }) {
-    if (viewType === '3 dni') {
+export default function DailyCalendar({ date, employees = [], reservations = [], draftVisit = null, onReservationClick, onEmptySlotClick, viewType = 'day', onViewChange, onEmployeeFilter, onReservationResize, onReservationDrop }) {
+    if (viewType === '3days') {
         return (
             <ThreeDayView
                 date={date}
@@ -20,7 +20,7 @@ export default function DailyCalendar({ date, employees = [], reservations = [],
         );
     }
 
-    if (viewType === 'Tydzień') {
+    if (viewType === 'week') {
         return (
             <WeekView
                 date={date}
@@ -35,7 +35,7 @@ export default function DailyCalendar({ date, employees = [], reservations = [],
         );
     }
 
-    if (viewType === 'Miesiąc') {
+    if (viewType === 'month') {
         return (
             <MonthView
                 date={date}

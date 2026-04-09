@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
   Calendar,
@@ -15,6 +16,8 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
+  const t = useTranslations('Footer');
+
   return (
     <footer className="bg-gray-900 text-white relative overflow-hidden">
       {/* Background Elements */}
@@ -35,8 +38,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-gray-400 text-lg mb-8 max-w-md leading-relaxed">
-              Najprostszy sposób na rezerwację usług beauty i wellness w Polsce.
-              Odkryj, zarezerwuj, ciesz się rezultatem.
+              {t('about')}
             </p>
 
             {/* Contact Info */}
@@ -72,7 +74,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-lg mb-6 text-white">Produkt</h4>
+            <h4 className="font-semibold text-lg mb-6 text-white">{t('product')}</h4>
             <ul className="space-y-3">
               <li>
                 <Link
@@ -114,7 +116,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-lg mb-6 text-white">Firma</h4>
+            <h4 className="font-semibold text-lg mb-6 text-white">{t('company')}</h4>
             <ul className="space-y-3">
               <li>
                 <Link
@@ -161,7 +163,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <p className="text-gray-400 text-sm">
-                © 2024 Bookly. Wszelkie prawa zastrzeżone.
+                {t('rights')}
               </p>
             </div>
 

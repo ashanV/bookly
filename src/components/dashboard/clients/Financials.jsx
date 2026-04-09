@@ -13,6 +13,7 @@ import {
     BarChart3
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 
 // Lazy load charts
 const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });
@@ -24,6 +25,7 @@ const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr
 const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
 
 export default function Financials() {
+    const t = useTranslations('BusinessFinance');
     const [timeRange, setTimeRange] = useState('month'); // 'week', 'month', 'year'
 
     // Mock data
@@ -48,11 +50,11 @@ export default function Financials() {
     const getStatusBadge = (status) => {
         switch (status) {
             case 'paid':
-                return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Opłacona</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">{t('statusPaid')}</span>;
             case 'pending':
-                return <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Oczekuje</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{t('statusPending')}</span>;
             case 'overdue':
-                return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Przeterminowana</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">{t('statusOverdue')}</span>;
             default: return null;
         }
     };
@@ -71,7 +73,7 @@ export default function Financials() {
                         </span>
                     </div>
                     <h3 className="text-3xl font-bold text-slate-900">45,280 zł</h3>
-                    <p className="text-slate-500 text-sm mt-1">Przychód w tym miesiącu</p>
+                    <p className="text-slate-500 text-sm mt-1">{t('monthlyRevenue')}</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -84,7 +86,7 @@ export default function Financials() {
                         </span>
                     </div>
                     <h3 className="text-3xl font-bold text-slate-900">124</h3>
-                    <p className="text-slate-500 text-sm mt-1">Wystawionych faktur</p>
+                    <p className="text-slate-500 text-sm mt-1">{t('invoicesIssued')}</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -97,7 +99,7 @@ export default function Financials() {
                         </span>
                     </div>
                     <h3 className="text-3xl font-bold text-slate-900">1,250 zł</h3>
-                    <p className="text-slate-500 text-sm mt-1">Średnia wartość koszyka</p>
+                    <p className="text-slate-500 text-sm mt-1">{t('avgOrderValue')}</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -110,7 +112,7 @@ export default function Financials() {
                         </span>
                     </div>
                     <h3 className="text-3xl font-bold text-slate-900">3,400 zł</h3>
-                    <p className="text-slate-500 text-sm mt-1">Koszty operacyjne</p>
+                    <p className="text-slate-500 text-sm mt-1">{t('operationalCosts')}</p>
                 </div>
             </div>
 
@@ -119,8 +121,8 @@ export default function Financials() {
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900">Przychody</h3>
-                            <p className="text-sm text-slate-500">Analiza finansowa</p>
+                            <h3 className="text-lg font-bold text-slate-900">{t('revenue')}</h3>
+                            <p className="text-sm text-slate-500">{t('financialAnalysis')}</p>
                         </div>
                         <div className="flex bg-slate-100 p-1 rounded-lg">
                             {['week', 'month', 'year'].map((range) => (
@@ -130,7 +132,7 @@ export default function Financials() {
                                     className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${timeRange === range ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                                         }`}
                                 >
-                                    {range === 'week' ? 'Tydzień' : range === 'month' ? 'Miesiąc' : 'Rok'}
+                                    {range === 'week' ? t('rangeWeek') : range === 'month' ? t('rangeMonth') : t('rangeYear')}
                                 </button>
                             ))}
                         </div>
@@ -158,7 +160,7 @@ export default function Financials() {
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6">Szybkie akcje</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-6">{t('quickActions')}</h3>
                     <div className="space-y-3">
                         <button className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors group">
                             <div className="flex items-center gap-3">
@@ -166,8 +168,8 @@ export default function Financials() {
                                     <FileText size={20} />
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-semibold text-slate-900">Nowa faktura</p>
-                                    <p className="text-xs text-slate-500">Wystaw dokument</p>
+                                    <p className="font-semibold text-slate-900">{t('newInvoice')}</p>
+                                    <p className="text-xs text-slate-500">{t('issueDocument')}</p>
                                 </div>
                             </div>
                             <ChevronDown className="-rotate-90 text-slate-400" size={20} />
@@ -179,8 +181,8 @@ export default function Financials() {
                                     <Download size={20} />
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-semibold text-slate-900">Raport miesięczny</p>
-                                    <p className="text-xs text-slate-500">Pobierz PDF</p>
+                                    <p className="font-semibold text-slate-900">{t('monthlyReport')}</p>
+                                    <p className="text-xs text-slate-500">{t('downloadPDF')}</p>
                                 </div>
                             </div>
                             <ChevronDown className="-rotate-90 text-slate-400" size={20} />
@@ -192,8 +194,8 @@ export default function Financials() {
                                     <CreditCard size={20} />
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-semibold text-slate-900">Terminal płatniczy</p>
-                                    <p className="text-xs text-slate-500">Konfiguracja</p>
+                                    <p className="font-semibold text-slate-900">{t('paymentTerminal')}</p>
+                                    <p className="text-xs text-slate-500">{t('configuration')}</p>
                                 </div>
                             </div>
                             <ChevronDown className="-rotate-90 text-slate-400" size={20} />
@@ -205,19 +207,19 @@ export default function Financials() {
             {/* Invoices List */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-slate-900">Ostatnie faktury</h3>
-                    <button className="text-violet-600 font-medium text-sm hover:text-violet-700">Zobacz wszystkie</button>
+                    <h3 className="text-lg font-bold text-slate-900">{t('latestInvoices')}</h3>
+                    <button className="text-violet-600 font-medium text-sm hover:text-violet-700">{t('viewAll')}</button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 text-slate-500">
                             <tr>
-                                <th className="px-6 py-4 font-medium">Numer</th>
-                                <th className="px-6 py-4 font-medium">Klient</th>
-                                <th className="px-6 py-4 font-medium">Data wystawienia</th>
-                                <th className="px-6 py-4 font-medium">Kwota</th>
-                                <th className="px-6 py-4 font-medium">Status</th>
-                                <th className="px-6 py-4 font-medium text-right">Akcje</th>
+                                <th className="px-6 py-4 font-medium">{t('colNumber')}</th>
+                                <th className="px-6 py-4 font-medium">{t('colClient')}</th>
+                                <th className="px-6 py-4 font-medium">{t('colIssueDate')}</th>
+                                <th className="px-6 py-4 font-medium">{t('colAmount')}</th>
+                                <th className="px-6 py-4 font-medium">{t('colStatus')}</th>
+                                <th className="px-6 py-4 font-medium text-right">{t('colActions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">

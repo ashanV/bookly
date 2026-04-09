@@ -15,8 +15,10 @@ import PortfolioSection from '@/components/dashboard/settings/PortfolioSection';
 import ReviewsSection from '@/components/dashboard/settings/ReviewsSection';
 import SettingsCardGrid from '@/components/dashboard/settings/SettingsCardGrid';
 import AddLocationWizard from '@/components/dashboard/settings/company-settings/AddLocationWizard';
+import { useTranslations } from 'next-intl';
 
 export default function BusinessSettings() {
+    const t = useTranslations('BusinessSettingsPage');
     const router = useRouter();
     const { user, updateProfile } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function BusinessSettings() {
     // Profile State
     const [profileImage, setProfileImage] = useState(null);
     const [bannerImage, setBannerImage] = useState(null);
-    const [businessName, setBusinessName] = useState('Moja Firma');
+    const [businessName, setBusinessName] = useState(t('myCompany'));
     const [description, setDescription] = useState('');
     const [facebook, setFacebook] = useState('');
     const [instagram, setInstagram] = useState('');
@@ -55,13 +57,13 @@ export default function BusinessSettings() {
 
     // Opening Hours State
     const [openingHours, setOpeningHours] = useState([
-        { day: 'Poniedziałek', key: 'monday', open: '09:00', close: '17:00', closed: false },
-        { day: 'Wtorek', key: 'tuesday', open: '09:00', close: '17:00', closed: false },
-        { day: 'Środa', key: 'wednesday', open: '09:00', close: '17:00', closed: false },
-        { day: 'Czwartek', key: 'thursday', open: '09:00', close: '17:00', closed: false },
-        { day: 'Piątek', key: 'friday', open: '09:00', close: '17:00', closed: false },
-        { day: 'Sobota', key: 'saturday', open: '10:00', close: '14:00', closed: false },
-        { day: 'Niedziela', key: 'sunday', open: '00:00', close: '00:00', closed: true }
+        { day: t('monday'), key: 'monday', open: '09:00', close: '17:00', closed: false },
+        { day: t('tuesday'), key: 'tuesday', open: '09:00', close: '17:00', closed: false },
+        { day: t('wednesday'), key: 'wednesday', open: '09:00', close: '17:00', closed: false },
+        { day: t('thursday'), key: 'thursday', open: '09:00', close: '17:00', closed: false },
+        { day: t('friday'), key: 'friday', open: '09:00', close: '17:00', closed: false },
+        { day: t('saturday'), key: 'saturday', open: '10:00', close: '14:00', closed: false },
+        { day: t('sunday'), key: 'sunday', open: '00:00', close: '00:00', closed: true }
     ]);
 
     // Portfolio & Reviews State
@@ -139,11 +141,11 @@ export default function BusinessSettings() {
             if (response.ok && data.success) {
                 return data.url;
             } else {
-                throw new Error(data.error || 'Błąd uploadowania obrazu');
+                throw new Error(data.error || t('errImageUpload'));
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            toast.error('Błąd uploadowania obrazu: ' + error.message);
+            toast.error(t('errImageUploadPrefix') + error.message);
             return null;
         }
     };
@@ -156,12 +158,12 @@ export default function BusinessSettings() {
             reader.onloadend = () => setProfileImage(reader.result);
             reader.readAsDataURL(file);
 
-            toast.info('Uploadowanie zdjęcia...');
+            toast.info(t('infoUploadingPhoto'));
             const url = await uploadImage(file, 'profile');
             if (url) {
                 setProfileImage(url);
                 await saveBusinessProfile({ profileImage: url });
-                toast.success('Zdjęcie profilowe zostało zapisane!');
+                toast.success(t('successProfileSaved'));
             }
         }
     };
@@ -173,12 +175,12 @@ export default function BusinessSettings() {
             reader.onloadend = () => setBannerImage(reader.result);
             reader.readAsDataURL(file);
 
-            toast.info('Uploadowanie banera...');
+            toast.info(t('infoUploadingBanner'));
             const url = await uploadImage(file, 'banner');
             if (url) {
                 setBannerImage(url);
                 await saveBusinessProfile({ bannerImage: url });
-                toast.success('Baner został zapisany!');
+                toast.success(t('successBannerSaved'));
             }
         }
     };
@@ -187,7 +189,7 @@ export default function BusinessSettings() {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
-        toast.info(`Uploadowanie ${files.length} zdjęć...`);
+        toast.info(t('infoUploadingNPhotos', { count: files.length }));
         const uploadPromises = files.map(async (file) => {
             const url = await uploadImage(file, 'portfolio');
             if (url) return { id: Date.now() + Math.random(), url };
@@ -199,7 +201,7 @@ export default function BusinessSettings() {
             const newPortfolio = [...portfolio, ...uploadedImages];
             setPortfolio(newPortfolio);
             await saveBusinessProfile({ portfolioImages: newPortfolio.map(img => img.url) });
-            toast.success(`Dodano ${uploadedImages.length} zdjęć do portfolio!`);
+            toast.success(t('successAddedNPhotos', { count: uploadedImages.length }));
         }
     };
 
@@ -211,12 +213,12 @@ export default function BusinessSettings() {
         setPortfolio(updatedPortfolio);
 
         await saveBusinessProfile({ portfolioImages: updatedPortfolio.map(img => img.url) });
-        toast.success('Zdjęcie zostało usunięte!');
+        toast.success(t('successPhotoDeleted'));
     };
 
     const saveBusinessProfile = async (updates = {}) => {
         if (!user?.id) {
-            toast.error("Błąd: Brak ID użytkownika.");
+            toast.error(t('errNoUserId'));
             return { success: false };
         }
 
@@ -237,32 +239,32 @@ export default function BusinessSettings() {
 
             if (response.ok) return { success: true };
             const data = await response.json();
-            throw new Error(data.error || 'Błąd zapisywania danych');
+            throw new Error(data.error || t('errSavingData'));
         } catch (error) {
-            toast.error(error.message || 'Wystąpił błąd podczas zapisywania');
+            toast.error(error.message || t('errSavingProcess'));
             return { success: false, error: error.message };
         }
     };
 
     const handleSaveProfile = async () => {
-        toast.info('Zapisywanie zmian...');
+        toast.info(t('infoSavingChanges'));
         const result = await saveBusinessProfile();
-        if (result.success) toast.success('Dane firmy zostały zaktualizowane!');
+        if (result.success) toast.success(t('successCompanyDataUpdated'));
     };
 
     const handleUpdateContactData = () => setShowConfirmModal(true);
 
     const confirmUpdate = async () => {
         const result = await updateProfile({ phone, email });
-        if (result.success) toast.success('Dane kontaktowe zostały zaktualizowane!');
-        else toast.error('Błąd aktualizacji: ' + result.error);
+        if (result.success) toast.success(t('successContactDataUpdated'));
+        else toast.error(t('errUpdate') + result.error);
         setShowConfirmModal(false);
     };
 
     const handlePasswordChangeClick = () => {
-        if (!currentPassword || !newPassword || !confirmPassword) return toast.error('Wypełnij wszystkie pola');
-        if (newPassword !== confirmPassword) return toast.error('Nowe hasła nie są identyczne');
-        if (newPassword.length < 6) return toast.error('Hasło musi mieć co najmniej 6 znaków');
+        if (!currentPassword || !newPassword || !confirmPassword) return toast.error(t('errFillAllFields'));
+        if (newPassword !== confirmPassword) return toast.error(t('errPasswordsNotMatch'));
+        if (newPassword.length < 6) return toast.error(t('errPasswordMinLength'));
         setShowPasswordConfirmModal(true);
     };
 
@@ -281,10 +283,10 @@ export default function BusinessSettings() {
                 setNewPassword('');
                 setConfirmPassword('');
             } else {
-                toast.error(data.error || 'Błąd zmiany hasła');
+                toast.error(data.error || t('errPasswordChange'));
             }
         } catch (error) {
-            toast.error('Błąd połączenia z serwerem');
+            toast.error(t('errServerConnection'));
         }
     };
 
@@ -308,38 +310,38 @@ export default function BusinessSettings() {
                 body: JSON.stringify({ workingHours }),
             });
             if (response.ok) {
-                toast.success('Godziny otwarcia zostały zaktualizowane!');
+                toast.success(t('successOpeningHoursUpdated'));
                 setShowHoursConfirmModal(false);
             } else {
-                toast.error('Błąd aktualizacji godzin');
+                toast.error(t('errHoursUpdate'));
             }
         } catch (error) {
-            toast.error('Błąd połączenia');
+            toast.error(t('errConnection'));
         }
     };
 
     // --- Navigation Config ---
     const categories = [
-        { id: 'settings', label: 'Ustawienia' },
-        { id: 'online', label: 'Obecność online' },
-        { id: 'marketing', label: 'Marketing' }
+        { id: 'settings', label: t('tabSettings') },
+        { id: 'online', label: t('tabOnline') },
+        { id: 'marketing', label: t('tabMarketing') }
     ];
 
     const cards = {
         settings: [
-            { id: 'company', title: 'Konfiguracja firmy', description: 'Edytuj dane firmy oraz zarządzaj lokalizacjami.', icon: Store, route: '/business/dashboard/settings/company-settings', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'planning', title: 'Planowanie', description: 'Czas i kalendarz, lista oczekujących, zasoby.', icon: Calendar, route: '/business/dashboard/settings/planning', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'contact', title: 'Dane kontaktowe', description: 'Zarządzaj adresem email, telefonem oraz hasłem.', icon: Lock, component: 'data', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'sales', title: 'Sprzedaż', description: 'Skonfiguruj formy płatności i podatki.', icon: Tag, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'billing', title: 'Rozliczenia', description: 'Zarządzaj fakturami i rozliczeniami.', icon: Landmark, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'team', title: 'Zespół', description: 'Zarządzaj uprawnieniami i urlopami.', icon: Users, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-            { id: 'forms', title: 'Formularze', description: 'Skonfiguruj szablony formularzy.', icon: FileText, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' }
+            { id: 'company', title: t('cardCompanyConfigTitle'), description: t('cardCompanyConfigDesc'), icon: Store, route: '/business/dashboard/settings/company-settings', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'planning', title: t('cardPlanningTitle'), description: t('cardPlanningDesc'), icon: Calendar, route: '/business/dashboard/settings/planning', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'contact', title: t('cardContactTitle'), description: t('cardContactDesc'), icon: Lock, component: 'data', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'sales', title: t('cardSalesTitle'), description: t('cardSalesDesc'), icon: Tag, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'billing', title: t('cardBillingTitle'), description: t('cardBillingDesc'), icon: Landmark, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'team', title: t('cardTeamTitle'), description: t('cardTeamDesc'), icon: Users, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+            { id: 'forms', title: t('cardFormsTitle'), description: t('cardFormsDesc'), icon: FileText, component: null, comingSoon: true, color: 'text-purple-600', bgColor: 'bg-purple-50' }
         ],
         online: [
-            { id: 'portfolio', title: 'Portfolio', description: 'Zarządzaj zdjęciami swoich prac.', icon: ImageIcon, component: 'portfolio', color: 'text-blue-600', bgColor: 'bg-blue-50' }
+            { id: 'portfolio', title: t('cardPortfolioTitle'), description: t('cardPortfolioDesc'), icon: ImageIcon, component: 'portfolio', color: 'text-blue-600', bgColor: 'bg-blue-50' }
         ],
         marketing: [
-            { id: 'reviews', title: 'Opinie', description: 'Przeglądaj i zarządzaj opiniami.', icon: MessageSquare, component: 'reviews', color: 'text-pink-600', bgColor: 'bg-pink-50' }
+            { id: 'reviews', title: t('cardReviewsTitle'), description: t('cardReviewsDesc'), icon: MessageSquare, component: 'reviews', color: 'text-pink-600', bgColor: 'bg-pink-50' }
         ]
     };
 
@@ -369,7 +371,7 @@ export default function BusinessSettings() {
                 return (
                     <OpeningHoursSection
                         openingHours={openingHours} onUpdateOpeningHours={updateOpeningHours}
-                        onSaveHours={() => setShowHoursConfirmModal(true)} onApplyToAllEmployees={() => toast.info("Przeniesione do zakładki Zespół.")}
+                        onSaveHours={() => setShowHoursConfirmModal(true)} onApplyToAllEmployees={() => toast.info(t('infoMovedToTeam'))}
                     />
                 );
             case 'portfolio':
@@ -383,14 +385,14 @@ export default function BusinessSettings() {
         }
     };
 
-    const activeSectionTitle = Object.values(cards).flat().find(c => c.component === activeSection)?.title || 'Szczegóły';
+    const activeSectionTitle = Object.values(cards).flat().find(c => c.component === activeSection)?.title || t('sectionDetails');
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-                    <p className="text-gray-500 font-medium">Ładowanie ustawień...</p>
+                    <p className="text-gray-500 font-medium">{t('loadingSettings')}</p>
                 </div>
             </div>
         );
@@ -402,11 +404,11 @@ export default function BusinessSettings() {
             {showPasswordConfirmModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold mb-4">Zmiana hasła</h3>
-                        <p className="text-gray-500 mb-6">Czy na pewno chcesz zmienić hasło?</p>
+                        <h3 className="text-xl font-bold mb-4">{t('modalPasswordTitle')}</h3>
+                        <p className="text-gray-500 mb-6">{t('modalPasswordDesc')}</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowPasswordConfirmModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl">Anuluj</button>
-                            <button onClick={handleChangePassword} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl">Zmień hasło</button>
+                            <button onClick={() => setShowPasswordConfirmModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl">{t('btnCancel')}</button>
+                            <button onClick={handleChangePassword} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl">{t('btnChangePassword')}</button>
                         </div>
                     </div>
                 </div>
@@ -414,11 +416,11 @@ export default function BusinessSettings() {
             {showHoursConfirmModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold mb-4">Aktualizacja godzin</h3>
-                        <p className="text-gray-500 mb-6">Czy na pewno chcesz zaktualizować godziny otwarcia?</p>
+                        <h3 className="text-xl font-bold mb-4">{t('modalHoursTitle')}</h3>
+                        <p className="text-gray-500 mb-6">{t('modalHoursDesc')}</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowHoursConfirmModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl">Anuluj</button>
-                            <button onClick={saveOpeningHours} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl">Potwierdź</button>
+                            <button onClick={() => setShowHoursConfirmModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl">{t('btnCancel')}</button>
+                            <button onClick={saveOpeningHours} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl">{t('btnConfirm')}</button>
                         </div>
                     </div>
                 </div>
@@ -426,11 +428,11 @@ export default function BusinessSettings() {
             {showConfirmModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold mb-4">Potwierdzenie zmiany</h3>
-                        <p className="text-gray-500 mb-6">Czy na pewno chcesz zaktualizować dane kontaktowe?</p>
+                        <h3 className="text-xl font-bold mb-4">{t('modalContactTitle')}</h3>
+                        <p className="text-gray-500 mb-6">{t('modalContactDesc')}</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowConfirmModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl">Anuluj</button>
-                            <button onClick={confirmUpdate} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-xl">Potwierdź</button>
+                            <button onClick={() => setShowConfirmModal(false)} className="flex-1 px-4 py-2 bg-gray-100 rounded-xl">{t('btnCancel')}</button>
+                            <button onClick={confirmUpdate} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-xl">{t('btnConfirm')}</button>
                         </div>
                     </div>
                 </div>
@@ -440,8 +442,8 @@ export default function BusinessSettings() {
                 {/* Header */}
                 {!activeSection && (
                     <div className="mb-8 text-left">
-                        <h1 className="text-2xl font-bold text-gray-900">Ustawienia obszaru roboczego</h1>
-                        <p className="text-gray-500">Zarządzaj ustawieniami dla {businessName}.</p>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('pageTitle')}</h1>
+                        <p className="text-gray-500">{t('pageDesc', { name: businessName })}</p>
                     </div>
                 )}
                 {activeSection && !['profile', 'profile-edit', 'locations'].includes(activeSection) && (
@@ -451,7 +453,7 @@ export default function BusinessSettings() {
                         </button>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">{activeSectionTitle}</h1>
-                            <p className="text-gray-500">Zarządzaj ustawieniami tej sekcji</p>
+                            <p className="text-gray-500">{t('sectionDesc')}</p>
                         </div>
                     </div>
                 )}
@@ -500,7 +502,7 @@ export default function BusinessSettings() {
                     onClose={() => setShowAddLocationWizard(false)}
                     businessId={user?.id}
                     onNext={(newLocation) => {
-                        toast.success("Lokalizacja dodana");
+                        toast.success(t('successLocationAdded'));
                         setShowAddLocationWizard(false);
                         router.refresh();
                     }}

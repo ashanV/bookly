@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
     Star,
@@ -13,6 +14,7 @@ import AnimatedContent from '@/components/animations/AnimatedContent';
 
 export default function FeaturedServices() {
     const router = useRouter();
+    const t = useTranslations('FeaturedServices');
 
     const services = [
         {
@@ -84,13 +86,13 @@ export default function FeaturedServices() {
             <div className="container mx-auto px-6 relative z-10">
                 <AnimatedContent delay={0.1}>
                     <div className="text-center mb-20">
-                        <span className="text-violet-600 font-semibold tracking-wider uppercase text-sm mb-4 block">Polecane oferty</span>
+                        <span className="text-violet-600 font-semibold tracking-wider uppercase text-sm mb-4 block">{t('badge')}</span>
                         <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
-                            Odkryj najlepsze usługi w{" "}
-                            <span className="hero-gradient-text">Twojej okolicy</span>
+                            {t('title1')}
+                            <span className="hero-gradient-text">{t('title2')}</span>
                         </h2>
                         <p className="text-xl text-slate-600 max-w-2xl mx-auto font-light">
-                            Wyselekcjonowane miejsca, które gwarantują najwyższą jakość i profesjonalizm.
+                            {t('subtitle')}
                         </p>
                     </div>
                 </AnimatedContent>
@@ -144,7 +146,7 @@ export default function FeaturedServices() {
 
                                     <div className="flex justify-between items-center pt-4 border-t border-slate-100">
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-slate-400 font-medium uppercase">Cena od</span>
+                                            <span className="text-xs text-slate-400 font-medium uppercase">{t('priceFrom')}</span>
                                             <span className="text-xl font-bold text-slate-900">
                                                 {service.price}
                                             </span>

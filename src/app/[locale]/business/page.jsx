@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import {
     Calendar,
@@ -32,8 +33,8 @@ import {
     Instagram,
     Building2
 } from 'lucide-react';
-import HeroBackground from '../../components/HeroComponents/HeroBackground';
-import BusinessHeroAsset from '../../components/HeroComponents/BusinessHeroAsset';
+import HeroBackground from '@/components/HeroComponents/HeroBackground';
+import BusinessHeroAsset from '@/components/HeroComponents/BusinessHeroAsset';
 
 // Animations
 const fadeInUp = {
@@ -156,6 +157,7 @@ function Navbar() {
 
 // Hero Section
 function HeroSection() {
+    const t = useTranslations('BusinessHero');
     return (
         <section className="relative min-h-screen flex items-center overflow-hidden bg-slate-900">
             <HeroBackground />
@@ -174,17 +176,17 @@ function HeroSection() {
                                 className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-sm text-white mb-8"
                             >
                                 <Star className="w-4 h-4 text-yellow-400" />
-                                Zaufało nam ponad 50,000 firm
+                                {t('badge')}
                             </motion.div>
 
                             <motion.h1
                                 variants={fadeInUp}
                                 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tight"
                             >
-                                Rewolucja w
+                                {t('title1')}
                                 <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
-                                    rezerwacjach
+                                    {t('title2')}
                                 </span>
                             </motion.h1>
 
@@ -192,8 +194,7 @@ function HeroSection() {
                                 variants={fadeInUp}
                                 className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light"
                             >
-                                Automatyzuj rezerwacje, zwiększ przychody o 40% i zredukuj no-show o 75%.
-                                Kompleksowe rozwiązanie dla nowoczesnych biznesów.
+                                {t('subtitle')}
                             </motion.p>
 
                             <motion.div
@@ -202,12 +203,12 @@ function HeroSection() {
                             >
                                 <button className="group bg-white text-slate-900 px-8 py-4 rounded-full cursor-pointer font-bold flex items-center gap-3 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 transition-all duration-300">
                                     <Zap className="w-5 h-5" />
-                                    Rozpocznij test
+                                    {t('startTest')}
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 <button className="group flex items-center gap-3 text-white border border-white/30 px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
                                     <PlayCircle className="w-5 h-5" />
-                                    Zobacz demo
+                                    {t('watchDemo')}
                                 </button>
                             </motion.div>
 

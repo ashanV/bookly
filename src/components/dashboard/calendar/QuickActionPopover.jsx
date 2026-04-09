@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { X, CalendarPlus, Users, Ban } from 'lucide-react';
 
 export default function QuickActionPopover({ isOpen, x, y, date, onClose, onAction, position = 'right' }) {
+    const t = useTranslations('BusinessQuickAction');
     const popoverRef = useRef(null);
 
     // Close on outside click
@@ -63,26 +65,26 @@ export default function QuickActionPopover({ isOpen, x, y, date, onClose, onActi
                     className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
                     <CalendarPlus size={16} strokeWidth={2} />
-                    Dodaj wizytę
+                    {t('addVisit')}
                 </button>
                 <button
                     onClick={() => onAction('group_visit')}
                     className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
                     <Users size={16} strokeWidth={2} />
-                    Dodaj wizytę grupową
+                    {t('addGroupVisit')}
                 </button>
                 <button
                     onClick={() => onAction('time_block')}
                     className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-md flex items-center gap-3 transition-colors"
                 >
                     <Ban size={16} strokeWidth={2} />
-                    Dodaj blokadę czasu
+                    {t('addTimeBlock')}
                 </button>
             </div>
             <div className="p-2 border-t border-gray-100 mt-1">
                 <button className="w-full text-left px-2 py-1 text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline">
-                    Ustawienia szybkich czynności
+                    {t('settings')}
                 </button>
             </div>
         </div>

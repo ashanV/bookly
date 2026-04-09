@@ -21,8 +21,10 @@ import {
     useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useTranslations } from 'next-intl';
 
 function CategoryHeader({ category, onEdit, onDelete, onAddService }) {
+    const t = useTranslations('BusinessServiceList');
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null);
 
@@ -44,7 +46,7 @@ function CategoryHeader({ category, onEdit, onDelete, onAddService }) {
                     onClick={() => setIsOpen(!isOpen)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${isOpen ? 'bg-gray-100 border-gray-300 text-gray-900' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                 >
-                    Opcje
+                    {t('options')}
                     <MoreHorizontal className="w-4 h-4" />
                 </button>
 
@@ -56,14 +58,14 @@ function CategoryHeader({ category, onEdit, onDelete, onAddService }) {
                                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg flex items-center gap-2"
                             >
                                 <Pencil className="w-4 h-4" />
-                                Zmień
+                                {t('edit')}
                             </button>
                             <button
                                 onClick={() => { setIsOpen(false); onAddService(category); }}
                                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg flex items-center gap-2"
                             >
                                 <Plus className="w-4 h-4" />
-                                Dodaj usługę
+                                {t('addService')}
                             </button>
                         </div>
                         <div className="h-px bg-gray-100 my-1" />
@@ -73,14 +75,14 @@ function CategoryHeader({ category, onEdit, onDelete, onAddService }) {
                                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg flex items-center gap-2"
                             >
                                 <Archive className="w-4 h-4" />
-                                Archiwizuj
+                                {t('archive')}
                             </button>
                             <button
                                 onClick={() => { setIsOpen(false); onDelete(category); }}
                                 className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2"
                             >
                                 <Trash2 className="w-4 h-4" />
-                                Trwale usuń
+                                {t('deletePermanently')}
                             </button>
                         </div>
                     </div>
@@ -131,6 +133,7 @@ function CategoryDroppable({ id, children }) {
 }
 
 export default function ServiceList({ services: propServices, categories, selectedCategory, onEdit, onUpdate, onDelete, onEditCategory, onDeleteCategory, onAddServiceToCategory }) {
+    const t = useTranslations('BusinessServiceList');
     const [services, setServices] = useState(propServices);
     const [activeId, setActiveId] = useState(null);
     const [dragStartCategory, setDragStartCategory] = useState(null);
@@ -154,7 +157,7 @@ export default function ServiceList({ services: propServices, categories, select
     // Group services by category
     const groupedServices = useMemo(() => {
         return services.reduce((acc, service) => {
-            const cat = service.category || 'Ogólne';
+            const cat = service.category || t('generalCategory');
             if (!acc[cat]) acc[cat] = [];
             acc[cat].push(service);
             return acc;
@@ -183,7 +186,7 @@ export default function ServiceList({ services: propServices, categories, select
         setActiveId(event.active.id);
         const service = services.find(s => s.id === event.active.id);
         if (service) {
-            setDragStartCategory(service.category || 'Ogólne');
+            setDragStartCategory(service.category || t('generalCategory'));
         }
     };
 
@@ -209,7 +212,7 @@ export default function ServiceList({ services: propServices, categories, select
         if (overService) {
             // We are hovering over another service item
             if (activeService.category !== overService.category) {
-                newCategory = overService.category || 'Ogólne'; // Fallback
+                newCategory = overService.category || t('generalCategory'); // Fallback
             }
         } else if (isOverCategory) {
             // We are hovering over a category container
@@ -305,7 +308,7 @@ export default function ServiceList({ services: propServices, categories, select
                                     ))}
                                     {(!groupedServices[category] || groupedServices[category].length === 0) && (
                                         <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-500 bg-gray-50/50">
-                                            <p className="font-medium">Upuść tutaj</p>
+                                            <p className="font-medium">{t('dropHere')}</p>
                                         </div>
                                     )}
                                 </div>
@@ -316,7 +319,7 @@ export default function ServiceList({ services: propServices, categories, select
 
                 {categoriesToShow.length === 0 && (
                     <div className="text-center py-12">
-                        <p className="text-gray-500">Nie znaleziono usług ani kategorii.</p>
+                        <p className="text-gray-500">{t('noServicesOrCategories')}</p>
                     </div>
                 )}
 

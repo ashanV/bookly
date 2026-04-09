@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { format, addMinutes, isSameDay } from 'date-fns';
 import { Clock, Plus, LayoutList, CalendarDays, CalendarRange, Calendar as CalendarIcon, ChevronDown, User } from 'lucide-react';
 import QuickActionPopover from './QuickActionPopover';
@@ -10,6 +11,8 @@ const END_HOUR = 24;
 const PIXELS_PER_MINUTE = 2.5; // Controls height of time slots (roughly 150px per hour)
 
 export default function DayView({ date, employees = [], reservations = [], draftVisit = null, onReservationClick, onEmptySlotClick, onViewChange, onEmployeeFilter, onReservationResize, onReservationDrop }) {
+    const t = useTranslations('BusinessDayView');
+    
     const containerRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeEmployeeId, setActiveEmployeeId] = useState(null);
@@ -306,7 +309,7 @@ export default function DayView({ date, employees = [], reservations = [], draft
             setHoveredReservation({
                 reservation,
                 rect,
-                employeeInfo: employees.find(emp => emp._id === reservation.employeeId) || { name: 'Brak pracownika' }
+                employeeInfo: employees.find(emp => emp._id === reservation.employeeId) || { name: t('noEmployee') }
             });
         }, 400); // 400ms delay to prevent flashing
     };
@@ -351,9 +354,9 @@ export default function DayView({ date, employees = [], reservations = [], draft
                             {hoveredReservation.reservation.time} - {format(addMinutes(parseReservationTime(hoveredReservation.reservation.date, hoveredReservation.reservation.time), hoveredReservation.reservation.duration), 'HH:mm')}
                         </span>
                         <span>
-                            {hoveredReservation.reservation.status === 'confirmed' ? 'Zarezerwowana' :
-                             hoveredReservation.reservation.status === 'pending' ? 'Oczekująca' :
-                             hoveredReservation.reservation.status === 'cancelled' ? 'Anulowana' : 'Inny'}
+                            {hoveredReservation.reservation.status === 'confirmed' ? t('confirmed') :
+                             hoveredReservation.reservation.status === 'pending' ? t('pending') :
+                             hoveredReservation.reservation.status === 'cancelled' ? t('cancelled') : t('other')}
                         </span>
                     </div>
                     {/* Body */}
@@ -362,7 +365,7 @@ export default function DayView({ date, employees = [], reservations = [], draft
                             <div className="w-10 h-10 rounded-full bg-indigo-50 flex flex-shrink-0 items-center justify-center text-indigo-500">
                                 <User size={20} />
                             </div>
-                            <span className="font-semibold text-gray-800 text-base">{hoveredReservation.reservation.clientName || 'Bez rezerwacji'}</span>
+                            <span className="font-semibold text-gray-800 text-base">{hoveredReservation.reservation.clientName || t('noReservation')}</span>
                         </div>
                         
                         <div className="flex justify-between items-end border-t border-gray-100 pt-3">
@@ -407,7 +410,7 @@ export default function DayView({ date, employees = [], reservations = [], draft
                     {/* Default Column if no employees */}
                     {employees.length === 0 && (
                         <div className="flex-1 min-w-[200px] p-4 text-center border-r border-gray-100 bg-white">
-                            <span className="text-sm font-medium text-gray-500">Wszyscy pracownicy</span>
+                            <span className="text-sm font-medium text-gray-500">{t('allEmployees')}</span>
                         </div>
                     )}
                 </div>
@@ -474,7 +477,7 @@ export default function DayView({ date, employees = [], reservations = [], draft
                             </div>
                         )}
 
-                        {(employees.length > 0 ? employees : [{ _id: 'all', firstName: 'Wszyscy' }]).map((employee) => (
+                        {(employees.length > 0 ? employees : [{ _id: 'all', firstName: t('all') }]).map((employee) => (
                             <div
                                 key={employee._id}
                                 ref={(el) => { if (el) columnRefsMap.current[employee._id] = el; }}
@@ -560,7 +563,7 @@ export default function DayView({ date, employees = [], reservations = [], draft
                                         <div className="font-medium flex items-center justify-between opacity-90 truncate leading-tight">
                                             <span>
                                                 {format(new Date(draftVisit.date), 'HH:mm')} - {format(addMinutes(new Date(draftVisit.date), draftVisit.services.length > 0 ? draftVisit.services.reduce((acc, s) => acc + s.duration, 0) : TIME_SLOT_DURATION), 'HH:mm')} 
-                                                {' '} {draftVisit.client ? `${draftVisit.client.firstName} ${draftVisit.client.lastName}` : 'Bez rezerwacji'}
+                                                {' '} {draftVisit.client ? `${draftVisit.client.firstName} ${draftVisit.client.lastName}` : t('noReservation')}
                                             </span>
                                         </div>
                                         {draftVisit.services.length > 0 && (

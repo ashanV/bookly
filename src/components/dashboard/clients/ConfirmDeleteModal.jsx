@@ -3,8 +3,12 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, message, confirmText = "Usuń", cancelText = "Anuluj" }) {
+export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, message, confirmText, cancelText }) {
+    const t = useTranslations('BusinessConfirmDelete');
+    const resolvedConfirmText = confirmText || t('defaultConfirm');
+    const resolvedCancelText = cancelText || t('defaultCancel');
     return (
         <AnimatePresence>
             {isOpen && (
@@ -50,13 +54,13 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, 
                                         onClick={onConfirm}
                                         className="w-full py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
                                     >
-                                        {confirmText}
+                                        {resolvedConfirmText}
                                     </button>
                                     <button
                                         onClick={onClose}
                                         className="w-full py-3 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors"
                                     >
-                                        {cancelText}
+                                        {resolvedCancelText}
                                     </button>
                                 </div>
                             </div>

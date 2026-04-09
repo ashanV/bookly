@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { X, Search, Clock, UserPlus, Expand, Crosshair, Plus, PersonStanding, ChevronDown, Trash2, Edit2, ArrowLeft, ChevronRight, Heart } from 'lucide-react';
 
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useTranslations, useLocale } from 'next-intl';
+import { enUS, pl } from 'date-fns/locale';
 import DatePickerPopover from './DatePickerPopover';
 
 const fallbackColors = ['#7dd3fc', '#fca5a5', '#d8b4fe', '#fcd34d', '#86efac', '#fdba74', '#5eead4'];
@@ -15,13 +16,13 @@ const getFallbackColor = (name) => {
     return fallbackColors[Math.abs(hash) % fallbackColors.length];
 };
 
-const formatDuration = (min) => {
+const formatDuration = (min, t) => {
     if (!min) return '';
     const h = Math.floor(min / 60);
     const m = min % 60;
-    if (h > 0 && m > 0) return `${h} godz. ${m} min`;
-    if (h > 0) return `${h} godz.`;
-    return `${m} min`;
+    if (h > 0 && m > 0) return `${h} ${t('hoursShort')} ${m} ${t('minutesShort')}`;
+    if (h > 0) return `${h} ${t('hoursShort')}`;
+    return `${m} ${t('minutesShort')}`;
 };
 
 export default function AddVisitSidebar({
@@ -38,6 +39,9 @@ export default function AddVisitSidebar({
     onSave,
     isSaving
 }) {
+    const t = useTranslations('BusinessCalendar');
+    const locale = useLocale();
+    const dateLocale = locale === 'pl' ? pl : enUS;
     const [searchTerm, setSearchTerm] = useState('');
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [isAddingService, setIsAddingService] = useState(false);
@@ -146,7 +150,7 @@ export default function AddVisitSidebar({
         // Handle both object and string formats
         const categoryName = typeof service.category === 'object' && service.category?.name 
             ? service.category.name 
-            : service.category || 'Inne';
+            : service.category || t('otherCategory');
             
         if (!acc[categoryName]) {
             acc[categoryName] = {
@@ -194,12 +198,12 @@ export default function AddVisitSidebar({
                 {/* Left Column - Client Selection */}
                 <div className="w-[300px] border-r border-gray-100 bg-white flex flex-col h-full shrink-0">
                     <div className="p-6 pb-4 border-b border-gray-100">
-                        <h2 className="text-[20px] font-bold text-gray-900 mb-4 drop-shadow-sm tracking-tight">Wybierz klienta</h2>
+                        <h2 className="text-[20px] font-bold text-gray-900 mb-4 drop-shadow-sm tracking-tight">{t('chooseClient')}</h2>
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-600 transition-colors" size={18} />
                             <input
                                 type="text"
-                                placeholder="Wyszukaj klienta lub pozost..."
+                                placeholder={t('searchClientPlaceholder')}
                                 value={clientSearchTerm}
                                 onChange={(e) => setClientSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 transition-shadow placeholder:text-gray-400 text-[14px]"
@@ -212,14 +216,14 @@ export default function AddVisitSidebar({
                             <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
                                 <Plus size={20} strokeWidth={2} />
                             </div>
-                            <span className="font-bold text-gray-900 text-[14px]">Dodaj nowego klienta</span>
+                            <span className="font-bold text-gray-900 text-[14px]">{t('addNewClient')}</span>
                         </div>
 
                         <div onClick={() => setDraftVisit(prev => ({ ...prev, client: null }))} className={`flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors border ${!draftVisit?.client ? 'border-indigo-200 bg-indigo-50/50' : 'border-transparent hover:border-gray-100'} mb-4`}>
                             <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 shrink-0">
                                 <PersonStanding size={22} strokeWidth={1.5} />
                             </div>
-                            <span className="font-bold text-gray-900 text-[14px]">Bez rezerwacji</span>
+                            <span className="font-bold text-gray-900 text-[14px]">{t('noReservation')}</span>
                         </div>
 
                         <div className="border-b border-gray-100 mt-2 mb-4"></div>
@@ -245,7 +249,7 @@ export default function AddVisitSidebar({
                         
                         {clientSearchTerm && filteredClients.length === 0 && (
                             <div className="text-center py-6 text-gray-500 text-[13px]">
-                                Brak wyników wyszukiwania.
+                                {t('noSearchResults')}
                             </div>
                         )}
                     </div>
@@ -261,10 +265,10 @@ export default function AddVisitSidebar({
                                     className="flex items-center gap-2 text-gray-700 font-medium px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors text-[14px] w-max mb-6"
                                 >
                                     <ArrowLeft size={16} />
-                                    Wróć
+                                    {t('goBack')}
                                 </button>
                                 <h2 className="text-[28px] font-bold text-gray-900 drop-shadow-sm tracking-tight">
-                                    Edytuj usługę
+                                    {t('editService')}
                                 </h2>
                             </div>
 
@@ -275,7 +279,7 @@ export default function AddVisitSidebar({
                                         className="border border-gray-200 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                         onClick={() => setIsEditingServiceDropdownOpen(!isEditingServiceDropdownOpen)}
                                     >
-                                        <span className="text-gray-900 font-medium text-[15px]">{editingForm?.name}, {formatDuration(editingForm?.duration)}</span>
+                                        <span className="text-gray-900 font-medium text-[15px]">{editingForm?.name}, {formatDuration(editingForm?.duration, t)}</span>
                                         <ChevronRight size={18} className={`text-gray-500 transition-transform ${isEditingServiceDropdownOpen ? 'rotate-90' : ''}`} />
                                     </div>
                                     
@@ -301,14 +305,14 @@ export default function AddVisitSidebar({
                                                         >
                                                             <div className="flex flex-col">
                                                                 <span className={`text-[14px] font-medium leading-tight ${isSelected ? 'text-purple-700' : 'text-gray-900'}`}>{srv.name}</span>
-                                                                <span className="text-[13px] text-gray-500 mt-0.5">{formatDuration(srv.duration)}</span>
+                                                                <span className="text-[13px] text-gray-500 mt-0.5">{formatDuration(srv.duration, t)}</span>
                                                             </div>
                                                             <span className={`text-[14px] font-medium ${isSelected ? 'text-purple-700' : 'text-gray-900'}`}>{srv.price} zł</span>
                                                         </div>
                                                     );
                                                 })}
                                                 {services.length === 0 && (
-                                                    <div className="p-4 text-center text-sm text-gray-500">Brak dostępnych usług.</div>
+                                                    <div className="p-4 text-center text-sm text-gray-500">{t('noServicesAvailable')}</div>
                                                 )}
                                             </div>
                                         </div>
@@ -317,7 +321,7 @@ export default function AddVisitSidebar({
 
                                 {/* Employee dropdown */}
                                 <div className="relative">
-                                    <label className="block text-[14px] font-semibold text-gray-900 mb-2">Pracownik</label>
+                                    <label className="block text-[14px] font-semibold text-gray-900 mb-2">{t('employee')}</label>
                                     <div className="flex gap-2">
                                         <button className="p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                                             <Heart size={20} className="text-gray-600" />
@@ -330,7 +334,7 @@ export default function AddVisitSidebar({
                                                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0">
                                                     {selectedEmployee ? (selectedEmployee.name ? selectedEmployee.name.substring(0, 2) : 'AA') : 'AA'}
                                                 </div>
-                                                <span className="text-gray-900 font-medium text-[14px] truncate">{selectedEmployee ? (selectedEmployee.name || 'Nieznany pracownik') : 'Brak pracownika'}</span>
+                                                <span className="text-gray-900 font-medium text-[14px] truncate">{selectedEmployee ? (selectedEmployee.name || t('unknownEmployee')) : t('noEmployee')}</span>
                                             </div>
                                             <ChevronDown size={18} className={`text-gray-400 transition-transform ${isEditingEmployeeDropdownOpen ? 'rotate-180' : ''}`} />
                                         </div>
@@ -351,11 +355,11 @@ export default function AddVisitSidebar({
                                                         <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0">
                                                             {emp.name ? emp.name.substring(0, 2) : 'AA'}
                                                         </div>
-                                                        <span className="font-medium text-[14px] truncate">{emp.name || 'Nieznany pracownik'}</span>
+                                                        <span className="font-medium text-[14px] truncate">{emp.name || t('unknownEmployee')}</span>
                                                     </div>
                                                 ))}
                                                 {employees.length === 0 && (
-                                                    <div className="p-4 text-center text-sm text-gray-500">Brak pracowników w bazie.</div>
+                                                    <div className="p-4 text-center text-sm text-gray-500">{t('noEmployeesInDb')}</div>
                                                 )}
                                             </div>
                                         </div>
@@ -365,7 +369,7 @@ export default function AddVisitSidebar({
                                 {/* Price & Discount */}
                                 <div className="flex gap-4">
                                     <div className="flex-1">
-                                        <label className="block text-[14px] font-semibold text-gray-900 mb-2">Cena usługi</label>
+                                        <label className="block text-[14px] font-semibold text-gray-900 mb-2">{t('servicePrice')}</label>
                                         <div className="relative">
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-[14px]">PLN</span>
                                             <input 
@@ -377,9 +381,9 @@ export default function AddVisitSidebar({
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <label className="block text-[14px] font-semibold text-gray-900 mb-2">Zniżka</label>
+                                        <label className="block text-[14px] font-semibold text-gray-900 mb-2">{t('discount')}</label>
                                         <div className="border border-gray-200 rounded-xl py-3 px-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors">
-                                            <span className="text-gray-900 font-medium text-[14px]">Brak zniżki</span>
+                                            <span className="text-gray-900 font-medium text-[14px]">{t('noDiscount')}</span>
                                             <ChevronDown size={18} className="text-gray-400" />
                                         </div>
                                     </div>
@@ -390,7 +394,7 @@ export default function AddVisitSidebar({
                                     {editingForm?.segments?.map((seg, segIdx) => (
                                         <div key={segIdx} className="flex gap-4 relative">
                                             <div className="flex-1 relative">
-                                                <label className="block text-[14px] font-semibold text-gray-900 mb-2">Godzina rozpoczęcia</label>
+                                                <label className="block text-[14px] font-semibold text-gray-900 mb-2">{t('startTime')}</label>
                                                 <div 
                                                     className="border border-gray-200 rounded-xl py-3 px-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                                     onClick={() => setIsEditingStartTimeDropdownOpen(isEditingStartTimeDropdownOpen === segIdx ? null : segIdx)}
@@ -431,12 +435,12 @@ export default function AddVisitSidebar({
                                                 )}
                                             </div>
                                             <div className="flex-1 relative">
-                                                <label className="block text-[14px] font-semibold text-gray-900 mb-2">Czas trwania</label>
+                                                <label className="block text-[14px] font-semibold text-gray-900 mb-2">{t('duration')}</label>
                                                 <div 
                                                     className="border border-gray-200 rounded-xl py-3 px-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                                     onClick={() => setIsEditingDurationDropdownOpen(isEditingDurationDropdownOpen === segIdx ? null : segIdx)}
                                                 >
-                                                    <span className="text-gray-900 font-medium text-[14px]">{formatDuration(seg.duration)}</span>
+                                                    <span className="text-gray-900 font-medium text-[14px]">{formatDuration(seg.duration, t)}</span>
                                                     <ChevronDown size={18} className={`text-gray-400 transition-transform ${isEditingDurationDropdownOpen === segIdx ? 'rotate-180' : ''}`} />
                                                 </div>
                                                 
@@ -456,7 +460,7 @@ export default function AddVisitSidebar({
                                                                         setIsEditingDurationDropdownOpen(null);
                                                                     }}
                                                                 >
-                                                                    {formatDuration(dur)}
+                                                                    {formatDuration(dur, t)}
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -469,7 +473,7 @@ export default function AddVisitSidebar({
                                                 <div className="flex flex-col justify-end pb-1.5">
                                                     <button 
                                                         className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0 border border-transparent hover:border-red-100"
-                                                        title="Usuń czas"
+                                                        title={t('removeTime')}
                                                         onClick={() => setEditingForm(prev => ({
                                                             ...prev,
                                                             segments: prev.segments.filter((_, i) => i !== segIdx)
@@ -491,15 +495,15 @@ export default function AddVisitSidebar({
                                     }))}
                                 >
                                     <Plus size={16} />
-                                    Dodaj czas
+                                    {t('addTime')}
                                 </button>
                             </div>
 
                             <div className="p-6 border-t border-gray-100 bg-white shrink-0">
                                 <div className="flex justify-between items-center mb-6">
-                                    <span className="font-bold text-gray-900 text-[15px]">Razem</span>
+                                    <span className="font-bold text-gray-900 text-[15px]">{t('total')}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-gray-500 font-medium text-[15px]">{formatDuration(editingForm?.segments?.reduce((acc, s) => acc + s.duration, 0) || 0)}</span>
+                                        <span className="text-gray-500 font-medium text-[15px]">{formatDuration(editingForm?.segments?.reduce((acc, s) => acc + s.duration, 0) || 0, t)}</span>
                                         <span className="font-bold text-gray-900 text-[17px]">{editingForm?.price} zł</span>
                                     </div>
                                 </div>
@@ -547,7 +551,7 @@ export default function AddVisitSidebar({
                                         }}
                                         disabled={isSaving}
                                     >
-                                        {isSaving && draftVisit._id ? 'Zapisywanie...' : 'Zastosuj'}
+                                        {isSaving && draftVisit._id ? t('saving') : t('apply')}
                                     </button>
                                 </div>
                             </div>
@@ -555,13 +559,13 @@ export default function AddVisitSidebar({
                     ) : (!draftVisit?.services?.length || isAddingService) ? (
                         <>
                             <div className="p-8 pb-4">
-                                <h2 className="text-[28px] font-bold text-gray-900 mb-6 drop-shadow-sm tracking-tight">Wybierz usługę</h2>
+                                <h2 className="text-[28px] font-bold text-gray-900 mb-6 drop-shadow-sm tracking-tight">{t('chooseService')}</h2>
                                 
                                 <div className="relative group mb-8">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-600 transition-colors" size={20} />
                                     <input
                                         type="text"
-                                        placeholder="Szukaj według nazwy usługi"
+                                        placeholder={t('searchServicePlaceholder')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="w-full pl-12 pr-4 py-3.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 transition-shadow placeholder:text-gray-400 text-[15px]"
@@ -600,7 +604,7 @@ export default function AddVisitSidebar({
                                                         
                                                         <div className="pl-[18px] flex flex-col">
                                                             <span className="text-gray-900 text-[15.5px] font-medium leading-snug">{service.name}</span>
-                                                            <span className="text-gray-500 text-[13.5px] mt-0.5">{formatDuration(service.duration)}</span>
+                                                            <span className="text-gray-500 text-[13.5px] mt-0.5">{formatDuration(service.duration, t)}</span>
                                                         </div>
                                                         <span className="text-gray-900 text-[15px] font-medium shrink-0 pt-0.5 tracking-tight group-hover:text-purple-700 transition-colors">
                                                             {service.price} zł
@@ -613,13 +617,13 @@ export default function AddVisitSidebar({
                                     
                                     {filteredServices.length === 0 && (
                                         <div className="text-center py-10 text-gray-500">
-                                            Brak usług pasujących do wyszukiwania.
+                                            {t('noMatchingServices')}
                                         </div>
                                     )}
                                     
                                     {services.length === 0 && searchTerm === '' && (
                                         <div className="text-center py-10 text-gray-500 text-[15px]">
-                                            Brak dostępnych usług. Dodaj usługi w menu biznesowym.
+                                            {t('noServicesAddInMenu')}
                                         </div>
                                     )}
                                 </div>
@@ -633,11 +637,11 @@ export default function AddVisitSidebar({
                                         className="text-[28px] font-bold text-gray-900 drop-shadow-sm tracking-tight lowercase first-letter:uppercase cursor-pointer hover:text-purple-600 transition-colors flex items-center gap-2"
                                         onClick={() => setIsDatePickerOpen(true)}
                                     >
-                                        {format(new Date(draftVisit.date), 'EEE. d MMM', { locale: pl }).replace(/\./g, '')}
+                                        {format(new Date(draftVisit.date), 'EEE. d MMM', { locale: dateLocale }).replace(/\./g, '')}
                                         <ChevronDown size={24} className="text-gray-400 mt-1" />
                                     </h2>
                                     <p className="text-gray-600 text-[14.5px] mt-1 font-medium">
-                                        {format(new Date(draftVisit.date), 'HH:mm')} • Nie powtarza się
+                                        {format(new Date(draftVisit.date), 'HH:mm')} • {t('doesNotRepeat')}
                                     </p>
                                 </div>
                                 <DatePickerPopover 
@@ -655,7 +659,7 @@ export default function AddVisitSidebar({
                             </div>
                             
                             <div className="flex-1 overflow-y-auto w-full px-8 py-6">
-                                <h3 className="text-[17px] font-bold text-gray-900 mb-6">Usługi</h3>
+                                <h3 className="text-[17px] font-bold text-gray-900 mb-6">{t('servicesTitle')}</h3>
                                 <div className="space-y-5">
                                     {draftVisit.services.map((service, idx) => {
                                         let startTime = new Date(draftVisit.date);
@@ -680,10 +684,10 @@ export default function AddVisitSidebar({
                                                     <div className="flex items-center text-gray-500 text-[13.5px] mt-1.5 font-medium whitespace-nowrap">
                                                         <span>{format(startTime, 'HH:mm')}</span>
                                                         <span className="mx-1.5">•</span>
-                                                        <span>{service.duration} min</span>
+                                                        <span>{service.duration} {t('minutesShort')}</span>
                                                         <span className="mx-1.5">•</span>
                                                         <span className="truncate max-w-[120px]">
-                                                            {employees.find(emp => emp._id === service.employeeId)?.name || selectedEmployee?.name || 'Nieznany pracownik'}
+                                                            {employees.find(emp => emp._id === service.employeeId)?.name || selectedEmployee?.name || t('unknownEmployee')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -744,28 +748,28 @@ export default function AddVisitSidebar({
                                         className="mt-6 flex items-center gap-2 text-gray-700 font-medium px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors text-[14px]"
                                     >
                                         <Plus size={16} />
-                                        Dodaj usługę
+                                        {t('chooseService')}
                                     </button>
                                 </div>
                             </div>
                             
                             <div className="p-6 border-t border-gray-100 bg-white shrink-0">
                                 <div className="flex justify-between items-center mb-6">
-                                    <span className="font-bold text-gray-900 text-[15px]">Razem</span>
+                                    <span className="font-bold text-gray-900 text-[15px]">{t('total')}</span>
                                     <span className="font-bold text-gray-900 text-[17px]">
                                         {draftVisit.services.reduce((sum, s) => sum + s.price, 0)} zł
                                     </span>
                                 </div>
                                 <div className="flex gap-3">
                                     <button className="flex-1 py-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-900 hover:bg-gray-50 transition-colors">
-                                        Zapłać
+                                        {t('pay')}
                                     </button>
                                     <button 
                                         className="flex-1 py-3 bg-gray-900 rounded-xl font-bold text-white shadow-sm hover:bg-gray-800 transition-colors text-[15px] disabled:opacity-70"
                                         onClick={() => onSave && onSave()}
                                         disabled={isSaving}
                                     >
-                                        {isSaving && !draftVisit._id ? 'Zapisywanie...' : 'Zapisz'}
+                                        {isSaving && !draftVisit._id ? t('saving') : t('save')}
                                     </button>
                                 </div>
                             </div>

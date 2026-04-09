@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, Plus, X, Copy, Check } from 'lucide-react';
 import { toast } from '@/components/Toast';
+import { useTranslations } from 'next-intl';
 
 const DAYS = [
     { key: 'monday', label: 'poniedziałek' },
@@ -55,6 +56,7 @@ const DEFAULT_HOURS = {
 };
 
 export default function WorkingHoursEditor({ value, onChange }) {
+    const t = useTranslations('BusinessWorkingHours');
     const [hours, setHours] = useState(value ? normalizeHours(value) : DEFAULT_HOURS);
     const [showCopyButton, setShowCopyButton] = useState(false);
 
@@ -139,7 +141,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
         });
 
         handleChange(newHours);
-        toast.success("Skopiowano godziny do wszystkich dni");
+        toast.success(t('successCopyHours'));
         setShowCopyButton(false);
     };
 
@@ -171,7 +173,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
 
                             {/* Day Name */}
                             <span className={`mt-2 w-32 text-sm font-medium ${isOpen ? 'text-gray-900' : 'text-gray-400'}`}>
-                                {day.label}
+                                {t(day.key)}
                             </span>
 
                             {/* Time Selectors */}
@@ -216,7 +218,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
                                                         type="button"
                                                         onClick={() => addRange(day.key)}
                                                         className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                                                        title="Dodaj przerwę/kolejną zmianę"
+                                                        title={t('addBreakShift')}
                                                     >
                                                         <Plus size={18} />
                                                     </button>
@@ -225,7 +227,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
                                                         type="button"
                                                         onClick={() => removeRange(day.key, index)}
                                                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Usuń zakres"
+                                                        title={t('removeRange')}
                                                     >
                                                         <X size={18} />
                                                     </button>
@@ -237,7 +239,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
                                                         type="button"
                                                         onClick={() => removeRange(day.key, index)}
                                                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Usuń zakres"
+                                                        title={t('removeRange')}
                                                     >
                                                         <X size={18} />
                                                     </button>
@@ -247,7 +249,7 @@ export default function WorkingHoursEditor({ value, onChange }) {
                                     ))
                                 ) : (
                                     <div className="py-2">
-                                        <span className="text-sm text-gray-400 italic">Zamknięte</span>
+                                        <span className="text-sm text-gray-400 italic">{t('closed')}</span>
                                     </div>
                                 )}
                             </div>
@@ -264,13 +266,13 @@ export default function WorkingHoursEditor({ value, onChange }) {
                             <Copy size={20} />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-gray-900">Czy te same godziny otwarcia obowiązują we wszystkie dni?</p>
+                            <p className="text-sm font-medium text-gray-900">{t('copyHoursQuestion')}</p>
                             <button
                                 type="button"
                                 onClick={copyToAllDays}
                                 className="text-sm text-purple-600 font-bold hover:underline text-left mt-0.5"
                             >
-                                Tak, skopiuj
+                                {t('btnCopyHours')}
                             </button>
                         </div>
                     </div>

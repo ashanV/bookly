@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import SubscriptionBanner from '@/components/SubscriptionBanner';
+import { useTranslations } from 'next-intl';
 
 
 // Lazy load heavy chart components
@@ -48,6 +49,7 @@ const Area = dynamic(() => import('recharts').then(mod => mod.Area), { ssr: fals
 const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });
 
 export default function DashboardPage() {
+  const t = useTranslations('BusinessDashboard');
   const router = useRouter();
   const { user, loading, isAuthenticated, logout } = useAuth('/business/auth');
   const [businessData, setBusinessData] = useState(null);
@@ -235,9 +237,9 @@ export default function DashboardPage() {
 
             let dateLabel = '';
             if (dateOnly.getTime() === today.getTime()) {
-              dateLabel = 'Dzisiaj';
+              dateLabel = t('todayMsg');
             } else if (dateOnly.getTime() === tomorrow.getTime()) {
-              dateLabel = 'Jutro';
+              dateLabel = t('tomorrowMsg');
             } else {
               dateLabel = resDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' });
             }
@@ -339,10 +341,10 @@ export default function DashboardPage() {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'confirmed': return 'Potwierdzona';
-      case 'pending': return 'Oczekująca';
-      case 'cancelled': return 'Anulowana';
-      default: return 'Nieznany';
+      case 'confirmed': return t('statusConfirmedLabel');
+      case 'pending': return t('statusPendingLabel');
+      case 'cancelled': return t('statusCancelledLabel');
+      default: return t('statusUnknownLabel');
     }
   };
 
@@ -353,7 +355,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Ładowanie dashboardu...</p>
+          <p className="text-gray-600 font-medium">{t('loadingDashboard')}</p>
         </div>
       </div>
     );
@@ -371,13 +373,13 @@ export default function DashboardPage() {
             <ShieldAlert className="w-10 h-10" />
           </div>
           <div className="flex-1 text-center md:text-left">
-            <h3 className="font-bold text-xl mb-1">KONTO ZABLOKOWANE</h3>
+            <h3 className="font-bold text-xl mb-1">{t('accountBlocked')}</h3>
             <p className="text-red-100 text-sm md:text-base max-w-2xl">
-              Twój profil został zablokowany przez administratora i jest obecnie niewidoczny dla klientów.
+              {t('accountBlockedDesc')}
             </p>
             {(businessData?.blockReason || user?.blockReason) && (
               <div className="mt-3 p-3 bg-red-700/50 rounded-lg inline-block border border-red-500/30">
-                <p className="text-red-100 text-xs font-semibold uppercase tracking-wider mb-1">Powód blokady</p>
+                <p className="text-red-100 text-xs font-semibold uppercase tracking-wider mb-1">{t('blockReason')}</p>
                 <p className="text-white font-medium">"{businessData?.blockReason || user?.blockReason}"</p>
               </div>
             )}
@@ -388,14 +390,14 @@ export default function DashboardPage() {
                 className="px-5 py-2.5 bg-white text-red-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2"
               >
                 <Mail size={18} />
-                Skontaktuj się z supportem
+                {t('contactSupport')}
               </button>
               <button
                 onClick={() => window.location.href = 'mailto:odwolania@bookly.pl?subject=Odwołanie od blokady - ' + (businessData?.companyName || user?.companyName)}
                 className="px-5 py-2.5 bg-red-700 text-white border border-red-500/50 rounded-xl font-medium text-sm hover:bg-red-800 transition-colors flex items-center gap-2"
               >
                 <Edit size={18} />
-                Napisz odwołanie
+                {t('writeAppeal')}
               </button>
             </div>
           </div>
@@ -417,13 +419,13 @@ export default function DashboardPage() {
               </h2>
               <div className="flex items-center gap-3 mt-2">
                 <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                  {businessData?.category || 'Kategoria'}
+                  {businessData?.category || t('category')}
                 </span>
                 <span className="text-gray-400">•</span>
                 <div className="flex items-center gap-1">
                   <Star className="text-yellow-400 fill-yellow-400" size={16} />
                   <span className="font-semibold text-gray-900">{stats.avgRating}</span>
-                  <span className="text-gray-500 text-sm">(156 opinii)</span>
+                  <span className="text-gray-500 text-sm">(156 {t('reviews')})</span>
                 </div>
               </div>
             </div>
@@ -433,7 +435,7 @@ export default function DashboardPage() {
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2 font-medium"
           >
             <Edit size={18} />
-            Edytuj profil
+            {t('editProfile')}
           </button>
         </div>
 
@@ -443,9 +445,9 @@ export default function DashboardPage() {
               <MapPin className="text-purple-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Lokalizacja</p>
+              <p className="text-sm text-gray-500 font-medium">{t('location')}</p>
               <p className="text-gray-900 font-semibold">
-                {businessData?.city || 'Miasto'}, {businessData?.address || 'Adres'}
+                {businessData?.city || t('city')}, {businessData?.address || t('address')}
               </p>
             </div>
           </div>
@@ -454,7 +456,7 @@ export default function DashboardPage() {
               <Phone className="text-blue-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Telefon</p>
+              <p className="text-sm text-gray-500 font-medium">{t('phone')}</p>
               <p className="text-gray-900 font-semibold">{user?.phone || businessData?.phone || '+48 123 456 789'}</p>
             </div>
           </div>
@@ -463,7 +465,7 @@ export default function DashboardPage() {
               <Mail className="text-green-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Email</p>
+              <p className="text-sm text-gray-500 font-medium">{t('email')}</p>
               <p className="text-gray-900 font-semibold">{user?.email}</p>
             </div>
           </div>
@@ -483,9 +485,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">{stats.totalReservations}</h3>
-          <p className="text-sm text-gray-500 font-medium">Wszystkie rezerwacje</p>
+          <p className="text-sm text-gray-500 font-medium">{t('allReservations')}</p>
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">+23 w tym tygodniu</p>
+            <p className="text-xs text-gray-400">+23 {t('thisWeek')}</p>
           </div>
         </div>
 
@@ -500,9 +502,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">{stats.todayReservations}</h3>
-          <p className="text-sm text-gray-500 font-medium">Rezerwacje dzisiaj</p>
+          <p className="text-sm text-gray-500 font-medium">{t('reservationsToday')}</p>
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">3 nadchodzące</p>
+            <p className="text-xs text-gray-400">3 {t('upcoming')}</p>
           </div>
         </div>
 
@@ -517,9 +519,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">{stats.totalClients}</h3>
-          <p className="text-sm text-gray-500 font-medium">Aktywni klienci</p>
+          <p className="text-sm text-gray-500 font-medium">{t('activeClients')}</p>
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">8 nowych w tym miesiącu</p>
+            <p className="text-xs text-gray-400">8 {t('newThisMonth')}</p>
           </div>
         </div>
 
@@ -534,9 +536,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">{stats.revenue.toLocaleString()} zł</h3>
-          <p className="text-sm text-gray-500 font-medium">Przychód w tym miesiącu</p>
+          <p className="text-sm text-gray-500 font-medium">{t('revenueThisMonth')}</p>
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">Cel: 50,000 zł</p>
+            <p className="text-xs text-gray-400">{t('goal')} 50,000 zł</p>
           </div>
         </div>
       </div>
@@ -547,8 +549,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Przychody tygodniowe</h3>
-              <p className="text-sm text-gray-500 mt-1">Ostatnie 7 dni</p>
+              <h3 className="text-lg font-bold text-gray-900">{t('weeklyRevenue')}</h3>
+              <p className="text-sm text-gray-500 mt-1">{t('last7Days')}</p>
             </div>
             <div className="flex gap-2">
               {['day', 'week', 'month'].map((filter) => (
@@ -560,7 +562,7 @@ export default function DashboardPage() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
-                  {filter === 'day' ? 'Dzień' : filter === 'week' ? 'Tydzień' : 'Miesiąc'}
+                  {filter === 'day' ? t('day') : filter === 'week' ? t('week') : t('month')}
                 </button>
               ))}
             </div>
@@ -600,8 +602,8 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Popularne usługi</h3>
-              <p className="text-sm text-gray-500 mt-1">Rozkład procentowy</p>
+              <h3 className="text-lg font-bold text-gray-900">{t('popularServices')}</h3>
+              <p className="text-sm text-gray-500 mt-1">{t('percentageDistribution')}</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -644,14 +646,14 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Ostatnie rezerwacje</h3>
-              <p className="text-sm text-gray-500 mt-1">Nadchodzące wizyty</p>
+              <h3 className="text-lg font-bold text-gray-900">{t('recentReservations')}</h3>
+              <p className="text-sm text-gray-500 mt-1">{t('upcomingVisits')}</p>
             </div>
             <button
               onClick={() => router.push('/business/reservations')}
               className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all font-medium"
             >
-              Zobacz wszystkie
+              {t('viewAll')}
               <ArrowUpRight size={16} />
             </button>
           </div>
@@ -663,7 +665,7 @@ export default function DashboardPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Szukaj po kliencie, email lub telefonie..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
@@ -678,10 +680,10 @@ export default function DashboardPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               >
-                <option value="all">Wszystkie statusy</option>
-                <option value="confirmed">Potwierdzone</option>
-                <option value="pending">Oczekujące</option>
-                <option value="cancelled">Anulowane</option>
+                <option value="all">{t('allStatuses')}</option>
+                <option value="confirmed">{t('confirmed')}</option>
+                <option value="pending">{t('pending')}</option>
+                <option value="cancelled">{t('cancelled')}</option>
               </select>
 
               {/* Service Filter */}
@@ -690,7 +692,7 @@ export default function DashboardPage() {
                 onChange={(e) => setServiceFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               >
-                <option value="">Wszystkie usługi</option>
+                <option value="">{t('allServices')}</option>
                 {availableServices.map((service, idx) => (
                   <option key={idx} value={service}>{service}</option>
                 ))}
@@ -702,7 +704,7 @@ export default function DashboardPage() {
                 onChange={(e) => setEmployeeFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               >
-                <option value="">Wszyscy pracownicy</option>
+                <option value="">{t('allEmployees')}</option>
                 {availableEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>{employee.name}</option>
                 ))}
@@ -715,9 +717,9 @@ export default function DashboardPage() {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 >
-                  <option value="date">Sortuj: Data</option>
-                  <option value="price">Sortuj: Cena</option>
-                  <option value="clientName">Sortuj: Klient</option>
+                  <option value="date">{t('sortDate')}</option>
+                  <option value="price">{t('sortPrice')}</option>
+                  <option value="clientName">{t('sortClient')}</option>
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -735,7 +737,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all text-sm font-medium"
                 >
                   <X size={16} />
-                  Wyczyść ({activeFiltersCount()})
+                  {t('clear')} ({activeFiltersCount()})
                 </button>
               )}
             </div>
@@ -745,25 +747,25 @@ export default function DashboardPage() {
               <div className="flex flex-wrap gap-2">
                 {searchQuery && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                    Wyszukiwanie: {searchQuery}
+                    {t('searchLabel')} {searchQuery}
                     <X size={14} className="cursor-pointer" onClick={() => setSearchQuery('')} />
                   </span>
                 )}
                 {statusFilter && statusFilter !== 'all' && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                    Status: {statusFilter}
+                    {t('statusLabel')} {statusFilter}
                     <X size={14} className="cursor-pointer" onClick={() => setStatusFilter('all')} />
                   </span>
                 )}
                 {serviceFilter && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    Usługa: {serviceFilter}
+                    {t('serviceLabel')} {serviceFilter}
                     <X size={14} className="cursor-pointer" onClick={() => setServiceFilter('')} />
                   </span>
                 )}
                 {employeeFilter && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                    Pracownik: {availableEmployees.find(e => e.id === employeeFilter)?.name}
+                    {t('employeeLabel')} {availableEmployees.find(e => e.id === employeeFilter)?.name}
                     <X size={14} className="cursor-pointer" onClick={() => setEmployeeFilter('')} />
                   </span>
                 )}
@@ -778,8 +780,8 @@ export default function DashboardPage() {
           ) : recentReservations.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="mx-auto text-gray-300 mb-3" size={48} />
-              <p className="text-gray-500 font-medium">Brak rezerwacji spełniających kryteria</p>
-              <p className="text-sm text-gray-400 mt-1">Spróbuj zmienić filtry</p>
+              <p className="text-gray-500 font-medium">{t('noReservationsCriteria')}</p>
+              <p className="text-sm text-gray-400 mt-1">{t('tryChangingFilters')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -820,7 +822,7 @@ export default function DashboardPage() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Szybkie akcje</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('quickActions')}</h3>
             <div className="space-y-3">
               <button
                 onClick={() => router.push('/business/reservations')}
@@ -830,7 +832,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Calendar className="text-white" size={20} />
                   </div>
-                  <span className="font-semibold text-gray-900">Rezerwacje</span>
+                  <span className="font-semibold text-gray-900">{t('reservationsModule')}</span>
                 </div>
                 <ArrowUpRight className="text-purple-600" size={18} />
               </button>
@@ -842,7 +844,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Clock className="text-white" size={20} />
                   </div>
-                  <span className="font-semibold text-gray-900">Kalendarz</span>
+                  <span className="font-semibold text-gray-900">{t('calendar')}</span>
                 </div>
                 <ArrowUpRight className="text-blue-600" size={18} />
               </button>
@@ -854,7 +856,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Settings className="text-white" size={20} />
                   </div>
-                  <span className="font-semibold text-gray-900">Ustawienia</span>
+                  <span className="font-semibold text-gray-900">{t('settings')}</span>
                 </div>
                 <ArrowUpRight className="text-green-600" size={18} />
               </button>
@@ -866,7 +868,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Users className="text-white" size={20} />
                   </div>
-                  <span className="font-semibold text-gray-900">CRM & Klienci</span>
+                  <span className="font-semibold text-gray-900">{t('crmClients')}</span>
                 </div>
                 <ArrowUpRight className="text-rose-600" size={18} />
               </button>
@@ -875,7 +877,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Eye className="text-white" size={20} />
                   </div>
-                  <span className="font-semibold text-gray-900">Podgląd profilu</span>
+                  <span className="font-semibold text-gray-900">{t('profilePreview')}</span>
                 </div>
                 <ArrowUpRight className="text-orange-600" size={18} />
               </button>
@@ -884,7 +886,7 @@ export default function DashboardPage() {
 
           {/* Top services */}
           <div className="bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Najpopularniejsze usługi</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('topServices')}</h3>
             <div className="space-y-4">
               {topServices.map((service, index) => (
                 <div key={index} className="group">
@@ -902,7 +904,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                    <span>{service.bookings} rezerwacji</span>
+                    <span>{service.bookings} {t('bookings')}</span>
                     <span className="font-semibold text-gray-900">{service.revenue.toLocaleString()} zł</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -922,12 +924,12 @@ export default function DashboardPage() {
       <div className="mt-6 bg-white rounded-2xl shadow-md border border-gray-100/50 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Rezerwacje vs Anulowania</h3>
-            <p className="text-sm text-gray-500 mt-1">Ostatnie 7 dni</p>
+            <h3 className="text-lg font-bold text-gray-900">{t('reservationsVsCancellations')}</h3>
+            <p className="text-sm text-gray-500 mt-1">{t('last7Days')}</p>
           </div>
           <button className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
             <Download size={18} />
-            <span className="text-sm font-medium">Eksportuj</span>
+            <span className="text-sm font-medium">{t('export')}</span>
           </button>
         </div>
         <ResponsiveContainer width="100%" height={300}>
@@ -952,7 +954,7 @@ export default function DashboardPage() {
 
       <div className="mt-8 flex justify-center">
         <p className="text-gray-400 text-sm">
-          &copy; {new Date().getFullYear()} Bookly Business. Wszystkie prawa zastrzeżone.
+          &copy; {new Date().getFullYear()} Bookly Business. {t('allRightsReserved')}
         </p>
       </div>
 

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, ChevronDown, Loader2, ArrowDownUp, Minus, X, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
+import { format } from 'date-fns';
+import { pl, enUS } from 'date-fns/locale';
 
 // Delete Confirmation Modal
 function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
+    const t = useTranslations('BusinessClientList');
     if (!isOpen) return null;
 
     return (
@@ -31,11 +35,10 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
 
                 {/* Content */}
                 <h3 className="text-lg font-bold text-slate-900 mb-2">
-                    Usuń {count > 1 ? `${count} klientów` : 'klienta'}
+                    {count > 1 ? t('deleteTitleMulti', { count }) : t('deleteTitleSingle')}
                 </h3>
                 <p className="text-slate-500 text-sm mb-6">
-                    Czy na pewno chcesz usunąć {count > 1 ? `wybranych ${count} klientów` : 'wybranego klienta'}?
-                    Ta operacja jest nieodwracalna i wszystkie powiązane dane zostaną trwale usunięte.
+                    {count > 1 ? t('deleteDescMulti', { count }) : t('deleteDescSingle')}
                 </p>
 
                 {/* Actions */}
@@ -45,7 +48,7 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
                         disabled={isDeleting}
                         className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors disabled:opacity-50"
                     >
-                        Anuluj
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={onConfirm}
@@ -53,7 +56,7 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
                         className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isDeleting && <Loader2 size={16} className="animate-spin" />}
-                        Usuń
+                        {t('delete')}
                     </button>
                 </div>
             </div>
@@ -62,6 +65,10 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, count, isDeleting }) {
 }
 
 export default function ClientList({ onSelectClient, selectedClientId, businessId, onClientCountChange }) {
+    const t = useTranslations('BusinessClientList');
+    const locale = useLocale();
+    const dateLocale = locale === 'pl' ? pl : enUS;
+
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [tagFilter, setTagFilter] = useState('');
@@ -106,10 +113,10 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                 setClients(data.clients || []);
             } else {
                 const data = await response.json();
-                setError(data.error || 'Błąd pobierania klientów');
+                setError(data.error || t('fetchError'));
             }
         } catch (err) {
-            setError('Błąd połączenia z serwerem');
+            setError(t('connectionError'));
         } finally {
             setIsLoading(false);
         }
@@ -186,34 +193,30 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
             setShowDeleteModal(false);
             fetchClients(); // Refresh list
         } catch (err) {
-            setError('Błąd podczas usuwania klientów');
+            setError(t('deleteError'));
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const formatDate = (dateStr) => {
+    const formatDateStr = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
-        const day = date.getDate();
-        const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
+        return format(date, 'd MMM yyyy', { locale: dateLocale });
     };
 
     const sortOptions = [
-        { value: 'createdAt', label: 'Data utworzenia (od najnowszej)', order: 'desc' },
-        { value: 'createdAt', label: 'Data utworzenia (od najstarszej)', order: 'asc' },
-        { value: 'name', label: 'Nazwa (A-Z)', order: 'asc' },
-        { value: 'name', label: 'Nazwa (Z-A)', order: 'desc' },
-        { value: 'totalSpent', label: 'Sprzedaż (od najwyższej)', order: 'desc' },
-        { value: 'totalSpent', label: 'Sprzedaż (od najniższej)', order: 'asc' },
+        { value: 'createdAt', label: t('sortNewest'), order: 'desc' },
+        { value: 'createdAt', label: t('sortOldest'), order: 'asc' },
+        { value: 'name', label: t('sortNameAsc'), order: 'asc' },
+        { value: 'name', label: t('sortNameDesc'), order: 'desc' },
+        { value: 'totalSpent', label: t('sortSalesHigh'), order: 'desc' },
+        { value: 'totalSpent', label: t('sortSalesLow'), order: 'asc' },
     ];
 
     const currentSortLabel = sortOptions.find(
         opt => opt.value === sortBy && opt.order === sortOrder
-    )?.label || 'Data utworzenia (od najnowszej)';
+    )?.label || t('sortNewest');
 
     const isAllSelected = selectedClients.length === sortedClients.length && sortedClients.length > 0;
     const isSomeSelected = selectedClients.length > 0 && selectedClients.length < sortedClients.length;
@@ -243,7 +246,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
 
                         {/* Selection count */}
                         <span className="text-sm text-slate-700">
-                            wybrano {selectedClients.length}
+                            {t('selected')} {selectedClients.length}
                         </span>
 
                         {/* Deselect link */}
@@ -251,7 +254,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                             onClick={clearSelection}
                             className="text-sm text-violet-600 hover:text-violet-700 font-medium"
                         >
-                            Odznacz
+                            {t('deselect')}
                         </button>
                     </div>
 
@@ -262,7 +265,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                                 onClick={() => setShowBulkEditDropdown(!showBulkEditDropdown)}
                                 className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                             >
-                                Edycja zbiorcza
+                                {t('bulkEdit')}
                                 <ChevronDown size={14} />
                             </button>
 
@@ -271,13 +274,13 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                                     <div className="fixed inset-0 z-10" onClick={() => setShowBulkEditDropdown(false)} />
                                     <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-20 w-48">
                                         <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                                            Dodaj tag
+                                            {t('addTag')}
                                         </button>
                                         <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                                            Usuń tag
+                                            {t('removeTag')}
                                         </button>
                                         <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                                            Zmień status
+                                            {t('changeStatus')}
                                         </button>
                                     </div>
                                 </>
@@ -289,7 +292,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                             onClick={handleDeleteClick}
                             className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors"
                         >
-                            Usuń
+                            {t('deleteBtn')}
                         </button>
                     </div>
                 </div>
@@ -303,7 +306,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Imię i nazwisko, adres e-mail li..."
+                            placeholder={t('searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-slate-300 transition-all text-sm"
@@ -317,7 +320,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                         >
                             <SlidersHorizontal size={16} />
-                            Filtry
+                            {t('filters')}
                         </button>
 
                         {showFilters && (
@@ -325,26 +328,26 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                                 <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)} />
                                 <div className="absolute left-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-20 w-64">
                                     <div className="mb-3">
-                                        <label className="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                                        <label className="block text-xs font-semibold text-slate-600 mb-1">{t('status')}</label>
                                         <select
                                             value={statusFilter}
                                             onChange={(e) => setStatusFilter(e.target.value)}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                                         >
-                                            <option value="all">Wszyscy</option>
-                                            <option value="active">Aktywni</option>
-                                            <option value="inactive">Nieaktywni</option>
+                                            <option value="all">{t('statusAll')}</option>
+                                            <option value="active">{t('statusActive')}</option>
+                                            <option value="inactive">{t('statusInactive')}</option>
                                         </select>
                                     </div>
                                     {allTags.length > 0 && (
                                         <div className="mb-3">
-                                            <label className="block text-xs font-semibold text-slate-600 mb-1">Tag</label>
+                                            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('tag')}</label>
                                             <select
                                                 value={tagFilter}
                                                 onChange={(e) => setTagFilter(e.target.value)}
                                                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                                             >
-                                                <option value="">Wszystkie tagi</option>
+                                                <option value="">{t('allTags')}</option>
                                                 {allTags.map((tag, idx) => (
                                                     <option key={idx} value={tag}>{tag}</option>
                                                 ))}
@@ -418,12 +421,12 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                             className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
                         />
                     </div>
-                    <div>Imię i nazwisko klienta</div>
-                    <div>Numer telefonu komórkowego</div>
-                    <div className="text-center">Opinie</div>
-                    <div className="text-center">Sprzedaż</div>
+                    <div>{t('colName')}</div>
+                    <div>{t('colPhone')}</div>
+                    <div className="text-center">{t('colReviews')}</div>
+                    <div className="text-center">{t('colSales')}</div>
                     <div className="flex items-center gap-1">
-                        Utworzono
+                        {t('colCreated')}
                         <ChevronDown size={12} className={sortBy === 'createdAt' ? 'text-slate-900' : 'text-slate-400'} />
                     </div>
                 </div>
@@ -432,7 +435,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-16">
                         <Loader2 size={32} className="animate-spin text-violet-600 mb-2" />
-                        <p className="text-sm text-slate-500">Ładowanie klientów...</p>
+                        <p className="text-sm text-slate-500">{t('loading')}</p>
                     </div>
                 ) : sortedClients.length > 0 ? (
                     <div className="divide-y divide-slate-100">
@@ -485,7 +488,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
 
                                 {/* Created Date */}
                                 <div className="flex items-center text-sm text-slate-600">
-                                    {formatDate(client.createdAt)}
+                                    {formatDateStr(client.createdAt)}
                                 </div>
                             </div>
                         ))}
@@ -493,12 +496,12 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
                 ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-slate-400 text-center">
                         <Search size={32} className="mb-2 opacity-50" />
-                        <p className="text-sm mb-4">Nie znaleziono klientów</p>
+                        <p className="text-sm mb-4">{t('notFound')}</p>
                         <Link
                             href="/business/dashboard/clients/add"
                             className="px-4 py-2 bg-slate-900 text-white rounded-full text-sm font-medium hover:bg-slate-800 transition-colors"
                         >
-                            Dodaj pierwszego klienta
+                            {t('addFirst')}
                         </Link>
                     </div>
                 )}
@@ -506,7 +509,7 @@ export default function ClientList({ onSelectClient, selectedClientId, businessI
 
             {/* Footer */}
             <div className="py-4 text-center text-sm text-slate-500">
-                Wyświetlasz {sortedClients.length > 0 ? '1' : '0'}–{sortedClients.length} z {clients.length} wyników
+                {t('showing')} {sortedClients.length > 0 ? '1' : '0'}–{sortedClients.length} {t('resultsOf')} {clients.length} {t('results')}
             </div>
         </div>
     );

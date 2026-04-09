@@ -1,8 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, SlidersHorizontal, ArrowUpDown, MoreHorizontal, Plus, Mail, Phone, Star, UserCog, Calendar, Briefcase, X, ChevronDown, Info, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import {
+    Search, SlidersHorizontal, ArrowUpDown, MoreHorizontal, Plus, Mail, Phone, Star, UserCog, Calendar, Briefcase, X, ChevronDown, Info, ChevronRight,
+    Settings, Filter, MessageCircle, Edit2, Clock, UserMin, Wallet, Users, Layout, ShieldCheck
+} from 'lucide-react';
 import VacationModal from './VacationModal';
 
 export default function TeamList({ employees, onAddClick, onDeleteClick, onEmployeeUpdate, onEditClick, onViewScheduleClick }) {
+    const t = useTranslations('BusinessTeamList');
     const [activeDropdownId, setActiveDropdownId] = useState(null);
     const dropdownRef = useRef(null);
     const [isSidebarOptionsOpen, setIsSidebarOptionsOpen] = useState(false);
@@ -84,46 +89,47 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
         <div className="bg-white min-h-screen p-8">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold text-gray-900">Pracownicy</h1>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm font-medium">
-                        {filteredEmployees.length} / {employees.length}
-                    </span>
-                </div>
+                <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
                 <div className="flex gap-3">
-                    <button className="px-4 py-2 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                        Opcje
-                        <MoreHorizontal size={16} />
+                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <Settings size={18} />
+                        {t('options')}
                     </button>
                     <button
                         onClick={onAddClick}
-                        className="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
                     >
-                        Dodaj
+                        <Plus size={18} />
+                        {t('add')}
                     </button>
                 </div>
             </div>
 
-            {/* Activation Banner */}
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-8 flex justify-between items-center">
-                <p className="text-amber-900 font-medium">
-                    Aktywuj plan, aby nie stracić dostępu po zakończeniu bezpłatnego okresu próbnego za <span className="font-bold">13 dni</span>
-                </p>
-                <button className="px-4 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800">
-                    Aktywuj plan
+            {/* Trial Banner */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl text-white flex justify-between items-center shadow-md">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                        <ShieldCheck size={24} />
+                    </div>
+                    <div>
+                        <p className="font-medium">{t('bannerText')} 12 {t('days')}.</p>
+                    </div>
+                </div>
+                <button className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors">
+                    {t('activatePlan')}
                 </button>
             </div>
 
-            {/* Filters & Search */}
-            <div className="flex gap-4 mb-8">
-                <div className="flex-1 relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            {/* Filters and Search */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Szukaj pracowników po imieniu, nazwisku, email lub telefonie..."
+                        placeholder={t('searchPlaceholder')}
+                        className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-full text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-black/5"
                     />
                     {searchTerm && (
                         <button
@@ -134,10 +140,12 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                         </button>
                     )}
                 </div>
-                <button className="px-6 py-3 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                    Filtry
-                    <SlidersHorizontal size={18} />
-                </button>
+                <div className="flex gap-2">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <Filter size={18} />
+                        {t('filters')}
+                    </button>
+                </div>
                 <button
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     className="px-6 py-3 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 ml-auto"
@@ -147,157 +155,176 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                 </button>
             </div>
 
-            {/* Table Header */}
-            <div className="grid grid-cols-[auto_2fr_2fr_1fr_auto] gap-4 px-4 py-3 border-b border-gray-100 text-sm font-semibold text-gray-900">
-                <div className="w-6">
-                    <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
-                </div>
-                <div
-                    className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
-                    onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-                >
-                    Nazwa
-                    <ArrowUpDown size={14} />
-                </div>
-                <div>Kontakt</div>
-                <div
-                    className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
-                    onClick={() => { setSortBy('rating'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-                >
-                    Ocena
-                    <ArrowUpDown size={14} />
-                </div>
-                <div className="w-24"></div>
-            </div>
-
-            {/* List */}
-            <div className="divide-y divide-gray-100">
-                {filteredEmployees.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Search className="mx-auto text-gray-300 mb-3" size={48} />
-                        <p className="text-gray-500 font-medium">Brak pracowników spełniających kryteria</p>
-                        {searchTerm && (
-                            <button
-                                onClick={() => setSearchTerm('')}
-                                className="mt-2 text-sm text-purple-600 hover:underline"
-                            >
-                                Wyczyść wyszukiwanie
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    filteredEmployees.map((employee) => (
-                        <div
-                            key={employee.id}
-                            onClick={() => setSelectedEmployee(employee)}
-                            className="grid grid-cols-[auto_2fr_2fr_1fr_auto] gap-4 px-4 py-6 items-center hover:bg-gray-50 transition-colors group cursor-pointer"
-                        >
+            {/* Table */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-gray-50/50 border-b border-gray-100">
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('name')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('contact')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('rating')}</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"></th>
+                            </tr>
+                        </thead>
+                        {/* Table Header */}
+                        {/* Original table header was replaced by the new table structure.
+                        <div className="grid grid-cols-[auto_2fr_2fr_1fr_auto] gap-4 px-4 py-3 border-b border-gray-100 text-sm font-semibold text-gray-900">
                             <div className="w-6">
                                 <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
                             </div>
+                            <div
+                                className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
+                                onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                            >
+                                Nazwa
+                                <ArrowUpDown size={14} />
+                            </div>
+                            <div>Kontakt</div>
+                            <div
+                                className="flex items-center gap-2 cursor-pointer hover:text-gray-600"
+                                onClick={() => { setSortBy('rating'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                            >
+                                Ocena
+                                <ArrowUpDown size={14} />
+                            </div>
+                            <div className="w-24"></div>
+                        </div>
+                        */}
 
-                            {/* Name & Avatar */}
-                            <div className="flex items-center gap-4">
-                                {employee.avatarImage ? (
-                                    <img
-                                        src={employee.avatarImage}
-                                        alt={employee.name}
-                                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                                    />
-                                ) : (
-                                    <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-lg border border-blue-100">
-                                        {employee.avatar || employee.name.charAt(0)}
+                        {/* List */}
+                        <div className="divide-y divide-gray-100">
+                            {filteredEmployees.length === 0 ? (
+                                <div className="flex flex-col items-center py-12">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-4">
+                                        <Search size={32} />
                                     </div>
-                                )}
-                                <div>
-                                    <h3 className="font-bold text-gray-900">{employee.name}</h3>
-                                    <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
-                                        <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-[10px] font-serif">S</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Contact */}
-                            <div className="flex flex-col gap-1">
-                                {employee.email && (
-                                    <a href={`mailto:${employee.email}`} className="text-blue-600 hover:underline text-sm font-medium">
-                                        {employee.email}
-                                    </a>
-                                )}
-                                {employee.phone && (
-                                    <span className="text-blue-600 text-sm">
-                                        {employee.phone}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Rating */}
-                            <div className="text-gray-500 text-sm">
-                                Brak opinii
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex justify-end">
-                                <div className="relative">
+                                    <p className="text-gray-500 font-medium">{t('noEmployees')}</p>
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveDropdownId(activeDropdownId === employee.id ? null : employee.id);
-                                        }}
-                                        className={`px-4 py-2 border border-gray-200 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${activeDropdownId === employee.id ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-white hover:shadow-sm bg-white'}`}
+                                        onClick={() => setSearchTerm('')}
+                                        className="mt-2 text-blue-600 text-sm hover:underline"
                                     >
-                                        Opcje
-                                        <MoreHorizontal size={16} />
+                                        {t('clearSearch')}
                                     </button>
+                                </div>
+                            ) : (
+                                filteredEmployees.map((employee) => (
+                                    <div
+                                        key={employee.id}
+                                        onClick={() => setSelectedEmployee(employee)}
+                                        className="grid grid-cols-[auto_2fr_2fr_1fr_auto] px-6 py-4 items-center hover:bg-gray-50 transition-colors group cursor-pointer"
+                                    >
+                                        <div className="w-6">
+                                            <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
+                                        </div>
 
-                                    {activeDropdownId === employee.id && (
-                                        <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                            <div className="py-1">
-                                                <button
-                                                    onClick={() => {
-                                                        if (onEditClick) onEditClick(employee.id);
-                                                        setActiveDropdownId(null);
-                                                    }}
-                                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                                >
-                                                    <UserCog size={16} className="text-gray-400" />
-                                                    Zmień
-                                                </button>
-                                                <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
-                                                    <Calendar size={16} className="text-gray-400" />
-                                                    Wyświetl kalendarz
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (onViewScheduleClick) onViewScheduleClick();
-                                                        setActiveDropdownId(null);
-                                                    }}
-                                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                                >
-                                                    <Briefcase size={16} className="text-gray-400" />
-                                                    Wyświetl grafik pracy
-                                                </button>
-                                                <div className="h-px bg-gray-100 my-1"></div>
+                                        {/* Name & Avatar */}
+                                        <div className="flex items-center gap-4">
+                                            {employee.avatarImage ? (
+                                                <img
+                                                    src={employee.avatarImage}
+                                                    alt={employee.name}
+                                                    className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold text-lg border border-blue-100">
+                                                    {employee.avatar || employee.name.charAt(0)}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h3 className="font-bold text-gray-900">{employee.name}</h3>
+                                                <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
+                                                    <span className="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center text-[10px] font-serif">S</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Contact */}
+                                        <div className="flex flex-col gap-1">
+                                            {employee.email && (
+                                                <a href={`mailto:${employee.email}`} className="text-blue-600 hover:underline text-sm font-medium">
+                                                    {employee.email}
+                                                </a>
+                                            )}
+                                            {employee.phone && (
+                                                <span className="text-blue-600 text-sm">
+                                                    {employee.phone}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Rating */}
+                                        <div className="flex items-center gap-1">
+                                            <Star size={14} className={employee.rating > 0 ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                                            <span className="font-bold text-gray-900">{employee.rating || '0.0'}</span>
+                                            <span className="text-gray-400">({employee.reviewsCount || t('noOpinions')})</span>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex justify-end">
+                                            <div className="relative">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setActiveDropdownId(null);
-                                                        setVacationModalEmployeeId(employee.id);
-                                                        setIsVacationModalOpen(true);
+                                                        setActiveDropdownId(activeDropdownId === employee.id ? null : employee.id);
                                                     }}
-                                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                    className={`px-4 py-2 border border-gray-200 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${activeDropdownId === employee.id ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-white hover:shadow-sm bg-white'}`}
                                                 >
-                                                    <Briefcase size={16} className="text-gray-400" />
-                                                    Dodaj urlop
+                                                    {t('options')}
+                                                    <MoreHorizontal size={16} />
                                                 </button>
+
+                                                {activeDropdownId === employee.id && (
+                                                    <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                        <div className="py-1">
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (onEditClick) onEditClick(employee.id);
+                                                                    setActiveDropdownId(null);
+                                                                }}
+                                                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                            >
+                                                                <UserCog size={16} className="text-gray-400" />
+                                                                {t('edit')}
+                                                            </button>
+                                                            <button className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
+                                                                <Calendar size={16} className="text-gray-400" />
+                                                                {t('viewCalendar')}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (onViewScheduleClick) onViewScheduleClick();
+                                                                    setActiveDropdownId(null);
+                                                                }}
+                                                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                            >
+                                                                <Briefcase size={16} className="text-gray-400" />
+                                                                {t('viewSchedule')}
+                                                            </button>
+                                                            <div className="h-px bg-gray-100 my-1"></div>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setActiveDropdownId(null);
+                                                                    setVacationModalEmployeeId(employee.id);
+                                                                    setIsVacationModalOpen(true);
+                                                                }}
+                                                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                                            >
+                                                                <Briefcase size={16} className="text-gray-400" />
+                                                                {t('addVacation')}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
-                    ))
-                )}
+                    </table>
+                </div>
             </div>
             <VacationModal
                 isOpen={isVacationModalOpen}
@@ -343,7 +370,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         onClick={() => setIsSidebarOptionsOpen(!isSidebarOptionsOpen)}
                                         className="px-4 py-1.5 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                     >
-                                        Opcje
+                                        {t('options')}
                                         <ChevronDown size={14} className={`transition-transform duration-200 ${isSidebarOptionsOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
@@ -357,10 +384,10 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                                     }}
                                                     className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                                 >
-                                                    Zmień
+                                                    {t('edit')}
                                                 </button>
                                                 <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                                    Wyświetl kalendarz
+                                                    {t('viewCalendar')}
                                                 </button>
                                                 <button
                                                     onClick={() => {
@@ -369,7 +396,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                                     }}
                                                     className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                                 >
-                                                    Wyświetl grafik pracy
+                                                    {t('viewSchedule')}
                                                 </button>
                                                 <button
                                                     onClick={() => {
@@ -379,7 +406,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                                     }}
                                                     className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                                 >
-                                                    Dodaj urlop
+                                                    {t('addVacation')}
                                                 </button>
                                             </div>
                                         </div>
@@ -396,7 +423,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
-                                    Podsumowanie
+                                    {t('summary')}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('profile')}
@@ -405,7 +432,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
-                                    Profil osobisty
+                                    {t('personalProfile')}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('workspace')}
@@ -414,7 +441,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
-                                    Obszar roboczy
+                                    {t('workspace')}
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('pay')}
@@ -423,7 +450,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
-                                    Zapłać
+                                    {t('pay')}
                                 </button>
                             </div>
                         </div>
@@ -433,10 +460,10 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                             {/* Header */}
                             <div className="p-6 flex justify-between items-center border-b border-gray-50">
                                 <h2 className="text-2xl font-bold text-gray-900">
-                                    {activeTab === 'summary' && 'Podsumowanie'}
-                                    {activeTab === 'profile' && 'Profil osobisty'}
-                                    {activeTab === 'workspace' && 'Obszar roboczy'}
-                                    {activeTab === 'pay' && 'Zapłać'}
+                                    {activeTab === 'summary' && t('summary')}
+                                    {activeTab === 'profile' && t('personalProfile')}
+                                    {activeTab === 'workspace' && t('workspace')}
+                                    {activeTab === 'pay' && t('pay')}
                                 </h2>
                                 <button
                                     onClick={() => setSelectedEmployee(null)}
@@ -453,20 +480,20 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         {/* Panel wyników Header */}
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <h3 className="font-bold text-gray-900">Panel wyników</h3>
-                                                <button className="text-sm text-indigo-600 hover:underline">Zobacz cały pułpit</button>
+                                                <h3 className="font-bold text-gray-900">{t('performancePanel')}</h3>
+                                                <button className="text-sm text-indigo-600 hover:underline">{t('seeDashboard')}</button>
                                             </div>
                                             <select className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                                <option>Bieżący tydzień</option>
-                                                <option>Ostatni miesiąc</option>
-                                                <option>Ostatnie 3 miesiące</option>
+                                                <option>{t('currentWeek')}</option>
+                                                <option>{t('lastMonth')}</option>
+                                                <option>{t('last3Months')}</option>
                                             </select>
                                         </div>
 
                                         {/* Sprzedaż Card */}
                                         <div className="border border-gray-200 rounded-2xl p-6 shadow-sm">
                                             <div className="flex items-center gap-2 mb-4">
-                                                <span className="font-bold text-gray-900">Sprzedaż</span>
+                                                <span className="font-bold text-gray-900">{t('sales')}</span>
                                                 <Info size={16} className="text-gray-400" />
                                             </div>
 
@@ -474,7 +501,7 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
 
                                             <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-600 mb-8">
                                                 <ArrowUpDown size={12} />
-                                                0% vs poprzedni okres
+                                                0% {t('vsPreviousPeriod')}
                                             </div>
 
                                             {/* Graph Placeholder */}
@@ -509,14 +536,14 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
                                         <div className="grid grid-cols-2 gap-6">
                                             <div className="border border-gray-200 rounded-2xl p-6 shadow-sm">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className="font-bold text-gray-900">Wizyty</span>
+                                                    <span className="font-bold text-gray-900">{t('visits')}</span>
                                                     <Info size={16} className="text-gray-400" />
                                                 </div>
                                                 <div className="text-3xl font-bold text-gray-900">1</div>
                                             </div>
                                             <div className="border border-gray-200 rounded-2xl p-6 shadow-sm">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className="font-bold text-gray-900">Klienci</span>
+                                                    <span className="font-bold text-gray-900">{t('clients')}</span>
                                                     <Info size={16} className="text-gray-400" />
                                                 </div>
                                                 <div className="text-3xl font-bold text-gray-900">0</div>
@@ -527,19 +554,19 @@ export default function TeamList({ employees, onAddClick, onDeleteClick, onEmplo
 
                                 {activeTab === 'profile' && (
                                     <div className="text-center text-gray-500 py-12">
-                                        Profil osobisty - w przygotowaniu
+                                        {t('personalProfile')} - {t('inPreparation')}
                                     </div>
                                 )}
 
                                 {activeTab === 'workspace' && (
                                     <div className="text-center text-gray-500 py-12">
-                                        Obszar roboczy - w przygotowaniu
+                                        {t('workspace')} - {t('inPreparation')}
                                     </div>
                                 )}
 
                                 {activeTab === 'pay' && (
                                     <div className="text-center text-gray-500 py-12">
-                                        Zapłać - w przygotowaniu
+                                        {t('pay')} - {t('inPreparation')}
                                     </div>
                                 )}
                             </div>

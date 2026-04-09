@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-function CategorySelector({ selectedCategory, categories, onSelect }) {
+function CategorySelector({ selectedCategory, categories, onSelect, t }) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -45,7 +46,7 @@ function CategorySelector({ selectedCategory, categories, onSelect }) {
                             <span className="font-medium text-gray-900">{selectedCategory}</span>
                         </>
                     ) : (
-                        <span className="text-gray-500">Wybierz kategorię</span>
+                        <span className="text-gray-500">{t('selectCategory')}</span>
                     )}
                 </div>
                 <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -84,7 +85,7 @@ function CategorySelector({ selectedCategory, categories, onSelect }) {
                             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors font-medium"
                         >
                             <Plus className="w-4 h-4" />
-                            Dodaj kategorię
+                            {t('addCategory')}
                         </button>
                     </div>
                 </div>
@@ -94,20 +95,21 @@ function CategorySelector({ selectedCategory, categories, onSelect }) {
 }
 
 export default function ServiceBasicInfo({ data, onChange, categories }) {
+    const t = useTranslations('BusinessServiceBasicInfo');
     return (
         <section id="basic" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Podstawowe informacje</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('sectionTitle')}</h2>
 
             <div className="space-y-6">
                 <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">
-                        Nazwa zabiegu
+                        {t('nameLabel')}
                     </label>
                     <input
                         type="text"
                         value={data.name}
                         onChange={(e) => onChange('name', e.target.value)}
-                        placeholder="Dodaj nazwę zabiegu, np. strzyżenie męskie"
+                        placeholder={t('namePlaceholder')}
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-gray-400"
                     />
                 </div>
@@ -115,46 +117,47 @@ export default function ServiceBasicInfo({ data, onChange, categories }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-semibold text-gray-900 mb-2">
-                            Kategoria
+                            {t('categoryLabel')}
                         </label>
                         <CategorySelector
                             selectedCategory={data.category}
                             categories={categories}
                             onSelect={(value) => onChange('category', value)}
+                            t={t}
                         />
-                        <p className="mt-2 text-xs text-gray-500">Kategoria wyświetlana Tobie i klientom online</p>
+                        <p className="mt-2 text-xs text-gray-500">{t('categoryHint')}</p>
                     </div>
 
                     <div>
                         <label className="block text-sm font-semibold text-gray-900 mb-2">
-                            Rodzaj zabiegu
+                            {t('typeLabel')}
                         </label>
                         <div className="relative">
                             <select
                                 className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-all appearance-none bg-white font-medium text-gray-900"
                             >
-                                <option value="">Wybierz rodzaj zabiegu</option>
+                                <option value="">{t('selectType')}</option>
                                 {/* Placeholder for service types if needed */}
-                                <option value="service">Usługa podstawowa</option>
-                                <option value="package">Pakiet</option>
+                                <option value="service">{t('typeService')}</option>
+                                <option value="package">{t('typePackage')}</option>
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                         </div>
-                        <p className="mt-2 text-xs text-gray-500">Pomaga klientom znaleźć Twoje usługi</p>
+                        <p className="mt-2 text-xs text-gray-500">{t('typeHint')}</p>
                     </div>
                 </div>
 
                 <div>
                     <div className="flex justify-between mb-2">
                         <label className="block text-sm font-semibold text-gray-900">
-                            Opis <span className="text-gray-400 font-normal">(Opcjonalne)</span>
+                            {t('descriptionLabel')} <span className="text-gray-400 font-normal">{t('descriptionOptional')}</span>
                         </label>
                         <span className="text-xs text-gray-400">0/1000</span>
                     </div>
                     <textarea
                         value={data.description}
                         onChange={(e) => onChange('description', e.target.value)}
-                        placeholder="Dodaj krótki opis"
+                        placeholder={t('descriptionPlaceholder')}
                         rows={4}
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-gray-400 resize-none"
                     />

@@ -5,11 +5,12 @@ import {
   Briefcase, Clock, DollarSign, Users, Star, Globe, Instagram, Facebook,
   Camera, LogIn, UserPlus, Eye, EyeOff, Lock, ArrowRight, Zap, Sparkles
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/components/Toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCsrf } from '@/hooks/useCsrf';
+import { useTranslations } from 'next-intl';
 
 // Animation variants
 const fadeInUp = {
@@ -30,7 +31,8 @@ const slideIn = {
 
 const BooklyAuth = () => {
   const router = useRouter();
-  const { isAuthenticated, user, loading: authLoading } = useAuth('/business/auth');
+  const t = useTranslations('BusinessAuth');
+  const { isAuthenticated, user, loading: authLoading, refreshUser } = useAuth('/business/auth');
   const { secureFetch } = useCsrf();
   const [isLogin, setIsLogin] = useState(true);
   const [step, setStep] = useState(1);
@@ -153,6 +155,7 @@ const BooklyAuth = () => {
 
       if (response.ok) {
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (refreshUser) await refreshUser();
         router.push('/business/dashboard');
         toast.success('Pomyślnie zalogowano!');
       } else {
@@ -322,14 +325,14 @@ const BooklyAuth = () => {
             className="mt-12 md:mt-24"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
-              Zarządzaj swoim <br />
+              {t('title1')} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
-                biznesem beauty
+                {t('title2')}
               </span> <br />
-              jak profesjonalista.
+              {t('title3')}
             </h1>
             <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-              Dołącz do tysięcy salonów, które zautomatyzowały swoje zapisy i zwiększyły przychody dzięki Bookly.
+              {t('subtitle')}
             </p>
           </motion.div>
         </div>
@@ -350,7 +353,7 @@ const BooklyAuth = () => {
         {/* Top Navigation / Toggle */}
         <div className="absolute top-0 right-0 p-6 md:p-8 z-20 flex items-center gap-4">
           <span className="text-slate-400 text-sm hidden sm:inline-block">
-            {isLogin ? 'Nie masz jeszcze konta?' : 'Masz już konto?'}
+            {isLogin ? t('noAccount') : t('hasAccount')}
           </span>
           <button
             onClick={toggleMode}
@@ -359,12 +362,12 @@ const BooklyAuth = () => {
             {isLogin ? (
               <>
                 <UserPlus size={16} className="text-violet-400 group-hover:scale-110 transition-transform" />
-                <span>Zarejestruj się</span>
+                <span>{t('register')}</span>
               </>
             ) : (
               <>
                 <LogIn size={16} className="text-violet-400 group-hover:scale-110 transition-transform" />
-                <span>Zaloguj się</span>
+                <span>{t('login')}</span>
               </>
             )}
           </button>
@@ -383,8 +386,8 @@ const BooklyAuth = () => {
                   className="space-y-8"
                 >
                   <div className="text-center md:text-left">
-                    <h2 className="text-3xl font-bold text-white mb-2">Witaj ponownie! 👋</h2>
-                    <p className="text-slate-400">Wprowadź swoje dane, aby uzyskać dostęp do panelu.</p>
+                    <h2 className="text-3xl font-bold text-white mb-2">{t('welcomeBack')}</h2>
+                    <p className="text-slate-400">{t('loginDesc')}</p>
                   </div>
 
                   {error && (
@@ -396,7 +399,7 @@ const BooklyAuth = () => {
 
                   <form onSubmit={handleLogin} className="space-y-5">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-300 ml-1">Email</label>
+                      <label className="text-sm font-medium text-slate-300 ml-1">{t('emailLabel')}</label>
                       <div className="relative group">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-violet-400 transition-colors" />
                         <input
@@ -405,7 +408,7 @@ const BooklyAuth = () => {
                           value={formData.email}
                           onChange={handleChange}
                           className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-white/10 rounded-xl focus:border-violet-500 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-violet-500 text-white placeholder-slate-600 transition-all"
-                          placeholder="jan@firma.pl"
+                          placeholder={t('emailPlaceholder')}
                           required
                         />
                       </div>
@@ -413,8 +416,8 @@ const BooklyAuth = () => {
 
                     <div className="space-y-1.5">
                       <div className="flex justify-between ml-1">
-                        <label className="text-sm font-medium text-slate-300">Hasło</label>
-                        <a href="#" className="text-xs text-violet-400 hover:text-violet-300">Zapomniałeś hasła?</a>
+                        <label className="text-sm font-medium text-slate-300">{t('passwordLabel')}</label>
+                        <a href="#" className="text-xs text-violet-400 hover:text-violet-300">{t('forgotPassword')}</a>
                       </div>
                       <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-violet-400 transition-colors" />
@@ -424,7 +427,7 @@ const BooklyAuth = () => {
                           value={formData.password}
                           onChange={handleChange}
                           className="w-full pl-12 pr-12 py-3.5 bg-slate-900/50 border border-white/10 rounded-xl focus:border-violet-500 focus:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-violet-500 text-white placeholder-slate-600 transition-all"
-                          placeholder="••••••••"
+                          placeholder={t('passwordPlaceholder')}
                           required
                         />
                         <button
@@ -446,7 +449,7 @@ const BooklyAuth = () => {
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         <>
-                          <span>Zaloguj się</span>
+                          <span>{t('login')}</span>
                           <ArrowRight size={18} />
                         </>
                       )}
@@ -463,12 +466,12 @@ const BooklyAuth = () => {
                   className="w-full"
                 >
                   <div className="mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-2">Stwórz konto biznesowe</h2>
+                    <h2 className="text-3xl font-bold text-white mb-2">{t('createAccount')}</h2>
                     <p className="text-slate-400">Krok {step} z {totalSteps}: {
-                      step === 1 ? 'Informacje o firmie' :
-                        step === 2 ? 'Dane kontaktowe' :
-                          step === 3 ? 'Lokalizacja' :
-                            step === 4 ? 'Usługi' : 'Hasło i zgody'
+                      step === 1 ? t('step1') :
+                        step === 2 ? t('step2') :
+                          step === 3 ? t('step3') :
+                            step === 4 ? t('step4') : t('step5')
                     }</p>
 
                     {/* Stepper */}
@@ -769,7 +772,7 @@ const BooklyAuth = () => {
                           className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium flex items-center gap-2"
                         >
                           <ChevronLeft size={18} />
-                          Wstecz
+                          {t('back')}
                         </button>
                       ) : (
                         <div />
@@ -781,7 +784,7 @@ const BooklyAuth = () => {
                           onClick={nextStep}
                           className="px-8 py-3 rounded-xl bg-white text-slate-900 hover:bg-slate-200 font-bold transition-all shadow-lg shadow-white/10 flex items-center gap-2"
                         >
-                          Dalej
+                          {t('next')}
                           <ChevronRight size={18} />
                         </button>
                       ) : (
@@ -790,7 +793,7 @@ const BooklyAuth = () => {
                           disabled={isLoading}
                           className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:shadow-lg hover:shadow-violet-600/30 text-white font-bold transition-all flex items-center gap-2"
                         >
-                          {isLoading ? 'Rejestracja...' : 'Zakończ'}
+                          {isLoading ? t('registering') : t('finish')}
                           {!isLoading && <Check size={18} />}
                         </button>
                       )}
